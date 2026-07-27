@@ -733,6 +733,12 @@
     'Geçmiş tarih düzenlenemez. Düzeltme yetkisi admindedir.': 'Past dates cannot be edited. Corrections are admin-only.',
     'Kaydedilecek yeni giriş yok (mevcut kayıtlar kilitli).': 'No new entries to save (existing records are locked).',
     'Dışa aktarılacak veri yok.': 'No data to export.',
+    'GÜN SONU RAPORLAMA': 'END-OF-DAY REPORTING',
+    "Yöneticiye WhatsApp'tan bildir": 'Notify Manager on WhatsApp',
+    "Sistem Natural Clinic PDF'ini indirir, rapor mesajını panoya kopyalar ve WhatsApp sohbetini açar. İndirilen PDF'i ekleyip Gönder'e bas.": 'The system downloads the Natural Clinic PDF, copies the report message, and opens the WhatsApp chat. Attach the downloaded PDF and press Send.',
+    'PDF Oluştur & WhatsApp Aç': 'Generate PDF & Open WhatsApp',
+    'Rapor için veri yok.': 'No data for the report.',
+    "PDF indirildi, mesaj panoya kopyalandı. WhatsApp'ta PDF'i ekleyip Gönder'e bas.": 'PDF downloaded, message copied to clipboard. Attach the PDF in WhatsApp and press Send.',
   };
 
   function getLang() {

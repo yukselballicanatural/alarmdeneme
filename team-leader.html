@@ -1104,6 +1104,19 @@
         </tfoot>
       </table>
     </div>
+
+    <!-- Gün sonu raporu — WhatsApp ile yöneticiye bildir -->
+    <div id="depReportCard" style="display:none;margin-top:18px;background:linear-gradient(120deg,rgba(13,148,136,0.06),rgba(15,23,42,0.4));border:1px solid #14343a;border-radius:16px;padding:18px 20px;display:none;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div style="min-width:220px">
+        <div style="font-size:10px;font-weight:800;color:#2dd4bf;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:4px">GÜN SONU RAPORLAMA</div>
+        <div style="font-size:15px;font-weight:800;color:#f1f5f9">Yöneticiye WhatsApp'tan bildir</div>
+        <div style="font-size:11.5px;color:#64748b;margin-top:4px;max-width:560px;line-height:1.55">Sistem Natural Clinic PDF'ini indirir, rapor mesajını panoya kopyalar ve WhatsApp sohbetini açar. İndirilen PDF'i ekleyip Gönder'e bas.</div>
+      </div>
+      <button onclick="depSendWhatsApp()" id="depWaBtn" style="padding:11px 20px;background:linear-gradient(135deg,#0d9488,#0f766e);border:none;border-radius:11px;color:#fff;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 3px 14px rgba(13,148,136,0.4);transition:all .15s;white-space:nowrap" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(13,148,136,0.55)'" onmouseout="this.style.transform='';this.style.boxShadow='0 3px 14px rgba(13,148,136,0.4)'">
+        <svg style="width:16px;height:16px" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.978-1.607zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.767.966-.94 1.164-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
+        PDF Oluştur & WhatsApp Aç
+      </button>
+    </div>
   </div>
 
 </main>
@@ -4764,7 +4777,8 @@
     const wrap  = document.getElementById('depTableWrap');
     const tbody = document.getElementById('depTbody');
     const empty = document.getElementById('depEmpty');
-    if (!depRows.length) { wrap.style.display = 'none'; empty.style.display = 'block'; empty.textContent = I18N.t('Takımında kayıtlı kişi bulunamadı.'); return; }
+    const card = document.getElementById('depReportCard');
+    if (!depRows.length) { wrap.style.display = 'none'; empty.style.display = 'block'; empty.textContent = I18N.t('Takımında kayıtlı kişi bulunamadı.'); if (card) card.style.display = 'none'; return; }
     // Arama: ad soyad + kullanıcı adı; render sırasında master index (i) korunur
     // ki onchange/save/totals fonksiyonları her zaman depRows'a doğru indeksler.
     const q = (document.getElementById('depSearch')?.value || '').toLowerCase().trim();
@@ -4775,10 +4789,12 @@
       wrap.style.display = 'none';
       empty.style.display = 'block';
       empty.textContent = I18N.t('Aramayla eşleşen kişi yok.');
+      if (card) card.style.display = 'none';
       return;
     }
     empty.style.display = 'none';
     wrap.style.display = 'block';
+    if (card) card.style.display = 'flex';
     tbody.innerHTML = view.map(({ row, i }) => _depRowHtml(row, i)).join('');
     I18N.translateDOM(tbody);
     depRecalcTotals();
@@ -5549,6 +5565,56 @@
     });
 
     doc.save(`${_depTeamFilename()}.pdf`);
+  }
+
+  // ── Gün sonu raporu: PDF indir + mesajı panoya kopyala + WhatsApp aç ──
+  // WhatsApp tarayıcıdan otomatik dosya ekleyip otomatik gönderemez; mesaj
+  // önceden yazılı gelir, kullanıcı indirilen PDF'i ekleyip Gönder'e basar.
+  const DEP_WA_NUMBER = '905380531093';     // yöneticinin (Benmamar) WhatsApp no
+  const DEP_WA_DESTINATION = 'Benmamar';
+
+  function _depBuildReportMessage() {
+    const data = depRows || [];
+    const total = data.length;
+    const offDay = data.filter(r => r.attendance === 'off').length;
+    const active = total - offDay;
+    const completed = data.filter(r => r.attendance !== 'off' && r.status === 'saved' && !r._dirty).length;
+    const missing = active - completed;
+    const sum = f => data.reduce((a, r) => a + (parseFloat(r[f]) || 0), 0);
+    const p = String(depDate).split('-');
+    const dateStr = `${p[2]}/${p[1]}/${p[0]}`;
+    return [
+      '*Natural Clinic Daily Performance Report*',
+      '',
+      `*Team:* ${currentUser.team || '—'}`,
+      `*Date:* ${dateStr}`,
+      `*Reported by:* ${currentUser.fullName || currentUser.username || '—'}`,
+      `*Destination:* ${DEP_WA_DESTINATION}`,
+      '',
+      `*Completion:* ${completed}/${active}`,
+      `*Off Day:* ${offDay}`,
+      `*Missing entries:* ${missing}`,
+      `*Customers:* ${sum('customers')}`,
+      `*Calls:* ${sum('total_calls')}`,
+      `*Consultation Completed:* ${sum('consultation_completed')}`,
+      `*Offer Shared:* ${sum('offer_shared')}`,
+      `*Deals:* ${sum('deals')}`,
+      `*Same-day payment total:* €${sum('same_day_payment').toFixed(2)}`,
+      '',
+      'The daily PDF report is attached.',
+    ].join('\n');
+  }
+
+  async function depSendWhatsApp() {
+    if (!depRows.length) { showNotice('Rapor için veri yok.', 'error'); return; }
+    const msg = _depBuildReportMessage();
+    // 1) PDF'i indir
+    _depExportPdf();
+    // 2) Mesajı panoya kopyala (yedek — WhatsApp'ta metin zaten önceden gelir)
+    try { await navigator.clipboard.writeText(msg); } catch(_e) {}
+    // 3) WhatsApp sohbetini mesaj önceden yazılı olarak aç
+    window.open(`https://wa.me/${DEP_WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+    showNotice('PDF indirildi, mesaj panoya kopyalandı. WhatsApp\'ta PDF\'i ekleyip Gönder\'e bas.', 'success');
   }
 
   // Sayfa başlıklarındaki "Export" butonları — 8 sayfa, tek noktadan
