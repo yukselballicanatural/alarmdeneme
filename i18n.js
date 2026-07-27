@@ -723,6 +723,7 @@
     'Tümünü Kaydet': 'Save All Entries',
     'Takım Toplamı': 'Team Total',
     'çalışıyor': 'working',
+    'Kaydediliyor...': 'Saving...',
   };
 
   function getLang() {

@@ -50,6 +50,28 @@
     .nc-date-trigger:hover { border-color:#4b5f7a; }
     .nc-date-trigger.active { border-color:#0d9488; box-shadow:0 0 0 3px rgba(13,148,136,0.12); }
     .nc-date-trigger svg { flex-shrink:0; color:#64748b; }
+
+    /* ── Günlük Ekip Girişi — premium tablo kartı ────────────────────── */
+    .dep-quick-btn:hover { background:#1f2937 !important; }
+    .dep-card { background:linear-gradient(180deg,#0f172a 0%,#0b1220 100%); border:1px solid #1e293b; border-radius:16px; box-shadow:0 10px 40px -12px rgba(0,0,0,0.5); overflow:hidden; }
+    .dep-tbl { width:100%; border-collapse:separate; border-spacing:0; font-size:12px; }
+    .dep-tbl thead th { position:sticky; top:0; z-index:2; background:#0d1526; padding:12px 14px; font-size:9.5px; text-align:left; border-bottom:1px solid #1e293b; white-space:nowrap; font-weight:800; text-transform:uppercase; letter-spacing:0.07em; }
+    .dep-tbl tbody td { padding:9px 14px; vertical-align:middle; border-bottom:1px solid #131c2e; }
+    .dep-tbl tbody tr { transition:background .12s; }
+    .dep-tbl tbody tr:hover td { background:#0f1b30; }
+    .dep-tbl tbody tr.dep-row-off td { background:rgba(127,29,29,0.07); }
+    .dep-tbl tbody tr.dep-row-off:hover td { background:rgba(127,29,29,0.13); }
+    .dep-tbl tfoot td { padding:12px 14px; background:#0d1f1c; border-top:2px solid #0d9488; font-size:12px; }
+    .dep-input { width:62px; box-sizing:border-box; background:#0b1220; border:1px solid #1e293b; border-radius:7px; color:#e2e8f0; font-size:12px; padding:6px 8px; transition:border-color .15s,box-shadow .15s; }
+    .dep-input:focus { outline:none; border-color:#0d9488; box-shadow:0 0 0 3px rgba(13,148,136,0.15); }
+    .dep-input:disabled { opacity:.35; cursor:not-allowed; }
+    .dep-input-time { width:58px; }
+    .dep-input-money { width:82px; }
+    .dep-att-sel { border:1px solid; border-radius:9999px; font-size:10.5px; font-weight:800; padding:6px 12px 6px 10px; cursor:pointer; transition:all .15s; }
+    .dep-att-sel:focus { outline:none; box-shadow:0 0 0 3px rgba(13,148,136,0.15); }
+    .dep-badge { padding:4px 11px; border-radius:9999px; font-size:9.5px; font-weight:800; letter-spacing:.02em; white-space:nowrap; display:inline-block; }
+    .dep-badge-saved { background:rgba(22,163,74,0.15); color:#4ade80; border:1px solid rgba(74,222,128,0.25); }
+    .dep-badge-pending { background:rgba(251,191,36,0.12); color:#fbbf24; border:1px solid rgba(251,191,36,0.25); }
     .nc-date-trigger .nc-date-text { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#E2E8F0; letter-spacing:.2px; }
     .nc-date-trigger .nc-date-text.placeholder { color:#54637a; }
     .nc-cal-popup { position:absolute; top:calc(100% + 8px); left:0; z-index:200; background:#141d30; border:1px solid #2a3752; border-radius:14px; box-shadow:0 24px 48px -12px rgba(0,0,0,0.55), 0 0 0 1px rgba(13,148,136,0.05); padding:14px; width:264px; animation:ncCalIn .13s cubic-bezier(.16,1,.3,1); }
@@ -1013,46 +1035,47 @@
           <button onclick="depSetQuickDate(-1)" id="depBtnYesterday" class="dep-quick-btn" style="padding:6px 12px;font-size:11px;font-weight:700;border-radius:6px;border:none;cursor:pointer;background:transparent;color:#94a3b8;transition:all .15s">Dün</button>
         </div>
         <input type="date" id="depDateInput" class="filter-inp" style="width:150px" onchange="depOnDateInputChange()">
-        <button onclick="depSaveAll()" style="padding:8px 14px;background:#0f766e;border:none;border-radius:10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Tümünü Kaydet</button>
+        <span id="depExportMount"></span>
+        <button onclick="depSaveAll()" id="depSaveBtn" style="padding:8px 16px;background:linear-gradient(135deg,#0f766e,#0d9488);border:none;border-radius:10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 10px rgba(13,148,136,0.35);transition:all .15s" onmouseover="this.style.boxShadow='0 4px 16px rgba(13,148,136,0.5)'" onmouseout="this.style.boxShadow='0 2px 10px rgba(13,148,136,0.35)'">Tümünü Kaydet</button>
       </div>
     </div>
     <div id="depLoading" style="text-align:center;padding:40px 16px;color:#475569;font-size:12px">Yükleniyor...</div>
     <div id="depEmpty" style="display:none;text-align:center;padding:50px 16px;color:#475569;font-size:13px">Takımında kayıtlı kişi bulunamadı.</div>
-    <div id="depTableWrap" style="display:none;overflow-x:auto">
-      <table id="depTable" style="width:100%;border-collapse:collapse;font-size:12px">
+    <div id="depTableWrap" class="dep-card" style="display:none;overflow-x:auto">
+      <table id="depTable" class="dep-tbl">
         <thead>
-          <tr style="border-bottom:1px solid #1e293b">
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Agent</th>
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Attendance</th>
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Customers</th>
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Total Calls</th>
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Interested Patients</th>
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Sales Opportunities</th>
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Avg. Talk Time</th>
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Consultation Completed</th>
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Offer Shared</th>
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Deals</th>
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Same-day Payment (€)</th>
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Flight Tickets Offered</th>
-            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Status</th>
+          <tr>
+            <th>Agent</th>
+            <th>Attendance</th>
+            <th>Customers</th>
+            <th>Total Calls</th>
+            <th>Interested Patients</th>
+            <th>Sales Opportunities</th>
+            <th>Avg. Talk Time</th>
+            <th>Consultation Completed</th>
+            <th>Offer Shared</th>
+            <th>Deals</th>
+            <th>Same-day Payment (€)</th>
+            <th>Flight Tickets Offered</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody id="depTbody"></tbody>
         <tfoot>
-          <tr style="border-top:2px solid #1e293b;font-weight:700">
-            <td style="padding:8px 10px;color:#f1f5f9;white-space:nowrap">Takım Toplamı</td>
-            <td id="depTotAttendance" style="padding:8px 10px;color:#94a3b8;white-space:nowrap;font-size:11px">—</td>
-            <td id="depTotCustomers" style="padding:8px 10px;color:#f1f5f9">0</td>
-            <td id="depTotCalls" style="padding:8px 10px;color:#f1f5f9">0</td>
-            <td id="depTotInterested" style="padding:8px 10px;color:#f1f5f9">0</td>
-            <td id="depTotSalesOpp" style="padding:8px 10px;color:#f1f5f9">0</td>
-            <td style="padding:8px 10px;color:#475569">—</td>
-            <td id="depTotConsult" style="padding:8px 10px;color:#f1f5f9">0</td>
-            <td id="depTotOffer" style="padding:8px 10px;color:#f1f5f9">0</td>
-            <td id="depTotDeals" style="padding:8px 10px;color:#f1f5f9">0</td>
-            <td id="depTotPayment" style="padding:8px 10px;color:#f1f5f9">€0.00</td>
-            <td id="depTotFlights" style="padding:8px 10px;color:#f1f5f9">0</td>
-            <td style="padding:8px 10px;color:#475569">—</td>
+          <tr>
+            <td style="color:#f1f5f9;white-space:nowrap;font-weight:800">Takım Toplamı</td>
+            <td id="depTotAttendance" style="color:#5eead4;white-space:nowrap;font-weight:700">—</td>
+            <td id="depTotCustomers" style="color:#f1f5f9;font-weight:800">0</td>
+            <td id="depTotCalls" style="color:#f1f5f9;font-weight:800">0</td>
+            <td id="depTotInterested" style="color:#f1f5f9;font-weight:800">0</td>
+            <td id="depTotSalesOpp" style="color:#f1f5f9;font-weight:800">0</td>
+            <td style="color:#475569">—</td>
+            <td id="depTotConsult" style="color:#f1f5f9;font-weight:800">0</td>
+            <td id="depTotOffer" style="color:#f1f5f9;font-weight:800">0</td>
+            <td id="depTotDeals" style="color:#f1f5f9;font-weight:800">0</td>
+            <td id="depTotPayment" style="color:#5eead4;font-weight:800">€0.00</td>
+            <td id="depTotFlights" style="color:#f1f5f9;font-weight:800">0</td>
+            <td style="color:#475569">—</td>
           </tr>
         </tfoot>
       </table>
@@ -4626,44 +4649,43 @@
 
   function _depNumInput(rowIdx, field, value, disabled) {
     return `<input type="number" min="0" step="1" value="${value}" ${disabled ? 'disabled' : ''}
-      onchange="depOnFieldChange(${rowIdx}, '${field}', this.value)"
-      style="width:64px;box-sizing:border-box;background:#0b1220;border:1px solid #1e293b;border-radius:6px;color:#e2e8f0;font-size:12px;padding:5px 6px;${disabled ? 'opacity:.4' : ''}">`;
+      onchange="depOnFieldChange(${rowIdx}, '${field}', this.value)" class="dep-input">`;
+  }
+
+  function _depStatusBadgeHtml(row) {
+    const statusSaved = row.status === 'saved' && !row._dirty;
+    return statusSaved
+      ? '<span class="dep-badge dep-badge-saved">● Saved</span>'
+      : '<span class="dep-badge dep-badge-pending">● Pending</span>';
   }
 
   function _depRowHtml(row, i) {
-    const rowBg = i % 2 === 0 ? '' : 'background:#0a1120';
     const isOff = row.attendance === 'off';
-    const statusSaved = row.status === 'saved' && !row._dirty;
-    const statusBadge = statusSaved
-      ? '<span style="padding:3px 9px;border-radius:999px;background:#052e16;color:#4ade80;font-size:10px;font-weight:700">Saved</span>'
-      : '<span style="padding:3px 9px;border-radius:999px;background:#451a03;color:#fbbf24;font-size:10px;font-weight:700">Pending</span>';
-    return `<tr id="depRow-${i}" style="${rowBg};border-bottom:1px solid #1e293b">
-      <td style="padding:8px 10px;color:#f1f5f9;font-weight:600;white-space:nowrap">${fmt(row.fullName)}</td>
-      <td style="padding:8px 10px;white-space:nowrap">
-        <select onchange="depOnAttendanceChange(${i}, this.value)" style="background:#0b1220;border:1px solid #1e293b;border-radius:6px;color:${isOff ? '#f87171' : '#4ade80'};font-size:11px;font-weight:700;padding:5px 6px">
+    return `<tr id="depRow-${i}" class="${isOff ? 'dep-row-off' : ''}">
+      <td style="color:#f1f5f9;font-weight:700;white-space:nowrap">${fmt(row.fullName)}</td>
+      <td style="white-space:nowrap">
+        <select onchange="depOnAttendanceChange(${i}, this.value)" class="dep-att-sel" style="background:${isOff ? 'rgba(248,113,113,0.1)' : 'rgba(74,222,128,0.1)'};border-color:${isOff ? 'rgba(248,113,113,0.35)' : 'rgba(74,222,128,0.35)'};color:${isOff ? '#f87171' : '#4ade80'}">
           <option value="working" ${!isOff ? 'selected' : ''}>Working</option>
           <option value="off" ${isOff ? 'selected' : ''}>Off Day</option>
         </select>
       </td>
-      <td style="padding:8px 10px">${_depNumInput(i, 'customers', row.customers, isOff)}</td>
-      <td style="padding:8px 10px">${_depNumInput(i, 'total_calls', row.total_calls, isOff)}</td>
-      <td style="padding:8px 10px">${_depNumInput(i, 'interested_patients', row.interested_patients, isOff)}</td>
-      <td style="padding:8px 10px">${_depNumInput(i, 'sales_opportunities', row.sales_opportunities, isOff)}</td>
-      <td style="padding:8px 10px">
+      <td>${_depNumInput(i, 'customers', row.customers, isOff)}</td>
+      <td>${_depNumInput(i, 'total_calls', row.total_calls, isOff)}</td>
+      <td>${_depNumInput(i, 'interested_patients', row.interested_patients, isOff)}</td>
+      <td>${_depNumInput(i, 'sales_opportunities', row.sales_opportunities, isOff)}</td>
+      <td>
         <input type="text" value="${fmt(row.avg_talk_time)}" placeholder="00:00" ${isOff ? 'disabled' : ''}
-          onchange="depOnFieldChange(${i}, 'avg_talk_time', this.value)"
-          style="width:60px;box-sizing:border-box;background:#0b1220;border:1px solid #1e293b;border-radius:6px;color:#e2e8f0;font-size:12px;padding:5px 6px;${isOff ? 'opacity:.4' : ''}">
+          onchange="depOnFieldChange(${i}, 'avg_talk_time', this.value)" class="dep-input dep-input-time">
       </td>
-      <td style="padding:8px 10px">${_depNumInput(i, 'consultation_completed', row.consultation_completed, isOff)}</td>
-      <td style="padding:8px 10px">${_depNumInput(i, 'offer_shared', row.offer_shared, isOff)}</td>
-      <td style="padding:8px 10px">${_depNumInput(i, 'deals', row.deals, isOff)}</td>
-      <td style="padding:8px 10px">
+      <td>${_depNumInput(i, 'consultation_completed', row.consultation_completed, isOff)}</td>
+      <td>${_depNumInput(i, 'offer_shared', row.offer_shared, isOff)}</td>
+      <td>${_depNumInput(i, 'deals', row.deals, isOff)}</td>
+      <td>
         <input type="number" min="0" step="0.01" value="${row.same_day_payment}" ${isOff ? 'disabled' : ''}
-          onchange="depOnFieldChange(${i}, 'same_day_payment', this.value)"
-          style="width:76px;box-sizing:border-box;background:#0b1220;border:1px solid #1e293b;border-radius:6px;color:#e2e8f0;font-size:12px;padding:5px 6px;${isOff ? 'opacity:.4' : ''}">
+          onchange="depOnFieldChange(${i}, 'same_day_payment', this.value)" class="dep-input dep-input-money">
       </td>
-      <td style="padding:8px 10px">${_depNumInput(i, 'flight_tickets', row.flight_tickets, isOff)}</td>
-      <td id="depStatusCell-${i}" style="padding:8px 10px;white-space:nowrap">${statusBadge}</td>
+      <td>${_depNumInput(i, 'flight_tickets', row.flight_tickets, isOff)}</td>
+      <td id="depStatusCell-${i}" style="white-space:nowrap">${_depStatusBadgeHtml(row)}</td>
     </tr>`;
   }
 
@@ -4706,7 +4728,7 @@
     }
     row._dirty = true;
     const cell = document.getElementById('depStatusCell-' + i);
-    if (cell) cell.innerHTML = '<span style="padding:3px 9px;border-radius:999px;background:#451a03;color:#fbbf24;font-size:10px;font-weight:700">Pending</span>';
+    if (cell) cell.innerHTML = '<span class="dep-badge dep-badge-pending">● Pending</span>';
     depRecalcTotals();
   }
 
@@ -4727,6 +4749,9 @@
 
   async function depSaveAll() {
     if (!depRows.length) return;
+    const btn = document.getElementById('depSaveBtn');
+    const btnLabel = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = I18N.t('Kaydediliyor...'); btn.style.opacity = '.7'; }
     try {
       const payload = depRows.map(r => ({
         entry_date: depDate,
@@ -4750,12 +4775,21 @@
       }));
       const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' };
       const r = await fetch(`${SUPABASE_URL}/rest/v1/daily_performance?on_conflict=entry_date,username`, { method: 'POST', headers: H, body: JSON.stringify(payload) });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
+      if (!r.ok) {
+        let msg = 'HTTP ' + r.status;
+        try { const errBody = await r.json(); if (errBody && (errBody.message || errBody.error)) msg = errBody.message || errBody.error; } catch(_e) {}
+        if (r.status === 404 || /schema cache|does not exist/i.test(msg)) {
+          msg = 'daily_performance tablosu Supabase\'de henüz oluşturulmamış. daily_performance_table.sql dosyasını Supabase SQL Editor\'de çalıştır.';
+        }
+        throw new Error(msg);
+      }
       depRows.forEach(row => { row.status = 'saved'; row._dirty = false; });
       renderDailyEntry();
       showNotice('Kaydedildi.', 'success');
     } catch(e) {
       showNotice('Kaydedilemedi: ' + e.message, 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = btnLabel; btn.style.opacity = '1'; }
     }
   }
 
@@ -5268,6 +5302,19 @@
     NCExport.download(format || 'csv', headers, rows, 'takimdaki_kisiler', 'Takımımdaki Kişiler');
   }
 
+  function exportDailyEntry(format) {
+    const data = depRows || [];
+    const headers = ['Agent','Attendance','Customers','Total Calls','Interested Patients','Sales Opportunities','Avg. Talk Time','Consultation Completed','Offer Shared','Deals','Same-day Payment (€)','Flight Tickets Offered','Status'];
+    const rows = data.map(r => [
+      r.fullName,
+      r.attendance === 'off' ? 'Off Day' : 'Working',
+      r.customers, r.total_calls, r.interested_patients, r.sales_opportunities, r.avg_talk_time,
+      r.consultation_completed, r.offer_shared, r.deals, (Number(r.same_day_payment) || 0).toFixed(2), r.flight_tickets,
+      (r.status === 'saved' && !r._dirty) ? 'Saved' : 'Pending',
+    ]);
+    NCExport.download(format || 'csv', headers, rows, 'gunluk_ekip_girisi_' + depDate, 'Günlük Ekip Girişi — ' + depDate);
+  }
+
   // Sayfa başlıklarındaki "Export" butonları — 8 sayfa, tek noktadan
   // (bkz. export-util.js: NCExport.renderButton) mount edilir.
   function mountExportButtons() {
@@ -5280,6 +5327,7 @@
       cancelledExportMount:    'exportCancelled',
       wonExportMount:          'exportWonAlarms',
       teamMembersExportMount:  'exportTeamMembers',
+      depExportMount:          'exportDailyEntry',
     };
     for (const [mountId, fnName] of Object.entries(map)) {
       const el = document.getElementById(mountId);
