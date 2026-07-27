@@ -980,6 +980,9 @@
       </div>
     </div>
 
+    <!-- Filtreler buraya (en üste) taşınır: switchView açılışında amFiltersPanel bu mount'a alınır -->
+    <div id="amFiltersTop"></div>
+
     <!-- Gün Filtresi — Alarm Listesi'ni kalan güne göre gerçek zamanlı filtreler -->
     <div class="am-panel p-4 mb-6">
       <div class="flex items-center justify-between flex-wrap gap-3">
@@ -1049,7 +1052,7 @@
         <h3 class="text-sm font-bold text-white">Alarm Listesi</h3>
       </div>
 
-      <div class="bg-gray-950/60 border border-gray-800 rounded-xl p-4 mb-4">
+      <div id="amFiltersPanel" class="bg-gray-950/60 border border-gray-800 rounded-xl p-4 mb-4">
         <div class="flex items-center justify-between mb-3">
           <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Filtreler</span>
           <button onclick="_amResetFilters()" class="text-[10px] text-indigo-400 font-semibold hover:text-indigo-300">Tümünü Temizle</button>
@@ -1146,14 +1149,9 @@
             <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Created (bit.)</label><input type="date" id="amCreatedTo" onchange="renderAdminAlarmTable()"></div>
           </div>
           <div class="flex items-end gap-2">
-            <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Yıl</label>
-              <select id="amCreatedYearFilter" class="filter-select" onchange="renderAdminAlarmTable()" style="width:90px">
-                <option value="">Tümü</option>
-                <option value="2022">2022</option>
-                <option value="2023">2023</option>
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-                <option value="2026">2026</option>
+            <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Yıl (dinamik)</label>
+              <select id="amCreatedYearFilter" class="filter-select" onchange="_amOnYearChange()" style="width:100px">
+                <!-- seçenekler _amPopulateYearOptions() ile dinamik doldurulur -->
               </select>
             </div>
           </div>
@@ -2082,21 +2080,80 @@
       }
     }
 
-    // Sistem geneli kesim: deal created_time 2026 öncesi olan alarmları ele.
-    // allDeals zaten yalnızca 2026 dealleri içerir (sorgu filtresi); bu yüzden
-    // allDeals'te OLMAYAN deal_id'li alarmlar pre-2026 sayılıp gizlenir.
-    // (allDeals henüz yüklenmediyse eleme yapılmaz — yanlışlıkla gizleme olmasın.)
-    function _admPruneAlarms2026() {
-      if (!allDeals.length || !adminAllAlarms.length) return;
-      const ok = new Set(allDeals.map(d => String(d.id)));
-      const before = adminAllAlarms.length;
-      adminAllAlarms = adminAllAlarms.filter(a => a.deal_id == null || ok.has(String(a.deal_id)));
-      if (adminAllAlarms.length !== before) {
-        updateAdminAlarmKPIs();
-        renderRegionPanels();
-        if (typeof renderAdminAlarmTable === 'function') renderAdminAlarmTable();
-        _amUpdateBadges(adminAllAlarms);
-      }
+    // ── Alarm Monitoring: YIL bazlı dinamik veri ──────────────────────
+    // adminAllAlarms artık "görünür" (seçili yıla göre süzülmüş) listedir;
+    // _amAlarmsRaw tüm yılların ham listesini tutar. Yıl değişince ilgili
+    // yılın deal id kümesi (created_time o yıl) sunucudan çekilip alarmlar
+    // yeniden süzülür — böylece 2026 dışı yıllar da talep üzerine görüntülenir.
+    let _amAlarmsRaw = [];
+    let amSelectedYear = '2026';           // varsayılan: 2026
+    const _amYearIds = {};                 // year -> Set(String(deal.id))
+    const _amYearCreated = {};             // String(deal.id) -> created_time (tüm yıllar birleşik)
+
+    async function _amEnsureYearIds(year) {
+      if (_amYearIds[year]) return _amYearIds[year];
+      const set = new Set();
+      try {
+        const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
+        const from = `${year}-01-01T00:00:00`;
+        const to   = `${Number(year) + 1}-01-01T00:00:00`;
+        const teamQ = window.rmTeams ? `&team=${TeamMap.inFilter(window.rmTeams)}` : '';
+        const PAGE = 1000;
+        let offset = 0;
+        while (true) {
+          const url = `${SUPABASE_URL}/rest/v1/deals?select=id,created_time&created_time=gte.${from}&created_time=lt.${to}${teamQ}&limit=${PAGE}&offset=${offset}`;
+          const r = await fetch(url, { headers: H });
+          if (!r.ok) break;
+          const rows = await r.json();
+          if (!Array.isArray(rows) || !rows.length) break;
+          rows.forEach(d => { const k = String(d.id); set.add(k); _amYearCreated[k] = d.created_time; });
+          if (rows.length < PAGE) break;
+          offset += PAGE;
+        }
+      } catch(e) { /* sessiz — küme boş kalırsa o yıl için alarm görünmez */ }
+      _amYearIds[year] = set;
+      return set;
+    }
+
+    // adminAllAlarms'ı seçili yılın deal kümesine göre yeniden hesapla + render
+    async function _amApplyYearFilter() {
+      if (!_amAlarmsRaw.length) return;
+      const set = await _amEnsureYearIds(amSelectedYear);
+      adminAllAlarms = _amAlarmsRaw.filter(a => a.deal_id != null && set.has(String(a.deal_id)));
+      updateAdminAlarmKPIs();
+      renderRegionPanels();
+      populateAdminAlarmFilters();
+      if (typeof renderAdminAlarmTable === 'function') renderAdminAlarmTable();
+      _amUpdateBadges(adminAllAlarms);
+      _amEnsureShortRefMap(adminAllAlarms);
+    }
+
+    function _amOnYearChange() {
+      amSelectedYear = document.getElementById('amCreatedYearFilter')?.value || '2026';
+      _amApplyYearFilter();
+    }
+
+    // Yıl seçeneklerini dinamik doldur (2022 → içinde bulunulan yıl), varsayılan 2026
+    let _amYearOptsReady = false;
+    function _amPopulateYearOptions() {
+      const sel = document.getElementById('amCreatedYearFilter');
+      if (!sel || _amYearOptsReady) return;
+      const nowY = new Date().getFullYear();
+      const maxY = Math.max(2026, nowY);
+      let html = '';
+      for (let y = maxY; y >= 2022; y--) html += `<option value="${y}">${y}</option>`;
+      sel.innerHTML = html;
+      sel.value = amSelectedYear;
+      _amYearOptsReady = true;
+    }
+
+    // Filtre panelini bir kez en üst mount'a (amFiltersTop) taşı
+    let _amFiltersMoved = false;
+    function _amMountFiltersTop() {
+      if (_amFiltersMoved) return;
+      const panel = document.getElementById('amFiltersPanel');
+      const top = document.getElementById('amFiltersTop');
+      if (panel && top) { top.appendChild(panel); _amFiltersMoved = true; }
     }
 
     async function loadAdminAlarms(silent) {
@@ -2106,16 +2163,11 @@
       // 12K+ alarmın tamamı ağdan inince görünüyordu ("bildirim sayısı
       // sonradan geliyor" şikayeti) — artık sayfa açılır açılmaz dolu görünür,
       // gerçek veri gelince sessizce (fark edilmeden) güncellenir.
-      if (!adminAllAlarms.length) {
+      if (!_amAlarmsRaw.length) {
         const cached = await _getCached(_alarmsCacheKey(), _ALARMS_TTL);
         if (cached && cached.length) {
-          adminAllAlarms = cached;
-          updateAdminAlarmKPIs();
-          renderRegionPanels();
-          populateAdminAlarmFilters();
-          renderAdminAlarmTable();
-          _amEnsureShortRefMap(adminAllAlarms);
-          _amUpdateBadges(adminAllAlarms);
+          _amAlarmsRaw = cached;
+          _amApplyYearFilter();
         }
       }
       if (!silent) document.getElementById('adminEngineStatus').textContent = I18N.t('Alarmlar yükleniyor...');
@@ -2142,15 +2194,8 @@
           ));
           rest.forEach(p => { if (Array.isArray(p)) all.push(...p); });
         }
-        adminAllAlarms = all;
-        _admPruneAlarms2026();
-        updateAdminAlarmKPIs();
-        renderRegionPanels();
-        if (!silent) {
-          populateAdminAlarmFilters();
-          renderAdminAlarmTable();
-        }
-        _amEnsureShortRefMap(adminAllAlarms);
+        _amAlarmsRaw = all;
+        await _amApplyYearFilter();     // seçili yıla göre süz + tüm render
         document.getElementById('adminEngineStatus').textContent = `${adminAllAlarms.length} ${I18N.t('alarm yüklendi')}`;
         const lr = document.getElementById('amLastRefresh');
         if (lr) lr.textContent = new Date().toLocaleTimeString('tr-TR');
@@ -3292,7 +3337,7 @@
         allDeals.forEach(d => { const k = d['Deal Id']; if (k) _amDealCreatedMapCache.set(String(k), d['Created Time']); });
         _amDealCreatedMapLen = allDeals.length;
       }
-      return _amDealCreatedMapCache.get(String(dealId)) || null;
+      return _amDealCreatedMapCache.get(String(dealId)) || _amYearCreated[String(dealId)] || null;
     }
 
     // deal_id (uzun) -> zengin bilgi haritası: kısa referans, tutar, ödenen,
@@ -3414,11 +3459,6 @@
           if (!ct) return false;
           if (cFrom && ct < parseDateString(cFrom)) return false;
           if (cTo && ct > parseDateString(cTo)) return false;
-        }
-        const cYear = document.getElementById('amCreatedYearFilter')?.value || '';
-        if (cYear) {
-          const ctStr = _amDealCreatedTimeFor(a.deal_id);
-          if (!ctStr || String(ctStr).substring(0, 4) !== cYear) return false;
         }
         if (search) {
           const txt = [a.deal_name,a.deal_owner,a.team,a.region].join(' ').toLowerCase();
@@ -5097,7 +5137,7 @@
       if (v === 'deals') { ['k1','k2','k3','k4','k5','k6','k7','k8'].forEach(id => { const el = document.getElementById(id); if (el) fitKpiText(el); }); }
       if (v === 'summary') { renderSummary(); _startAnalyticsAutoRefresh(); }
       else _stopAnalyticsAutoRefresh();
-      if (v === 'alarms-monitor') { loadAdminAlarms(); _amRenderDayFilterChips(); }
+      if (v === 'alarms-monitor') { _amMountFiltersTop(); _amPopulateYearOptions(); loadAdminAlarms(); _amRenderDayFilterChips(); }
       if (v === 'users') loadUsers();
       else if (v === 'logs') loadLogs();
       else if (v === 'team-members') loadAdminTeamMembers();
@@ -7102,7 +7142,6 @@
         if (cached) {
           allDeals = cached;
           _applyAll();
-          _admPruneAlarms2026();
           spinEl.classList.add('hidden');
           cardEl.classList.remove('hidden');
           // Arka planda sessizce güncelle — kullanıcı eski (ama doğru) rakamları
@@ -7112,7 +7151,6 @@
             _setCache(_dealsCacheKey(), deals);
             allDeals = deals;
             _applyAll();
-            _admPruneAlarms2026();
             document.getElementById('lastRefresh').textContent = 'Updated: ' + new Date().toLocaleTimeString();
           }).catch(() => {});
           return;
@@ -7143,7 +7181,6 @@
         });
         allDeals = mapDeals(raw);
         _setCache(_dealsCacheKey(), allDeals);
-        _admPruneAlarms2026();   // deal listesi hazır → alarmları 2026'ya göre ele
         document.getElementById('lastRefresh').textContent = 'Updated: ' + new Date().toLocaleTimeString();
       } catch(e) {
         if (!firstBatchShown) {
