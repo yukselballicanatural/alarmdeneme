@@ -4299,7 +4299,7 @@
     tbody.innerHTML = pageData.map((d, i) => {
       const diffColor = d._diff < 0 ? '#f87171' : '#4ade80';
       const diffSign = d._diff > 0 ? '+' : '';
-      return `<tr style="cursor:pointer" onclick="_waOpenDealModal('${d.id}')">
+      return `<tr style="cursor:pointer" onclick="_wrOpenModal('${d.id}')">
         <td style="color:#475569;font-size:10px">${pageStart + i + 1}</td>
         <td style="font-weight:600;color:#f1f5f9;font-size:12px;white-space:nowrap"><a href="https://crm.zoho.eu/crm/org20093728832/tab/Potentials/${d.id}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;text-decoration-style:dotted" onmouseover="this.style.color='#818cf8'" onmouseout="this.style.color=''">${fmt(d.deal_name)}</a></td>
         <td style="font-size:10px;font-family:monospace;white-space:nowrap"><a href="https://crm.zoho.eu/crm/org20093728832/tab/Potentials/${d.id}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#818cf8;text-decoration:underline;text-decoration-style:dotted">${fmt(d.deal_id)}</a></td>
