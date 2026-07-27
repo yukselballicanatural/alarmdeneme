@@ -1325,16 +1325,6 @@
         <svg style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,minmax(96px,1fr));gap:8px;margin-bottom:14px">
-      <div style="background:#111827;border:1px solid #1e293b;border-radius:8px;padding:8px 10px;min-width:0"><div style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase">Tutar</div><div style="font-size:12px;color:#60a5fa;margin-top:2px;overflow-wrap:anywhere" id="wrAmount">—</div></div>
-      <div style="background:#111827;border:1px solid #1e293b;border-radius:8px;padding:8px 10px;min-width:0"><div style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase">Ödenen</div><div style="font-size:12px;color:#4ade80;margin-top:2px;overflow-wrap:anywhere" id="wrPaid">—</div></div>
-      <div style="background:#111827;border:1px solid #1e293b;border-radius:8px;padding:8px 10px;min-width:0"><div style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase">Fark</div><div style="font-size:12px;color:#f87171;margin-top:2px;overflow-wrap:anywhere" id="wrDiff">—</div></div>
-    </div>
-    <div style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:14px">
-      <div style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase;margin-bottom:4px">Kayıtlı Sonuç</div>
-      <div style="font-size:12px;color:#cbd5e1" id="wrReasonText">—</div>
-      <div id="wrSavedConfirm" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #334155;font-size:11px;color:#4ade80;font-weight:700"></div>
-    </div>
     <div style="margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <label style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase">Sonuç Kodu <span style="color:#f87171">*</span></label>
@@ -3959,13 +3949,9 @@
     _wrCurrentDeal = d;
     document.getElementById('wrDealName').textContent  = d.deal_name || '—';
     document.getElementById('wrDealOwner').textContent = d.deal_owner || '—';
-    document.getElementById('wrAmount').textContent = fmtMoney(d._total);
-    document.getElementById('wrPaid').textContent   = fmtMoney(d._paid);
-    document.getElementById('wrDiff').textContent   = (d._diff > 0 ? '+' : '') + fmtMoney(d._diff);
     const zohoLink = document.getElementById('wrZohoLink');
     if (d.id) { zohoLink.href = `https://crm.zoho.eu/crm/org20093728832/tab/Potentials/${d.id}`; zohoLink.style.display = ''; }
     else zohoLink.style.display = 'none';
-    document.getElementById('wrSavedConfirm').style.display = 'none';
     _wrRefreshReasonCard(d);
     document.getElementById('wrResultCode').value = d.sub_code || '';
     document.getElementById('wrReasonNote').value = d.agent_note || '';
@@ -3975,10 +3961,13 @@
     _wrOnResultCodeChange();
   }
   function _wrRefreshReasonCard(d) {
-    const parts = [];
-    if (d.result_code) parts.push(`${I18N.t('Sonuç Kodu: ')}${d.sub_code || d.result_code}`);
-    if (d.agent_note) parts.push(`${I18N.t('Not: ')}${d.agent_note}`);
-    document.getElementById('wrReasonText').textContent = parts.length ? parts.join(' · ') : I18N.t('Kayıtlı bir sonuç yok.');
+    const rt = document.getElementById('wrReasonText');
+    if (rt) {
+      const parts = [];
+      if (d.result_code) parts.push(`${I18N.t('Sonuç Kodu: ')}${d.sub_code || d.result_code}`);
+      if (d.agent_note) parts.push(`${I18N.t('Not: ')}${d.agent_note}`);
+      rt.textContent = parts.length ? parts.join(' · ') : I18N.t('Kayıtlı bir sonuç yok.');
+    }
     const delBtn = document.getElementById('wrDeleteResultBtn');
     if (delBtn) delBtn.style.display = d.sub_code ? '' : 'none';
   }
@@ -4013,9 +4002,11 @@
       Object.assign(d, { result_code: 'Won Payment Follow-up', sub_code: code, agent_note: note });
       _wrRefreshReasonCard(d);
       const confirmEl = document.getElementById('wrSavedConfirm');
-      const who = (currentUser && (currentUser.fullName || currentUser.username)) || '';
-      confirmEl.textContent = `✓ ${I18N.t('Sonuç kodu kaydedildi')}${who ? ' — ' + who : ''} · ${formatDateTime(new Date().toISOString())}`;
-      confirmEl.style.display = 'block';
+      if (confirmEl) {
+        const who = (currentUser && (currentUser.fullName || currentUser.username)) || '';
+        confirmEl.textContent = `✓ ${I18N.t('Sonuç kodu kaydedildi')}${who ? ' — ' + who : ''} · ${formatDateTime(new Date().toISOString())}`;
+        confirmEl.style.display = 'block';
+      }
       showNotice('Won sonuç kodu kaydedildi.', 'success');
       renderWonAlarms();
     } catch(e) {
@@ -4043,7 +4034,7 @@
       Object.assign(d, { result_code: null, sub_code: null, agent_note: null });
       document.getElementById('wrResultCode').value = '';
       document.getElementById('wrReasonNote').value = '';
-      document.getElementById('wrSavedConfirm').style.display = 'none';
+      const _sc = document.getElementById('wrSavedConfirm'); if (_sc) _sc.style.display = 'none';
       _wrRefreshReasonCard(d);
       renderWonAlarms();
       showNotice('Sonuç kodu silindi.', 'success');
