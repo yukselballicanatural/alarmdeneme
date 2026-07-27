@@ -9,6 +9,8 @@ window.NCExport = (function () {
     return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  function _p(n) { return String(n).padStart(2, '0'); }
+
   function _downloadBlob(content, filename, mime) {
     const blob = new Blob([content], { type: mime });
     const a = document.createElement('a');
@@ -59,31 +61,86 @@ window.NCExport = (function () {
     if (format === 'pdf') {
       if (typeof jspdf === 'undefined') { alert('PDF kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edin.'); return; }
       const doc = new jspdf.jsPDF({ orientation: headers.length > 6 ? 'landscape' : 'portrait', unit: 'pt' });
-      doc.setFontSize(11);
-      doc.text(title, 24, 24);
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const M = 28;                       // sayfa kenar boşluğu
+      const now = new Date();
+      const genStr = _t('Oluşturulma') + ': ' +
+        `${_p(now.getDate())}.${_p(now.getMonth() + 1)}.${now.getFullYear()} ${_p(now.getHours())}:${_p(now.getMinutes())}`;
+
       doc.autoTable({
         head: [trHeaders],
         body: safeRows,
-        startY: 34,
-        styles: { fontSize: 7, cellPadding: 3 },
-        headStyles: { fillColor: [13, 148, 136] },
-        margin: { left: 20, right: 20 },
+        startY: 84,                        // başlık bandının altından başla
+        theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 4, lineColor: [226, 232, 240], lineWidth: 0.5, textColor: [30, 41, 59], overflow: 'linebreak', valign: 'middle' },
+        headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8, halign: 'left', cellPadding: 5 },
+        alternateRowStyles: { fillColor: [240, 249, 248] },
+        margin: { left: M, right: M, top: 84 },
+        didDrawPage: function (data) {
+          // ── Üst başlık bandı ──
+          doc.setFillColor(15, 23, 42);
+          doc.rect(0, 0, pageW, 60, 'F');
+          doc.setFillColor(13, 148, 136);
+          doc.rect(0, 60, pageW, 3, 'F');   // teal alt çizgi
+          doc.setTextColor(255, 255, 255);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(15);
+          doc.text('NATURAL CLINIC', M, 26);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          doc.setTextColor(148, 163, 184);
+          doc.text(title, M, 44);
+          doc.setFontSize(8);
+          doc.setTextColor(148, 163, 184);
+          doc.text(genStr, pageW - M, 26, { align: 'right' });
+          doc.text(`${safeRows.length} ${_t('kayıt')}`, pageW - M, 40, { align: 'right' });
+          // ── Alt bilgi (sayfa no) ──
+          const pageCount = doc.internal.getNumberOfPages();
+          const pageCur = data.pageNumber;
+          doc.setFontSize(7.5);
+          doc.setTextColor(148, 163, 184);
+          doc.text('Natural Clinic — Daily Performance System', M, pageH - 14);
+          doc.text(`${pageCur} / ${pageCount}`, pageW - M, pageH - 14, { align: 'right' });
+        },
       });
       doc.save(`${filename}.pdf`);
       return;
     }
 
     if (format === 'html') {
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${_escHtml(title)}</title>
-        <style>body{font-family:Arial,sans-serif;padding:20px;background:#fff;color:#111}
-        table{border-collapse:collapse;width:100%;font-size:12px}
-        th,td{border:1px solid #ccc;padding:6px 10px;text-align:left}
-        th{background:#0d9488;color:#fff}
-        tr:nth-child(even){background:#f4f4f4}</style></head><body>
-        <h2>${_escHtml(title)}</h2>
-        <table><thead><tr>${trHeaders.map(h => `<th>${_escHtml(h)}</th>`).join('')}</tr></thead>
-        <tbody>${safeRows.map(r => `<tr>${r.map(c => `<td>${_escHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody>
-        </table></body></html>`;
+      const now = new Date();
+      const genStr = _t('Oluşturulma') + ': ' +
+        `${_p(now.getDate())}.${_p(now.getMonth() + 1)}.${now.getFullYear()} ${_p(now.getHours())}:${_p(now.getMinutes())}`;
+      const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${_escHtml(title)}</title>
+        <style>
+          *{box-sizing:border-box}
+          body{font-family:'Segoe UI',Arial,sans-serif;margin:0;padding:0;background:#f1f5f9;color:#0f172a}
+          .wrap{max-width:1200px;margin:0 auto;padding:28px 20px 40px}
+          .card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 10px 40px -12px rgba(15,23,42,0.2)}
+          .hdr{background:linear-gradient(120deg,#0f172a,#134e4a);color:#fff;padding:22px 26px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;border-bottom:3px solid #0d9488}
+          .hdr .brand{font-size:19px;font-weight:800;letter-spacing:.02em}
+          .hdr .sub{font-size:12px;color:#94a3b8;margin-top:4px}
+          .hdr .meta{font-size:11px;color:#94a3b8;text-align:right;line-height:1.7}
+          table{border-collapse:collapse;width:100%;font-size:12.5px}
+          thead th{background:#0d9488;color:#fff;padding:11px 14px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+          tbody td{padding:9px 14px;border-bottom:1px solid #e2e8f0;color:#1e293b}
+          tbody tr:nth-child(even){background:#f0f9f8}
+          tbody tr:hover{background:#e6fffa}
+          .foot{padding:14px 26px;font-size:11px;color:#64748b;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+          @media print{body{background:#fff}.card{box-shadow:none}.wrap{padding:0}}
+        </style></head><body>
+        <div class="wrap"><div class="card">
+          <div class="hdr">
+            <div><div class="brand">NATURAL CLINIC</div><div class="sub">${_escHtml(title)}</div></div>
+            <div class="meta">${_escHtml(genStr)}<br>${safeRows.length} ${_escHtml(_t('kayıt'))}</div>
+          </div>
+          <div style="overflow-x:auto">
+          <table><thead><tr>${trHeaders.map(h => `<th>${_escHtml(h)}</th>`).join('')}</tr></thead>
+          <tbody>${safeRows.map(r => `<tr>${r.map(c => `<td>${_escHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table></div>
+          <div class="foot"><span>Natural Clinic — Daily Performance System</span><span>${_escHtml(title)}</span></div>
+        </div></div></body></html>`;
       _downloadBlob(html, `${filename}.html`, 'text/html;charset=utf-8;');
       return;
     }

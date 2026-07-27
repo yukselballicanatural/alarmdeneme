@@ -52,7 +52,10 @@
     .nc-date-trigger svg { flex-shrink:0; color:#64748b; }
 
     /* ── Günlük Ekip Girişi — premium tablo kartı ────────────────────── */
-    .dep-quick-btn:hover { background:#1f2937 !important; }
+    .dep-quick-btn { padding:7px 14px; font-size:11px; font-weight:700; border-radius:8px; border:none; cursor:pointer; background:transparent; color:#94a3b8; transition:all .15s; }
+    .dep-quick-btn:hover { background:#1f2937; color:#e2e8f0; }
+    .dep-quick-btn.dep-quick-active { background:linear-gradient(135deg,#4f46e5,#4338ca); color:#fff; box-shadow:0 2px 8px rgba(79,70,229,0.35); }
+    .dep-quick-btn.dep-quick-active:hover { background:linear-gradient(135deg,#4f46e5,#4338ca); color:#fff; }
     .dep-card { background:linear-gradient(180deg,#0f172a 0%,#0b1220 100%); border:1px solid #1e293b; border-radius:16px; box-shadow:0 10px 40px -12px rgba(0,0,0,0.5); overflow:hidden; }
     .dep-tbl { width:100%; border-collapse:separate; border-spacing:0; font-size:12px; }
     .dep-tbl thead th { position:sticky; top:0; z-index:2; background:#0d1526; padding:12px 14px; font-size:9.5px; text-align:left; border-bottom:1px solid #1e293b; white-space:nowrap; font-weight:800; text-transform:uppercase; letter-spacing:0.07em; }
@@ -1024,19 +1027,35 @@
 
   <!-- ── VIEW: GÜNLÜK EKİP GİRİŞİ ── -->
   <div id="view-daily-entry" style="display:none">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <div>
-        <h2 style="font-size:20px;font-weight:700;color:#f1f5f9;margin:0">Günlük Ekip Girişi</h2>
-        <p style="font-size:11px;color:#64748b;margin:3px 0 0">Her gün için ayrı, sıfırdan bir sayfa. Önceki günleri tarih filtresinden görebilirsin.</p>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#0d9488,#0f766e);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(13,148,136,0.3);flex-shrink:0">
+          <svg style="width:20px;height:20px;color:#fff" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h3m-9 5h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zM8 3v4M16 3v4"/></svg>
+        </div>
+        <div>
+          <h2 style="font-size:20px;font-weight:800;color:#f1f5f9;margin:0;letter-spacing:-0.01em">Günlük Ekip Girişi</h2>
+          <p style="font-size:11px;color:#64748b;margin:3px 0 0">Her gün için ayrı, sıfırdan bir sayfa. Önceki günleri tarih filtresinden görebilirsin.</p>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <div style="display:flex;background:#111827;border:1px solid #374151;border-radius:8px;padding:2px;gap:2px">
-          <button onclick="depSetQuickDate(0)" id="depBtnToday" class="dep-quick-btn" style="padding:6px 12px;font-size:11px;font-weight:700;border-radius:6px;border:none;cursor:pointer;background:#4f46e5;color:#fff;transition:all .15s">Bugün</button>
-          <button onclick="depSetQuickDate(-1)" id="depBtnYesterday" class="dep-quick-btn" style="padding:6px 12px;font-size:11px;font-weight:700;border-radius:6px;border:none;cursor:pointer;background:transparent;color:#94a3b8;transition:all .15s">Dün</button>
-        </div>
-        <input type="date" id="depDateInput" class="filter-inp" style="width:150px" onchange="depOnDateInputChange()">
         <span id="depExportMount"></span>
-        <button onclick="depSaveAll()" id="depSaveBtn" style="padding:8px 16px;background:linear-gradient(135deg,#0f766e,#0d9488);border:none;border-radius:10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 10px rgba(13,148,136,0.35);transition:all .15s" onmouseover="this.style.boxShadow='0 4px 16px rgba(13,148,136,0.5)'" onmouseout="this.style.boxShadow='0 2px 10px rgba(13,148,136,0.35)'">Tümünü Kaydet</button>
+        <button onclick="depSaveAll()" id="depSaveBtn" style="padding:9px 18px;background:linear-gradient(135deg,#0f766e,#0d9488);border:none;border-radius:10px;color:#fff;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 2px 12px rgba(13,148,136,0.4);transition:all .15s;display:flex;align-items:center;gap:6px" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 18px rgba(13,148,136,0.55)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(13,148,136,0.4)'">
+          <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          Tümünü Kaydet
+        </button>
+      </div>
+    </div>
+
+    <!-- Filtre çubuğu -->
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+      <div style="display:flex;background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:3px;gap:3px">
+        <button onclick="depSetQuickDate(0)" id="depBtnToday" class="dep-quick-btn dep-quick-active">Bugün</button>
+        <button onclick="depSetQuickDate(-1)" id="depBtnYesterday" class="dep-quick-btn">Dün</button>
+      </div>
+      <input type="date" id="depDateInput" onchange="depOnDateInputChange()">
+      <div style="position:relative;display:inline-flex;align-items:center;flex:1;min-width:200px;max-width:320px">
+        <svg style="position:absolute;left:11px;width:14px;height:14px;color:#475569;pointer-events:none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" id="depSearch" oninput="depOnSearch()" placeholder="Agent ara (ad veya kullanıcı adı)..." class="filter-inp" style="width:100%;padding-left:32px">
       </div>
     </div>
     <div id="depLoading" style="text-align:center;padding:40px 16px;color:#475569;font-size:12px">Yükleniyor...</div>
@@ -1708,7 +1727,7 @@
     return { from, to };
   }
 
-  ['alarmArrFrom', 'alarmArrTo', 'alarmCreatedFrom', 'alarmCreatedTo', 'dealDateFrom', 'dealDateTo', 'dealCreatedFrom', 'dealCreatedTo', 'tlcaArrFrom', 'tlcaArrTo', 'tlcaCreatedFrom', 'tlcaCreatedTo', 'tlwaArrFrom', 'tlwaArrTo', 'tlwaCreatedFrom', 'tlwaCreatedTo'].forEach(id => NCDatePicker.attach(id));
+  ['alarmArrFrom', 'alarmArrTo', 'alarmCreatedFrom', 'alarmCreatedTo', 'dealDateFrom', 'dealDateTo', 'dealCreatedFrom', 'dealCreatedTo', 'tlcaArrFrom', 'tlcaArrTo', 'tlcaCreatedFrom', 'tlcaCreatedTo', 'tlwaArrFrom', 'tlwaArrTo', 'tlwaCreatedFrom', 'tlwaCreatedTo', 'depDateInput'].forEach(id => NCDatePicker.attach(id));
 
   // ── Deal finans bilgisi (Ödenen / Toplam / Kalan / Won durumu) ────
   // alarms tablosunda amount/paid/stage kolonu yok, bu yüzden deal_id
@@ -4572,37 +4591,47 @@
   // Ekip listesi api/team-members.js'den (server-side takım kapsamlı),
   // günlük veriler daily_performance tablosundan (Public Access RLS,
   // alarms/deals tablolarıyla aynı desen) doğrudan anon key ile.
-  let depDate = new Date().toISOString().slice(0, 10);
-  let depRows = [];      // { username, fullName, ...günlük alanlar, _dirty }
-  let depLoaded = false;
-
-  function _depToday() { return new Date().toISOString().slice(0, 10); }
+  // Tarih hesaplarını TAMAMEN yerel takvim gününde tut — toISOString() UTC'ye
+  // çevirdiği için (Türkiye UTC+3) tarihi bir gün geri kaydırıyordu; kayıt bir
+  // güne yazılıp okuma başka günü sorguluyor ve veri "sıfırlanmış" görünüyordu.
+  function _depPad(n) { return String(n).padStart(2, '0'); }
+  function _depLocalISO(d) { return `${d.getFullYear()}-${_depPad(d.getMonth() + 1)}-${_depPad(d.getDate())}`; }
+  function _depToday() { return _depLocalISO(new Date()); }
   function _depAddDays(dateStr, delta) {
-    const d = new Date(dateStr + 'T00:00:00');
+    const p = dateStr.split('-').map(Number);
+    const d = new Date(p[0], p[1] - 1, p[2]);
     d.setDate(d.getDate() + delta);
-    return d.toISOString().slice(0, 10);
+    return _depLocalISO(d);
   }
 
+  let depDate = _depToday();
+  let depRows = [];        // { username, fullName, ...günlük alanlar, _dirty } — tam liste (master)
+  let depLoaded = false;
+
+  // Quick butonlar tek giriş noktasından (setValue → change → depOnDateInputChange) geçsin
   function depSetQuickDate(deltaFromToday) {
-    depDate = _depAddDays(_depToday(), deltaFromToday);
-    document.getElementById('depDateInput').value = depDate;
-    document.getElementById('depBtnToday').style.background = deltaFromToday === 0 ? '#4f46e5' : 'transparent';
-    document.getElementById('depBtnToday').style.color = deltaFromToday === 0 ? '#fff' : '#94a3b8';
-    document.getElementById('depBtnYesterday').style.background = deltaFromToday === -1 ? '#4f46e5' : 'transparent';
-    document.getElementById('depBtnYesterday').style.color = deltaFromToday === -1 ? '#fff' : '#94a3b8';
-    loadDailyEntry();
+    const iso = _depAddDays(_depToday(), deltaFromToday);
+    NCDatePicker.setValue('depDateInput', iso);
+  }
+
+  function _depSyncQuickButtons(v) {
+    const today = _depToday();
+    const btT = document.getElementById('depBtnToday');
+    const btY = document.getElementById('depBtnYesterday');
+    if (btT) { btT.classList.toggle('dep-quick-active', v === today); }
+    if (btY) { btY.classList.toggle('dep-quick-active', v === _depAddDays(today, -1)); }
   }
 
   function depOnDateInputChange() {
-    const v = document.getElementById('depDateInput').value;
-    if (!v) return;
+    let v = document.getElementById('depDateInput').value;
+    if (!v) { v = _depToday(); NCDatePicker.setValue('depDateInput', v); return; }
     depDate = v;
-    const today = _depToday();
-    document.getElementById('depBtnToday').style.background = v === today ? '#4f46e5' : 'transparent';
-    document.getElementById('depBtnToday').style.color = v === today ? '#fff' : '#94a3b8';
-    document.getElementById('depBtnYesterday').style.background = v === _depAddDays(today, -1) ? '#4f46e5' : 'transparent';
-    document.getElementById('depBtnYesterday').style.color = v === _depAddDays(today, -1) ? '#fff' : '#94a3b8';
+    _depSyncQuickButtons(v);
     loadDailyEntry();
+  }
+
+  function depOnSearch() {
+    renderDailyEntry();
   }
 
   async function loadDailyEntry() {
@@ -4622,9 +4651,20 @@
       if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
       const members = (data.members || []).filter(m => m.role !== 'team-leader');
 
+      // Kayıtlı günlük veriler — team filtresine güvenme (login'deki ham
+      // "Takim Adi" ile kayıttaki değer teorik olarak farklı olabilir); sadece
+      // tarihe göre çek, üyelikle client-side eşle. Hata SESSIZCE yutulmasın.
       const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
-      const existR = await fetch(`${SUPABASE_URL}/rest/v1/daily_performance?entry_date=eq.${depDate}&team=eq.${encodeURIComponent(currentUser.team || '')}&select=*`, { headers: H });
-      const existing = existR.ok ? await existR.json() : [];
+      const existR = await fetch(`${SUPABASE_URL}/rest/v1/daily_performance?entry_date=eq.${encodeURIComponent(depDate)}&select=*`, { headers: H });
+      if (!existR.ok) {
+        let msg = 'HTTP ' + existR.status;
+        try { const eb = await existR.json(); if (eb && (eb.message || eb.error)) msg = eb.message || eb.error; } catch(_e) {}
+        if (existR.status === 404 || /schema cache|does not exist/i.test(msg)) {
+          msg = 'daily_performance tablosu Supabase\'de bulunamadı. daily_performance_table.sql dosyasını çalıştırdığından emin ol.';
+        }
+        throw new Error(msg);
+      }
+      const existing = await existR.json();
       const byUsername = new Map((existing || []).map(row => [row.username, row]));
 
       depRows = members.map(m => {
@@ -4693,10 +4733,22 @@
     const wrap  = document.getElementById('depTableWrap');
     const tbody = document.getElementById('depTbody');
     const empty = document.getElementById('depEmpty');
-    if (!depRows.length) { wrap.style.display = 'none'; empty.style.display = 'block'; return; }
+    if (!depRows.length) { wrap.style.display = 'none'; empty.style.display = 'block'; empty.textContent = I18N.t('Takımında kayıtlı kişi bulunamadı.'); return; }
+    // Arama: ad soyad + kullanıcı adı; render sırasında master index (i) korunur
+    // ki onchange/save/totals fonksiyonları her zaman depRows'a doğru indeksler.
+    const q = (document.getElementById('depSearch')?.value || '').toLowerCase().trim();
+    const view = depRows
+      .map((row, i) => ({ row, i }))
+      .filter(({ row }) => !q || (`${row.fullName || ''} ${row.username || ''}`).toLowerCase().includes(q));
+    if (!view.length) {
+      wrap.style.display = 'none';
+      empty.style.display = 'block';
+      empty.textContent = I18N.t('Aramayla eşleşen kişi yok.');
+      return;
+    }
     empty.style.display = 'none';
     wrap.style.display = 'block';
-    tbody.innerHTML = depRows.map((row, i) => _depRowHtml(row, i)).join('');
+    tbody.innerHTML = view.map(({ row, i }) => _depRowHtml(row, i)).join('');
     I18N.translateDOM(tbody);
     depRecalcTotals();
   }
@@ -4883,8 +4935,12 @@
     if (v === 'activity')    loadTlActivity();
     if (v === 'team-members') loadTeamMembers();
     if (v === 'daily-entry') {
-      if (!document.getElementById('depDateInput').value) document.getElementById('depDateInput').value = depDate;
-      loadDailyEntry();
+      // setValue → change → depOnDateInputChange → loadDailyEntry (tek giriş noktası).
+      // Değer zaten bugünse change tetiklenmez; o durumda elle yükle.
+      const cur = document.getElementById('depDateInput').value;
+      if (cur !== depDate) NCDatePicker.setValue('depDateInput', depDate);
+      else loadDailyEntry();
+      _depSyncQuickButtons(depDate);
     }
   }
 

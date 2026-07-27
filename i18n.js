@@ -724,6 +724,9 @@
     'Takım Toplamı': 'Team Total',
     'çalışıyor': 'working',
     'Kaydediliyor...': 'Saving...',
+    'Agent ara (ad veya kullanıcı adı)...': 'Search agent (name or username)...',
+    'Aramayla eşleşen kişi yok.': 'No one matches your search.',
+    'Takımında kayıtlı kişi bulunamadı.': 'No registered members in your team.',
   };
 
   function getLang() {
