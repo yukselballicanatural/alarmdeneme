@@ -208,6 +208,10 @@
         <svg class="h-4 w-4" style="flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 3v-2a4 4 0 00-3-3.87m-1-4.13a4 4 0 010 7.75"/></svg>
         <span>Takımımdaki Kişiler</span>
       </button>
+      <button onclick="switchView('daily-entry')" class="nav-btn" id="nav-daily-entry">
+        <svg class="h-4 w-4" style="flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h3m-9 5h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zM8 3v4M16 3v4"/></svg>
+        <span>Günlük Ekip Girişi</span>
+      </button>
       <button onclick="switchView('rm-overview')" class="nav-btn" id="nav-rm-overview" style="display:none">
         <svg class="h-4 w-4" style="flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
         <span>Yönetim Özeti</span>
@@ -291,6 +295,9 @@
     </button>
     <button onclick="switchView('rm-overview')" id="mini-nav-rm-overview" title="Yönetim Özeti" style="width:36px;height:36px;border-radius:10px;background:transparent;border:none;color:#64748b;cursor:pointer;display:none;align-items:center;justify-content:center;transition:all 0.15s">
       <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+    </button>
+    <button onclick="switchView('daily-entry')" id="mini-nav-daily-entry" title="Günlük Ekip Girişi" style="width:36px;height:36px;border-radius:10px;background:transparent;border:none;color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s">
+      <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h3m-9 5h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zM8 3v4M16 3v4"/></svg>
     </button>
   </div>
   <button onclick="I18N.toggle()" title="TR / EN" style="width:36px;height:26px;border-radius:9999px;background:#1e293b;border:1px solid #334155;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:12px;font-size:8px;font-weight:800;transition:all 0.15s">
@@ -989,6 +996,65 @@
           </tr>
         </thead>
         <tbody id="tmTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── VIEW: GÜNLÜK EKİP GİRİŞİ ── -->
+  <div id="view-daily-entry" style="display:none">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <div>
+        <h2 style="font-size:20px;font-weight:700;color:#f1f5f9;margin:0">Günlük Ekip Girişi</h2>
+        <p style="font-size:11px;color:#64748b;margin:3px 0 0">Her gün için ayrı, sıfırdan bir sayfa. Önceki günleri tarih filtresinden görebilirsin.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;background:#111827;border:1px solid #374151;border-radius:8px;padding:2px;gap:2px">
+          <button onclick="depSetQuickDate(0)" id="depBtnToday" class="dep-quick-btn" style="padding:6px 12px;font-size:11px;font-weight:700;border-radius:6px;border:none;cursor:pointer;background:#4f46e5;color:#fff;transition:all .15s">Bugün</button>
+          <button onclick="depSetQuickDate(-1)" id="depBtnYesterday" class="dep-quick-btn" style="padding:6px 12px;font-size:11px;font-weight:700;border-radius:6px;border:none;cursor:pointer;background:transparent;color:#94a3b8;transition:all .15s">Dün</button>
+        </div>
+        <input type="date" id="depDateInput" class="filter-inp" style="width:150px" onchange="depOnDateInputChange()">
+        <button onclick="depSaveAll()" style="padding:8px 14px;background:#0f766e;border:none;border-radius:10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Tümünü Kaydet</button>
+      </div>
+    </div>
+    <div id="depLoading" style="text-align:center;padding:40px 16px;color:#475569;font-size:12px">Yükleniyor...</div>
+    <div id="depEmpty" style="display:none;text-align:center;padding:50px 16px;color:#475569;font-size:13px">Takımında kayıtlı kişi bulunamadı.</div>
+    <div id="depTableWrap" style="display:none;overflow-x:auto">
+      <table id="depTable" style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:1px solid #1e293b">
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Agent</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Attendance</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Customers</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Total Calls</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Interested Patients</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Sales Opportunities</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Avg. Talk Time</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Consultation Completed</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Offer Shared</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Deals</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Same-day Payment (€)</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Flight Tickets Offered</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Status</th>
+          </tr>
+        </thead>
+        <tbody id="depTbody"></tbody>
+        <tfoot>
+          <tr style="border-top:2px solid #1e293b;font-weight:700">
+            <td style="padding:8px 10px;color:#f1f5f9;white-space:nowrap">Takım Toplamı</td>
+            <td id="depTotAttendance" style="padding:8px 10px;color:#94a3b8;white-space:nowrap;font-size:11px">—</td>
+            <td id="depTotCustomers" style="padding:8px 10px;color:#f1f5f9">0</td>
+            <td id="depTotCalls" style="padding:8px 10px;color:#f1f5f9">0</td>
+            <td id="depTotInterested" style="padding:8px 10px;color:#f1f5f9">0</td>
+            <td id="depTotSalesOpp" style="padding:8px 10px;color:#f1f5f9">0</td>
+            <td style="padding:8px 10px;color:#475569">—</td>
+            <td id="depTotConsult" style="padding:8px 10px;color:#f1f5f9">0</td>
+            <td id="depTotOffer" style="padding:8px 10px;color:#f1f5f9">0</td>
+            <td id="depTotDeals" style="padding:8px 10px;color:#f1f5f9">0</td>
+            <td id="depTotPayment" style="padding:8px 10px;color:#f1f5f9">€0.00</td>
+            <td id="depTotFlights" style="padding:8px 10px;color:#f1f5f9">0</td>
+            <td style="padding:8px 10px;color:#475569">—</td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   </div>
@@ -4479,6 +4545,220 @@
     window.open(`https://wa.me/${digits}`, '_blank', 'noopener');
   }
 
+  // ── Günlük Ekip Girişi ──────────────────────────────────────────
+  // Ekip listesi api/team-members.js'den (server-side takım kapsamlı),
+  // günlük veriler daily_performance tablosundan (Public Access RLS,
+  // alarms/deals tablolarıyla aynı desen) doğrudan anon key ile.
+  let depDate = new Date().toISOString().slice(0, 10);
+  let depRows = [];      // { username, fullName, ...günlük alanlar, _dirty }
+  let depLoaded = false;
+
+  function _depToday() { return new Date().toISOString().slice(0, 10); }
+  function _depAddDays(dateStr, delta) {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + delta);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function depSetQuickDate(deltaFromToday) {
+    depDate = _depAddDays(_depToday(), deltaFromToday);
+    document.getElementById('depDateInput').value = depDate;
+    document.getElementById('depBtnToday').style.background = deltaFromToday === 0 ? '#4f46e5' : 'transparent';
+    document.getElementById('depBtnToday').style.color = deltaFromToday === 0 ? '#fff' : '#94a3b8';
+    document.getElementById('depBtnYesterday').style.background = deltaFromToday === -1 ? '#4f46e5' : 'transparent';
+    document.getElementById('depBtnYesterday').style.color = deltaFromToday === -1 ? '#fff' : '#94a3b8';
+    loadDailyEntry();
+  }
+
+  function depOnDateInputChange() {
+    const v = document.getElementById('depDateInput').value;
+    if (!v) return;
+    depDate = v;
+    const today = _depToday();
+    document.getElementById('depBtnToday').style.background = v === today ? '#4f46e5' : 'transparent';
+    document.getElementById('depBtnToday').style.color = v === today ? '#fff' : '#94a3b8';
+    document.getElementById('depBtnYesterday').style.background = v === _depAddDays(today, -1) ? '#4f46e5' : 'transparent';
+    document.getElementById('depBtnYesterday').style.color = v === _depAddDays(today, -1) ? '#fff' : '#94a3b8';
+    loadDailyEntry();
+  }
+
+  async function loadDailyEntry() {
+    const loading = document.getElementById('depLoading');
+    const empty   = document.getElementById('depEmpty');
+    const wrap    = document.getElementById('depTableWrap');
+    loading.style.display = 'block'; empty.style.display = 'none'; wrap.style.display = 'none';
+    try {
+      const token = (currentUser && currentUser.token) || '';
+      const r = await fetch('/api/team-members', { headers: { Authorization: 'Bearer ' + token } });
+      if (r.status === 401) {
+        sessionStorage.removeItem('nc_current_user');
+        window.location.href = 'index.html?relogin=1';
+        return;
+      }
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+      const members = (data.members || []).filter(m => m.role !== 'team-leader');
+
+      const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
+      const existR = await fetch(`${SUPABASE_URL}/rest/v1/daily_performance?entry_date=eq.${depDate}&team=eq.${encodeURIComponent(currentUser.team || '')}&select=*`, { headers: H });
+      const existing = existR.ok ? await existR.json() : [];
+      const byUsername = new Map((existing || []).map(row => [row.username, row]));
+
+      depRows = members.map(m => {
+        const ex = byUsername.get(m.username);
+        return ex ? { ...ex, fullName: m.fullName, _dirty: false } : {
+          username: m.username, fullName: m.fullName, attendance: 'working',
+          customers: 0, total_calls: 0, interested_patients: 0, sales_opportunities: 0,
+          avg_talk_time: '00:00', consultation_completed: 0, offer_shared: 0, deals: 0,
+          same_day_payment: 0, flight_tickets: 0, status: 'pending', _dirty: false,
+        };
+      });
+
+      loading.style.display = 'none';
+      depLoaded = true;
+      renderDailyEntry();
+    } catch(e) {
+      loading.style.display = 'none';
+      empty.textContent = I18N.t('Yükleme hatası: ') + e.message;
+      empty.style.display = 'block';
+    }
+  }
+
+  function _depNumInput(rowIdx, field, value, disabled) {
+    return `<input type="number" min="0" step="1" value="${value}" ${disabled ? 'disabled' : ''}
+      onchange="depOnFieldChange(${rowIdx}, '${field}', this.value)"
+      style="width:64px;box-sizing:border-box;background:#0b1220;border:1px solid #1e293b;border-radius:6px;color:#e2e8f0;font-size:12px;padding:5px 6px;${disabled ? 'opacity:.4' : ''}">`;
+  }
+
+  function _depRowHtml(row, i) {
+    const rowBg = i % 2 === 0 ? '' : 'background:#0a1120';
+    const isOff = row.attendance === 'off';
+    const statusSaved = row.status === 'saved' && !row._dirty;
+    const statusBadge = statusSaved
+      ? '<span style="padding:3px 9px;border-radius:999px;background:#052e16;color:#4ade80;font-size:10px;font-weight:700">Saved</span>'
+      : '<span style="padding:3px 9px;border-radius:999px;background:#451a03;color:#fbbf24;font-size:10px;font-weight:700">Pending</span>';
+    return `<tr id="depRow-${i}" style="${rowBg};border-bottom:1px solid #1e293b">
+      <td style="padding:8px 10px;color:#f1f5f9;font-weight:600;white-space:nowrap">${fmt(row.fullName)}</td>
+      <td style="padding:8px 10px;white-space:nowrap">
+        <select onchange="depOnAttendanceChange(${i}, this.value)" style="background:#0b1220;border:1px solid #1e293b;border-radius:6px;color:${isOff ? '#f87171' : '#4ade80'};font-size:11px;font-weight:700;padding:5px 6px">
+          <option value="working" ${!isOff ? 'selected' : ''}>Working</option>
+          <option value="off" ${isOff ? 'selected' : ''}>Off Day</option>
+        </select>
+      </td>
+      <td style="padding:8px 10px">${_depNumInput(i, 'customers', row.customers, isOff)}</td>
+      <td style="padding:8px 10px">${_depNumInput(i, 'total_calls', row.total_calls, isOff)}</td>
+      <td style="padding:8px 10px">${_depNumInput(i, 'interested_patients', row.interested_patients, isOff)}</td>
+      <td style="padding:8px 10px">${_depNumInput(i, 'sales_opportunities', row.sales_opportunities, isOff)}</td>
+      <td style="padding:8px 10px">
+        <input type="text" value="${fmt(row.avg_talk_time)}" placeholder="00:00" ${isOff ? 'disabled' : ''}
+          onchange="depOnFieldChange(${i}, 'avg_talk_time', this.value)"
+          style="width:60px;box-sizing:border-box;background:#0b1220;border:1px solid #1e293b;border-radius:6px;color:#e2e8f0;font-size:12px;padding:5px 6px;${isOff ? 'opacity:.4' : ''}">
+      </td>
+      <td style="padding:8px 10px">${_depNumInput(i, 'consultation_completed', row.consultation_completed, isOff)}</td>
+      <td style="padding:8px 10px">${_depNumInput(i, 'offer_shared', row.offer_shared, isOff)}</td>
+      <td style="padding:8px 10px">${_depNumInput(i, 'deals', row.deals, isOff)}</td>
+      <td style="padding:8px 10px">
+        <input type="number" min="0" step="0.01" value="${row.same_day_payment}" ${isOff ? 'disabled' : ''}
+          onchange="depOnFieldChange(${i}, 'same_day_payment', this.value)"
+          style="width:76px;box-sizing:border-box;background:#0b1220;border:1px solid #1e293b;border-radius:6px;color:#e2e8f0;font-size:12px;padding:5px 6px;${isOff ? 'opacity:.4' : ''}">
+      </td>
+      <td style="padding:8px 10px">${_depNumInput(i, 'flight_tickets', row.flight_tickets, isOff)}</td>
+      <td id="depStatusCell-${i}" style="padding:8px 10px;white-space:nowrap">${statusBadge}</td>
+    </tr>`;
+  }
+
+  function renderDailyEntry() {
+    const wrap  = document.getElementById('depTableWrap');
+    const tbody = document.getElementById('depTbody');
+    const empty = document.getElementById('depEmpty');
+    if (!depRows.length) { wrap.style.display = 'none'; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    wrap.style.display = 'block';
+    tbody.innerHTML = depRows.map((row, i) => _depRowHtml(row, i)).join('');
+    I18N.translateDOM(tbody);
+    depRecalcTotals();
+  }
+
+  function depOnAttendanceChange(i, value) {
+    const row = depRows[i];
+    if (!row) return;
+    row.attendance = value;
+    if (value === 'off') {
+      row.customers = 0; row.total_calls = 0; row.interested_patients = 0; row.sales_opportunities = 0;
+      row.avg_talk_time = '00:00'; row.consultation_completed = 0; row.offer_shared = 0; row.deals = 0;
+      row.same_day_payment = 0; row.flight_tickets = 0;
+    }
+    row._dirty = true;
+    const rowEl = document.getElementById('depRow-' + i);
+    if (rowEl) rowEl.outerHTML = _depRowHtml(row, i);
+    I18N.translateDOM(document.getElementById('depRow-' + i));
+    depRecalcTotals();
+  }
+
+  function depOnFieldChange(i, field, value) {
+    const row = depRows[i];
+    if (!row) return;
+    if (field === 'avg_talk_time') {
+      row[field] = value;
+    } else {
+      const n = parseFloat(value);
+      row[field] = isNaN(n) || n < 0 ? 0 : n;
+    }
+    row._dirty = true;
+    const cell = document.getElementById('depStatusCell-' + i);
+    if (cell) cell.innerHTML = '<span style="padding:3px 9px;border-radius:999px;background:#451a03;color:#fbbf24;font-size:10px;font-weight:700">Pending</span>';
+    depRecalcTotals();
+  }
+
+  function depRecalcTotals() {
+    const sum = field => depRows.reduce((acc, r) => acc + (parseFloat(r[field]) || 0), 0);
+    const workingCount = depRows.filter(r => r.attendance !== 'off').length;
+    document.getElementById('depTotAttendance').textContent = `${workingCount} / ${depRows.length} ${I18N.t('çalışıyor')}`;
+    document.getElementById('depTotCustomers').textContent = sum('customers');
+    document.getElementById('depTotCalls').textContent = sum('total_calls');
+    document.getElementById('depTotInterested').textContent = sum('interested_patients');
+    document.getElementById('depTotSalesOpp').textContent = sum('sales_opportunities');
+    document.getElementById('depTotConsult').textContent = sum('consultation_completed');
+    document.getElementById('depTotOffer').textContent = sum('offer_shared');
+    document.getElementById('depTotDeals').textContent = sum('deals');
+    document.getElementById('depTotPayment').textContent = '€' + sum('same_day_payment').toFixed(2);
+    document.getElementById('depTotFlights').textContent = sum('flight_tickets');
+  }
+
+  async function depSaveAll() {
+    if (!depRows.length) return;
+    try {
+      const payload = depRows.map(r => ({
+        entry_date: depDate,
+        team: currentUser.team || '',
+        username: r.username,
+        full_name: r.fullName,
+        attendance: r.attendance,
+        customers: r.customers,
+        total_calls: r.total_calls,
+        interested_patients: r.interested_patients,
+        sales_opportunities: r.sales_opportunities,
+        avg_talk_time: r.avg_talk_time,
+        consultation_completed: r.consultation_completed,
+        offer_shared: r.offer_shared,
+        deals: r.deals,
+        same_day_payment: r.same_day_payment,
+        flight_tickets: r.flight_tickets,
+        status: 'saved',
+        created_by: currentUser.username || '',
+        updated_at: new Date().toISOString(),
+      }));
+      const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' };
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/daily_performance?on_conflict=entry_date,username`, { method: 'POST', headers: H, body: JSON.stringify(payload) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      depRows.forEach(row => { row.status = 'saved'; row._dirty = false; });
+      renderDailyEntry();
+      showNotice('Kaydedildi.', 'success');
+    } catch(e) {
+      showNotice('Kaydedilemedi: ' + e.message, 'error');
+    }
+  }
+
   async function loadTlActivity() {
     const loading = document.getElementById('tlActivityLoading');
     const empty = document.getElementById('tlActivityEmpty');
@@ -4550,7 +4830,7 @@
 
   function switchView(v) {
     activeView = v;
-    const views = ['alarms','today','deals','noshow','closed-alarms','cancelled','won','rm-overview','activity','team-members'];
+    const views = ['alarms','today','deals','noshow','closed-alarms','cancelled','won','rm-overview','activity','team-members','daily-entry'];
     views.forEach(id => {
       const vw = document.getElementById('view-' + id);
       if (vw) vw.style.display  = id === v ? '' : 'none';
@@ -4568,6 +4848,10 @@
     if (v === 'rm-overview') loadRmOverview();
     if (v === 'activity')    loadTlActivity();
     if (v === 'team-members') loadTeamMembers();
+    if (v === 'daily-entry') {
+      if (!document.getElementById('depDateInput').value) document.getElementById('depDateInput').value = depDate;
+      loadDailyEntry();
+    }
   }
 
   // ── Payment / Aktivite Yok listesi ──────────────────────────────

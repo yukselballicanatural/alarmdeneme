@@ -715,6 +715,14 @@
     'İsim, takım, rol ara...': 'Search name, team, role...',
     'Telefon 10 rakam olmalı (ör. 532 123 45 67). +90 öneki otomatik eklenir.': 'Phone number must be 10 digits (e.g. 532 123 45 67). The +90 prefix is added automatically.',
     'Geçerli bir e-posta adresi girin (ör. ad@alan.com).': 'Enter a valid email address (e.g. name@domain.com).',
+    // Günlük Ekip Girişi (team-leader.html)
+    'Günlük Ekip Girişi': 'Team Daily Entry',
+    'Her gün için ayrı, sıfırdan bir sayfa. Önceki günleri tarih filtresinden görebilirsin.': 'A fresh page for each day. Use the date filter to view previous days.',
+    'Bugün': 'Today',
+    'Dün': 'Yesterday',
+    'Tümünü Kaydet': 'Save All Entries',
+    'Takım Toplamı': 'Team Total',
+    'çalışıyor': 'working',
   };
 
   function getLang() {
