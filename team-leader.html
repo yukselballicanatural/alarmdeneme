@@ -5358,7 +5358,26 @@
     NCExport.download(format || 'csv', headers, rows, 'takimdaki_kisiler', 'Takımımdaki Kişiler');
   }
 
+  // Avg talk time'ları (mm:ss) ortalamak için yardımcılar
+  function _depTalkToSec(v) {
+    const parts = String(v || '').split(':').map(x => parseInt(x, 10));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) return parts[0] * 60 + parts[1];
+    if (parts.length === 3 && parts.every(n => !isNaN(n))) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    return 0;
+  }
+  function _depSecToTalk(sec) {
+    sec = Math.round(sec);
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  function _depTeamFilename() {
+    const teamSlug = String(currentUser.team || 'team').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return `NC_${teamSlug}_Daily_Performance_${depDate}`;
+  }
+
   function exportDailyEntry(format) {
+    if (format === 'pdf') { _depExportPdf(); return; }
     const data = depRows || [];
     const headers = ['Agent','Attendance','Customers','Total Calls','Interested Patients','Sales Opportunities','Avg. Talk Time','Consultation Completed','Offer Shared','Deals','Same-day Payment (€)','Flight Tickets Offered','Status'];
     const rows = data.map(r => [
@@ -5368,7 +5387,104 @@
       r.consultation_completed, r.offer_shared, r.deals, (Number(r.same_day_payment) || 0).toFixed(2), r.flight_tickets,
       (r.status === 'saved' && !r._dirty) ? 'Saved' : 'Pending',
     ]);
-    NCExport.download(format || 'csv', headers, rows, 'gunluk_ekip_girisi_' + depDate, 'Günlük Ekip Girişi — ' + depDate);
+    NCExport.download(format || 'csv', headers, rows, _depTeamFilename(), 'Günlük Ekip Girişi — ' + depDate);
+  }
+
+  // Team Daily Entry'e ÖZEL premium PDF — kurumsal rapor düzeni
+  // (marka başlığı + meta kutusu + takım özeti + agent detay tablosu).
+  function _depExportPdf() {
+    if (typeof jspdf === 'undefined') { showNotice('PDF kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edin.', 'error'); return; }
+    const data = depRows || [];
+    if (!data.length) { showNotice('Dışa aktarılacak veri yok.', 'error'); return; }
+
+    const doc = new jspdf.jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const M = 30;
+    const NAVY  = [15, 34, 62];
+    const TEAL  = [13, 148, 136];
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const dmy = iso => { const p = String(iso).split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
+    const genStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    // ── Metrikler ──
+    const total = data.length;
+    const offDay = data.filter(r => r.attendance === 'off').length;
+    const active = total - offDay;
+    const completed = data.filter(r => r.attendance !== 'off' && r.status === 'saved' && !r._dirty).length;
+    const missing = active - completed;
+    const sum = f => data.reduce((a, r) => a + (parseFloat(r[f]) || 0), 0);
+    const workRows = data.filter(r => r.attendance !== 'off');
+    const avgTalk = workRows.length
+      ? _depSecToTalk(workRows.reduce((a, r) => a + _depTalkToSec(r.avg_talk_time), 0) / workRows.length)
+      : '00:00';
+
+    // ── Başlık ──
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(...NAVY);
+    doc.text('NATURAL CLINIC', pageW / 2, 42, { align: 'center' });
+    doc.setFontSize(12); doc.setTextColor(...TEAL);
+    doc.text('DAILY TEAM PERFORMANCE REPORT', pageW / 2, 60, { align: 'center' });
+
+    // ── Meta bilgi kutusu ──
+    doc.autoTable({
+      startY: 78,
+      theme: 'grid',
+      styles: { fontSize: 9, cellPadding: 7, lineColor: NAVY, lineWidth: 0.5, textColor: NAVY, valign: 'middle' },
+      columnStyles: {
+        0: { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold', cellWidth: 130 },
+        1: { fillColor: [255, 255, 255] },
+        2: { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold', cellWidth: 200 },
+        3: { fillColor: [255, 255, 255] },
+      },
+      body: [
+        ['Report Date', dmy(depDate), 'Team', currentUser.team || '—'],
+        ['Team Leader', currentUser.fullName || currentUser.username || '—', 'Generated At', genStr],
+        ['Active Agents', String(active), 'Completed / Missing / Off Day', `${completed} / ${missing} / ${offDay}`],
+      ],
+      margin: { left: M, right: M },
+    });
+
+    // ── Takım özeti (tek satır toplam) ──
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 16,
+      head: [['Customers', 'Calls', 'Interested', 'Sales Opp.', 'Avg Talk', 'Consultation Completed', 'Offer Shared', 'Deals', 'Same-day €', 'Flights']],
+      body: [[sum('customers'), sum('total_calls'), sum('interested_patients'), sum('sales_opportunities'), avgTalk, sum('consultation_completed'), sum('offer_shared'), sum('deals'), '€' + sum('same_day_payment').toFixed(2), sum('flight_tickets')]],
+      theme: 'grid',
+      styles: { fontSize: 8.5, cellPadding: 7, textColor: NAVY, lineColor: [203, 213, 225], lineWidth: 0.5, valign: 'middle' },
+      headStyles: { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+      bodyStyles: { fontStyle: 'bold', fillColor: [240, 249, 248] },
+      margin: { left: M, right: M },
+    });
+
+    // ── Agent detay tablosu ──
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 16,
+      head: [['Agent', 'Status', 'Cust.', 'Calls', 'Interested', 'Sales Opp.', 'Talk', 'Consultation Completed', 'Offer Shared', 'Deals', 'Same-day €', 'Flights']],
+      body: data.map(r => [
+        r.fullName,
+        r.attendance === 'off' ? 'OFF DAY' : 'WORKING',
+        r.customers, r.total_calls, r.interested_patients, r.sales_opportunities, r.avg_talk_time,
+        r.consultation_completed, r.offer_shared, r.deals, '€' + (Number(r.same_day_payment) || 0).toFixed(2), r.flight_tickets,
+      ]),
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 5, textColor: NAVY, lineColor: [226, 232, 240], lineWidth: 0.5, valign: 'middle' },
+      headStyles: { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+      alternateRowStyles: { fillColor: [240, 249, 248] },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 110 }, 1: { fontStyle: 'bold', cellWidth: 62 } },
+      margin: { left: M, right: M, top: 30, bottom: 30 },
+      didParseCell: function (d) {
+        if (d.section === 'body' && d.column.index === 1) {
+          d.cell.styles.textColor = d.cell.raw === 'OFF DAY' ? [220, 38, 38] : TEAL;
+        }
+      },
+      didDrawPage: function () {
+        doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+        doc.text('Generated by Natural Clinic Daily Performance System', pageW - M, pageH - 14, { align: 'right' });
+      },
+    });
+
+    doc.save(`${_depTeamFilename()}.pdf`);
   }
 
   // Sayfa başlıklarındaki "Export" butonları — 8 sayfa, tek noktadan
