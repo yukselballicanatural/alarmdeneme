@@ -4721,11 +4721,10 @@
     }
   }
 
-  // TL kilit kuralı: yalnızca BUGÜN ve Supabase'de henüz kaydı OLMAYAN satır
-  // düzenlenebilir. Kaydedildikten sonra (_fromDb=true) ya da geçmiş tarihte
-  // salt-okunur. Geçmiş tarih / kayıtlı satır düzeltmesi sadece admin panelinde.
+  // Kilit kaldırıldı — TL artık geçmiş tarihleri ve kaydedilmiş satırları da
+  // düzenleyip yeniden kaydedebilir.
   function _depRowLocked(row) {
-    return depDate !== _depToday() || !!row._fromDb;
+    return false;
   }
 
   function _depNumInput(rowIdx, field, value, disabled) {
@@ -4801,30 +4800,12 @@
     _depUpdateSaveState();
   }
 
-  // Geçmiş tarih ya da her satır kilitliyse: salt-okunur uyarısı göster,
-  // Save butonunu pasifleştir. (TL düzeltme yapamaz; yetki adminde.)
+  // Kilit kaldırıldı — Save her zaman aktif, salt-okunur banner gizli.
   function _depUpdateSaveState() {
-    const isPast = depDate !== _depToday();
-    const anyEditable = depRows.some(r => !_depRowLocked(r));
     const btn = document.getElementById('depSaveBtn');
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
     const banner = document.getElementById('depReadonlyBanner');
-    if (btn) {
-      const off = isPast || !anyEditable;
-      btn.disabled = off;
-      btn.style.opacity = off ? '.45' : '1';
-      btn.style.cursor = off ? 'not-allowed' : 'pointer';
-    }
-    if (banner) {
-      if (isPast) {
-        banner.style.display = 'flex';
-        banner.querySelector('span').textContent = I18N.t('Geçmiş tarih — salt okunur. Düzeltme yetkisi yalnızca admin panelindedir.');
-      } else if (!anyEditable) {
-        banner.style.display = 'flex';
-        banner.querySelector('span').textContent = I18N.t('Bugünün girişi kaydedildi ve kilitlendi. Düzeltme yetkisi yalnızca admin panelindedir.');
-      } else {
-        banner.style.display = 'none';
-      }
-    }
+    if (banner) banner.style.display = 'none';
   }
 
   function depOnAttendanceChange(i, value) {
@@ -4875,10 +4856,7 @@
 
   async function depSaveAll() {
     if (!depRows.length) return;
-    // TL yalnızca BUGÜN ve henüz kaydedilmemiş satırları yazabilir.
-    if (depDate !== _depToday()) { showNotice('Geçmiş tarih düzenlenemez. Düzeltme yetkisi admindedir.', 'error'); return; }
-    const toSave = depRows.filter(r => !_depRowLocked(r));
-    if (!toSave.length) { showNotice('Kaydedilecek yeni giriş yok (mevcut kayıtlar kilitli).', 'error'); return; }
+    const toSave = depRows;
     const btn = document.getElementById('depSaveBtn');
     const btnLabel = btn ? btn.textContent : '';
     if (btn) { btn.disabled = true; btn.textContent = I18N.t('Kaydediliyor...'); btn.style.opacity = '.7'; }
@@ -4913,10 +4891,9 @@
         }
         throw new Error(msg);
       }
-      // Kaydedilenleri kilitle — TL bir daha düzeltemez.
       toSave.forEach(row => { row.status = 'saved'; row._dirty = false; row._fromDb = true; });
       renderDailyEntry();
-      showNotice('Kaydedildi ve kilitlendi.', 'success');
+      showNotice('Kaydedildi.', 'success');
     } catch(e) {
       showNotice('Kaydedilemedi: ' + e.message, 'error');
     } finally {
