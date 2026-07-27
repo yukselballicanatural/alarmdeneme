@@ -205,11 +205,6 @@
         <svg class="h-4 w-4" style="flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         <span>Deal Listesi</span>
       </button>
-      <button onclick="switchView('noshow')" class="nav-btn" id="nav-noshow">
-        <svg class="h-4 w-4" style="flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-        <span>No-show Raporu</span>
-        <span id="navBadgeNoshow" class="badge-cnt ml-auto" style="background:#dc2626;color:#fff;display:none">0</span>
-      </button>
       <button onclick="switchView('closed-alarms')" class="nav-btn" id="nav-closed-alarms">
         <svg class="h-4 w-4" style="flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <span>Kapatılan Alarmlar</span>
@@ -308,9 +303,6 @@
     </button>
     <button onclick="switchView('deals')" id="mini-nav-deals" title="Deallar" style="width:36px;height:36px;border-radius:10px;background:transparent;border:none;color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s">
       <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-    </button>
-    <button onclick="switchView('noshow')" id="mini-nav-noshow" title="No-show" style="width:36px;height:36px;border-radius:10px;background:transparent;border:none;color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s">
-      <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
     </button>
     <button onclick="switchView('cancelled')" id="mini-nav-cancelled" title="İptal Edilenler" style="width:36px;height:36px;border-radius:10px;background:transparent;border:none;color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s">
       <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -733,43 +725,6 @@
     </div>
   </div>
 
-  <!-- ── VIEW: NO-SHOW RAPORU ── -->
-  <div id="view-noshow" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-      <div>
-        <h2 style="font-size:20px;font-weight:700;color:#f1f5f9;margin:0">No-show Raporu</h2>
-        <p style="font-size:11px;color:#64748b;margin:3px 0 0">Gelemedi olarak işaretlenen hastalar</p>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input id="noshowSearch" class="filter-inp" placeholder="Hasta, danışman..." oninput="_dbRenderNoshow()" style="width:170px">
-        <select id="noshowOwnerFilter" class="filter-sel" onchange="renderNoshow()" style="width:170px">
-          <option value="">Tüm Danışmanlar</option>
-        </select>
-        <span id="noshowExportMount"></span>
-      </div>
-    </div>
-    <div id="noshowTableWrap" style="overflow-x:auto;border-radius:14px;border:1px solid #1e293b;background:#0f172a">
-      <table class="alarm-tbl">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Hasta</th>
-            <th>Danışman</th>
-            <th>Takım</th>
-            <th>Bölge</th>
-            <th>Ref Alan</th>
-            <th>Planlanan Tarih</th>
-            <th>Gelemedi Tarihi</th>
-            <th>Ödeme</th>
-            <th>Not</th>
-          </tr>
-        </thead>
-        <tbody id="noshowTbody"></tbody>
-      </table>
-      <div id="noshowEmpty" style="display:none;text-align:center;padding:48px 16px;color:#475569;font-size:13px">No-show kaydı bulunamadı.</div>
-    </div>
-  </div>
-
   <!-- ── VIEW: KAPATILAN ALARMLAR ── -->
   <div id="view-closed-alarms" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
@@ -1126,20 +1081,20 @@
   <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(3px)" onclick="closeNoshowModal()"></div>
   <div style="position:relative;background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:24px;width:100%;max-width:420px;margin:16px;box-shadow:0 25px 60px rgba(0,0,0,0.6)">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-      <div style="width:32px;height:32px;border-radius:8px;background:#450a0a;border:1px solid #7f1d1d;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <svg style="width:16px;height:16px;color:#f87171" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      <div id="noshowIconWrap" style="width:32px;height:32px;border-radius:8px;background:#450a0a;border:1px solid #7f1d1d;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg id="noshowIcon" style="width:16px;height:16px;color:#f87171" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
       </div>
       <div>
-        <div style="font-size:14px;font-weight:700;color:#f1f5f9">Gelemedi — Açıklama</div>
+        <div id="noshowTitle" style="font-size:14px;font-weight:700;color:#f1f5f9">Gelemedi — Açıklama</div>
         <div style="font-size:11px;color:#64748b" id="noshowPatientName"></div>
       </div>
     </div>
-    <label style="font-size:11px;color:#94a3b8;font-weight:700;display:block;margin-bottom:6px">Neden gelemedi? <span style="color:#475569;font-weight:400">(isteğe bağlı)</span></label>
-    <textarea id="noshowNote" rows="3" maxlength="200" placeholder="ör. hasta iptal etti, bilet sorunu, sağlık durumu…" class="filter-inp" style="width:100%;box-sizing:border-box;resize:none;font-size:12px" oninput="document.getElementById('noshowNoteCount').textContent=this.value.length+' / 200'"></textarea>
+    <label id="noshowNoteLabel" style="font-size:11px;color:#94a3b8;font-weight:700;display:block;margin-bottom:6px">Not <span style="color:#475569;font-weight:400">(isteğe bağlı)</span></label>
+    <textarea id="noshowNote" rows="3" maxlength="200" placeholder="Kısa not (isteğe bağlı)…" class="filter-inp" style="width:100%;box-sizing:border-box;resize:none;font-size:12px" oninput="document.getElementById('noshowNoteCount').textContent=this.value.length+' / 200'"></textarea>
     <div style="text-align:right;font-size:10px;color:#475569;margin-top:3px;margin-bottom:16px"><span id="noshowNoteCount">0 / 200</span></div>
     <div style="display:flex;gap:8px">
       <button onclick="closeNoshowModal()" style="flex:1;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer">İptal</button>
-      <button onclick="confirmNoshow()" style="flex:1;padding:10px;background:#7f1d1d;border:none;border-radius:9px;color:#fecaca;font-size:12px;font-weight:700;cursor:pointer">Gelemedi Olarak İşaretle</button>
+      <button id="noshowConfirmBtn" onclick="confirmNoshow()" style="flex:1;padding:10px;background:#0d9488;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Kaydet</button>
     </div>
   </div>
 </div>
@@ -2537,7 +2492,7 @@
       // için beklemeye gerek yok, hazır olunca ilgili kolon/kartlar
       // kendini günceller (performans)
       loadDealFinance(all.map(a => a.deal_id))
-        .then(() => { renderAlarms(); if (activeView === 'today') renderToday(); if (activeView === 'noshow') renderNoshow(); })
+        .then(() => { renderAlarms(); if (activeView === 'today') renderToday(); })
         .catch(() => {});
     } catch(e) {
       if (!silent) {
@@ -3037,17 +2992,21 @@
           </button>
         </div>` : `
         <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-          <button onclick="quickAction('${a.id}','arrived')" style="flex:1;min-width:76px;padding:6px;background:#052e16;border:1px solid #166534;border-radius:8px;color:#4ade80;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">Hasta Geldi</button>
-          <button onclick="quickAction('${a.id}','examined')" style="flex:1;min-width:76px;padding:6px;background:#083344;border:1px solid #0e7490;border-radius:8px;color:#67e8f9;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">Muayene</button>
-          <button onclick="quickAction('${a.id}','processing')" style="flex:1;min-width:76px;padding:6px;background:#042f2e;border:1px solid #0d9488;border-radius:8px;color:#2dd4bf;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">İşlemlerde</button>
-          <button onclick="promptNoShow('${a.id}','${_escHtml(a.deal_name||'')}')" style="flex:1;min-width:76px;padding:6px;background:#450a0a;border:1px solid #7f1d1d;border-radius:8px;color:#f87171;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">Gelemedi</button>
+          <button onclick="promptOutcome('${a.id}','arrived','${_escHtml(a.deal_name||'')}')" style="flex:1;min-width:76px;padding:6px;background:#052e16;border:1px solid #166534;border-radius:8px;color:#4ade80;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">Hasta Geldi</button>
+          <button onclick="promptOutcome('${a.id}','examined','${_escHtml(a.deal_name||'')}')" style="flex:1;min-width:76px;padding:6px;background:#083344;border:1px solid #0e7490;border-radius:8px;color:#67e8f9;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">Muayene</button>
+          <button onclick="promptOutcome('${a.id}','processing','${_escHtml(a.deal_name||'')}')" style="flex:1;min-width:76px;padding:6px;background:#042f2e;border:1px solid #0d9488;border-radius:8px;color:#2dd4bf;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">İşlemlerde</button>
+          <button onclick="promptOutcome('${a.id}','no_show','${_escHtml(a.deal_name||'')}')" style="flex:1;min-width:76px;padding:6px;background:#450a0a;border:1px solid #7f1d1d;border-radius:8px;color:#f87171;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">Gelemedi</button>
         </div>`;
       const pftDisplay = a.payment_or_flight_ticket === 'Payment'
         ? '<span style="padding:2px 8px;border-radius:6px;font-size:9px;font-weight:800;background:#2e1065;color:#c084fc;border:1px solid #4c1d95">Payment</span>'
         : a.payment_or_flight_ticket === 'Flight Ticket'
           ? '<span style="padding:2px 8px;border-radius:6px;font-size:9px;font-weight:800;background:#1e3a5f;color:#60a5fa;border:1px solid #1e40af">Flight Ticket</span>'
           : '';
-      return `<div class="today-card" style="background:#0f172a;border:1px solid #1e293b;border-radius:14px;padding:16px">
+      const isNoShow = a.status === 'no_show';
+      const cardStyle = isNoShow
+        ? 'background:rgba(127,29,29,0.12);border:1px solid #7f1d1d'
+        : 'background:#0f172a;border:1px solid #1e293b';
+      return `<div class="today-card" style="${cardStyle};border-radius:14px;padding:16px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px">
           <div style="min-width:0;flex:1">
             <div style="font-size:13px;font-weight:700;color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://crm.zoho.eu/crm/org20093728832/tab/Potentials/${a.deal_id}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;text-decoration-style:dotted" onmouseover="this.style.color='#818cf8'" onmouseout="this.style.color=''">${fmt(a.deal_name)}</a></div>
@@ -3058,10 +3017,13 @@
             <span style="padding:2px 8px;border-radius:9999px;font-size:9px;font-weight:700;background:${sm.bg};color:${sm.color}">${sm.label}</span>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#4ade80;font-weight:600;margin-bottom:${a.note ? '8px' : '0'}">
+        ${isNoShow ? `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#f87171;font-weight:700;margin-bottom:${a.note ? '8px' : '0'}">
+          <svg style="width:12px;height:12px;flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          ${I18N.t('GELMEDİ')}${a.closed_at ? ' · ' + formatDate(a.closed_at) : ''}
+        </div>` : `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#4ade80;font-weight:600;margin-bottom:${a.note ? '8px' : '0'}">
           <svg style="width:12px;height:12px;flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           ${field} — <strong>${I18N.t('BUGÜN')}</strong>
-        </div>
+        </div>`}
         ${dealFinanceMap[a.deal_id] ? `<div style="font-size:10px;color:#94a3b8;background:#111827;padding:7px 10px;border-radius:8px;border:1px solid #1e293b;margin-bottom:10px">${paymentCellHtml(a.deal_id)}</div>` : ''}
         ${a.note ? `<div style="font-size:10px;color:#64748b;background:#1e293b;padding:7px 10px;border-radius:8px;border:1px solid #334155;margin-bottom:10px">${fmt(a.note)}</div>` : ''}
         ${actionBtns}
@@ -3071,31 +3033,55 @@
   }
 
   let _noshowPendingId = null;
+  let _noshowPendingStatus = null;
 
-  function promptNoShow(alarmId, patientName) {
+  // Her sonuç için (Hasta Geldi / Muayene / İşlemlerde / Gelemedi) not girme
+  // popup'ı. Seçilen duruma göre başlık/ikon/renk değişir.
+  const _OUTCOME_META = {
+    arrived:    { title: 'Hasta Geldi', icon: 'M5 13l4 4L19 7', bg: '#052e16', bd: '#166534', color: '#4ade80', btn: '#166534', btnText: 'Kaydet' },
+    examined:   { title: 'Muayenede',   icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', bg: '#083344', bd: '#0e7490', color: '#67e8f9', btn: '#0e7490', btnText: 'Kaydet' },
+    processing: { title: 'İşlemlerde',  icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', bg: '#042f2e', bd: '#0d9488', color: '#2dd4bf', btn: '#0d9488', btnText: 'Kaydet' },
+    no_show:    { title: 'Gelemedi — Açıklama', icon: 'M6 18L18 6M6 6l12 12', bg: '#450a0a', bd: '#7f1d1d', color: '#f87171', btn: '#7f1d1d', btnText: 'Gelemedi Olarak İşaretle' },
+  };
+
+  function promptOutcome(alarmId, status, patientName) {
     _noshowPendingId = alarmId;
-    const modal = document.getElementById('noshowModal');
+    _noshowPendingStatus = status;
+    const meta = _OUTCOME_META[status] || _OUTCOME_META.no_show;
     const note  = document.getElementById('noshowNote');
     const count = document.getElementById('noshowNoteCount');
-    const nameEl = document.getElementById('noshowPatientName');
     note.value = '';
     count.textContent = '0 / 200';
-    nameEl.textContent = patientName || '';
-    modal.style.display = 'flex';
+    document.getElementById('noshowPatientName').textContent = patientName || '';
+    document.getElementById('noshowTitle').textContent = I18N.t(meta.title);
+    const iw = document.getElementById('noshowIconWrap');
+    iw.style.background = meta.bg; iw.style.borderColor = meta.bd;
+    const ic = document.getElementById('noshowIcon');
+    ic.style.color = meta.color;
+    ic.querySelector('path').setAttribute('d', meta.icon);
+    const btn = document.getElementById('noshowConfirmBtn');
+    btn.style.background = meta.btn;
+    btn.textContent = I18N.t(meta.btnText);
+    document.getElementById('noshowModal').style.display = 'flex';
     setTimeout(() => note.focus(), 50);
   }
+
+  // Geriye dönük uyumluluk (eski çağrılar)
+  function promptNoShow(alarmId, patientName) { promptOutcome(alarmId, 'no_show', patientName); }
 
   function closeNoshowModal() {
     document.getElementById('noshowModal').style.display = 'none';
     _noshowPendingId = null;
+    _noshowPendingStatus = null;
   }
 
   function confirmNoshow() {
     if (!_noshowPendingId) return;
     const alarmId = _noshowPendingId;
+    const status = _noshowPendingStatus || 'no_show';
     const note = document.getElementById('noshowNote').value.trim();
     closeNoshowModal();
-    quickAction(alarmId, 'no_show', note);
+    quickAction(alarmId, status, note);
   }
 
   async function quickAction(alarmId, status, note) {
@@ -4875,7 +4861,7 @@
 
   function switchView(v) {
     activeView = v;
-    const views = ['alarms','today','deals','noshow','closed-alarms','cancelled','won','rm-overview','activity','team-members','daily-entry'];
+    const views = ['alarms','today','deals','closed-alarms','cancelled','won','rm-overview','activity','team-members','daily-entry'];
     views.forEach(id => {
       const vw = document.getElementById('view-' + id);
       if (vw) vw.style.display  = id === v ? '' : 'none';
@@ -4886,7 +4872,6 @@
     });
     if (v === 'today')       renderToday();
     if (v === 'deals' && !allDeals.length) loadDeals();
-    if (v === 'noshow')      renderNoshow();
     if (v === 'closed-alarms') renderClosedAlarms();
     if (v === 'cancelled')   loadCancelledDeals();
     if (v === 'won')         loadWonAlarms();
@@ -5611,7 +5596,7 @@
     _liveRefreshTimer = setInterval(() => {
       // silent=true: ekranda "yükleniyor" / tablo kaybolması YOK, veri arka
       // planda sessizce tazelenir — kullanıcı sayfayı okurken kesintiye uğramaz.
-      if (['alarms','today','noshow'].includes(activeView)) loadAlarms(true);
+      if (['alarms','today'].includes(activeView)) loadAlarms(true);
       else if (activeView === 'cancelled') loadCancelledDeals(true);
       else if (activeView === 'won')       loadWonAlarms(true);
     }, 60000);
