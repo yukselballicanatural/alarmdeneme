@@ -1158,49 +1158,10 @@
       </button>
     </div>
 
-    <!-- Alarm bilgileri -->
-    <div class="info-grid" style="margin-bottom:18px">
-      <div class="info-card">
-        <div class="info-label">Alarm Tipi</div>
-        <div class="info-val" id="modalAlarmType">—</div>
-      </div>
-      <div class="info-card">
-        <div class="info-label">Durum</div>
-        <div class="info-val" id="modalAlarmStatus">—</div>
-      </div>
-      <div class="info-card">
-        <div class="info-label">Referans Alan</div>
-        <div class="info-val" id="modalRefField">—</div>
-      </div>
-      <div class="info-card">
-        <div class="info-label">Referans Tarih</div>
-        <div class="info-val" id="modalRefDate">—</div>
-      </div>
-      <div class="info-card">
-        <div class="info-label">Kalan Gün</div>
-        <div class="info-val" id="modalDaysLeft">—</div>
-      </div>
-      <div class="info-card">
-        <div class="info-label">Alarm Eşiği</div>
-        <div class="info-val" id="modalThreshold">—</div>
-      </div>
-      <div class="info-card">
-        <div class="info-label">Alarm Tarihi</div>
-        <div class="info-val" id="modalCreatedAt">—</div>
-      </div>
-      <div class="info-card">
-        <div class="info-label">Deal ID</div>
-        <div class="info-val" id="modalDealRef">—</div>
-      </div>
-    </div>
-
-    <!-- Deal / Hasta Detayları -->
-    <div class="info-grid" id="modalDealInfoGrid" style="margin-bottom:18px"></div>
-
-    <!-- Aksiyon Geçmişi -->
-    <div id="modalTimeline" style="background:#0b1220;border:1px solid #1e293b;border-radius:10px;padding:10px 14px;margin-bottom:14px">
-      <div style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Aksiyon Geçmişi</div>
-      <div id="modalTimelineBody"></div>
+    <!-- Kompakt rozet: alarm tipi + mevcut durum (hızlı bağlam) -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+      <span id="modalAlarmType">—</span>
+      <span id="modalAlarmStatus">—</span>
     </div>
 
     <!-- Mevcut Not (varsa) -->
@@ -2758,73 +2719,6 @@
     document.getElementById('modalDealOwner').textContent = a.deal_owner || '—';
     document.getElementById('modalAlarmType').innerHTML   = `<span style="padding:2px 8px;border-radius:9999px;font-size:10px;font-weight:700;background:${tm.bg};color:${tm.color}">${tm.label}</span>`;
     document.getElementById('modalAlarmStatus').innerHTML = `<span style="padding:2px 8px;border-radius:9999px;font-size:10px;font-weight:700;background:${sm.bg};color:${sm.color}">${sm.label}</span>`;
-    document.getElementById('modalRefField').textContent  = fieldLabel(a.reference_field);
-    document.getElementById('modalRefDate').textContent   = formatDate(a.reference_date);
-    document.getElementById('modalCreatedAt').textContent = formatDateTime(a.created_at);
-    const days = liveDaysRemaining(a);
-    document.getElementById('modalDaysLeft').innerHTML    = daysDisplay(days, a.reference_date);
-
-    // Deal ID (kısa ref) — dealFinanceMap'ten, yüklenmediyse a.deal_id
-    const fin = dealFinanceMap[a.deal_id] || {};
-    const dealRefEl = document.getElementById('modalDealRef');
-    if (dealRefEl) {
-      const shortRef = fin.ref || '';
-      if (a.deal_id) {
-        dealRefEl.innerHTML = `<a href="https://crm.zoho.eu/crm/org20093728832/tab/Potentials/${a.deal_id}" target="_blank" rel="noopener" style="color:#818cf8;text-decoration:underline;text-decoration-style:dotted" title="Zoho'da Aç">${shortRef || a.deal_id} ↗</a>`;
-      } else {
-        dealRefEl.textContent = '—';
-      }
-    }
-    const pseudoDeal = {
-      stage: fin.stage,
-      payment_or_flight_ticket: a.payment_or_flight_ticket,
-      amount: fin.total,
-      total_paid_amount: fin.paid,
-      team: a.team,
-    };
-    // İki fazlı render: önce eldeki temel alanlarla ANINDA, sonra raw jsonb
-    // (kişi/otel/ekip detayları) o tek deal için arka planda gelince
-    // zenginleştirilmiş halde. Toplu yüklemede raw artık çekilmediği için
-    // (performans) burada isteğe bağlı çekiliyor.
-    document.getElementById('modalDealInfoGrid').innerHTML = renderFieldsHtml(buildDealFields(pseudoDeal, fin.raw));
-    if (!fin.raw && a.deal_id) {
-      const alarmIdAtOpen = a.id;
-      _tlFetchDealRaw(a.deal_id).then(raw => {
-        if (!raw) return;
-        if (!currentAlarm || currentAlarm.id !== alarmIdAtOpen) return; // modal değişti/kapandı
-        document.getElementById('modalDealInfoGrid').innerHTML = renderFieldsHtml(buildDealFields(pseudoDeal, raw));
-      });
-    }
-
-    // Threshold badge — CANLI hesaplanan kalan güne göre (bkz. liveDaysRemaining)
-    const tColors = { 45:['#1e3a5f','#60a5fa'], 30:['#1e1b4b','#818cf8'], 15:['#422006','#f59e0b'], 7:['#431407','#f97316'], 3:['#450a0a','#ef4444'] };
-    const liveDaysM = liveDaysRemaining(a);
-    const tBucketM = liveThreshBucket(a);
-    const tc2 = tBucketM ? tColors[tBucketM] : null;
-    const threshEl = document.getElementById('modalThreshold');
-    if (threshEl) {
-      if (tc2) {
-        const desc = `${liveDaysM} ${I18N.t('gün kaldı')}`;
-        threshEl.innerHTML = `<span style="padding:2px 10px;border-radius:6px;font-size:11px;font-weight:800;background:${tc2[0]};color:${tc2[1]};border:1px solid ${tc2[1]}44">${tBucketM} ${I18N.t('gün eşiği')}</span><div style="font-size:9px;color:#64748b;margin-top:3px">${desc}</div>`;
-      } else {
-        threshEl.textContent = '—';
-      }
-    }
-
-    // Aksiyon geçmişi timeline
-    const tlItems = [
-      { time: a.created_at,  label: I18N.t('Oluşturuldu'),    color: '#475569' },
-      { time: a.seen_at,     label: I18N.t('Görüldü'),         color: '#60a5fa' },
-      { time: a.actioned_at, label: I18N.t('Aksiyon Alındı'),  color: '#2dd4bf' },
-      { time: a.closed_at,   label: I18N.t('Kapatıldı') + (a.close_reason ? ' — ' + fmt(I18N.t(a.close_reason)) : ''), color: '#94a3b8' },
-    ].filter(t => !!t.time);
-    document.getElementById('modalTimelineBody').innerHTML = tlItems.length ?
-      tlItems.map(t => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #0f172a">
-        <span style="width:6px;height:6px;border-radius:50%;background:${t.color};flex-shrink:0"></span>
-        <span style="font-size:11px;color:${t.color};font-weight:600;flex:1">${t.label}</span>
-        <span style="font-size:10px;color:#475569">${formatDateTime(t.time)}</span>
-      </div>`).join('') :
-      `<span style="font-size:11px;color:#475569">${I18N.t('Henüz aksiyon yok.')}</span>`;
 
     if (a.note) {
       document.getElementById('modalExistingNoteWrap').style.display = 'block';
