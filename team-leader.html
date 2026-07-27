@@ -4612,6 +4612,7 @@
   let depDate = _depToday();
   let depRows = [];        // { username, fullName, ...günlük alanlar, _dirty } — tam liste (master)
   let depLoaded = false;
+  let _depMembersCache = null;   // /api/team-members bir kez çekilip saklanır
 
   // Quick butonlar tek giriş noktasından (setValue → change → depOnDateInputChange) geçsin
   function depSetQuickDate(deltaFromToday) {
@@ -4645,23 +4646,30 @@
     const wrap    = document.getElementById('depTableWrap');
     loading.style.display = 'block'; empty.style.display = 'none'; wrap.style.display = 'none';
     try {
-      const token = (currentUser && currentUser.token) || '';
-      const r = await fetch('/api/team-members', { headers: { Authorization: 'Bearer ' + token } });
-      if (r.status === 401) {
-        sessionStorage.removeItem('nc_current_user');
-        window.location.href = 'index.html?relogin=1';
-        return;
+      // Üye listesi bir kez çekilip cache'lenir — tarih değişiminde tekrar
+      // /api/team-members (cold serverless + 2000 satır) beklenmez, sadece
+      // o güne ait daily_performance sorgulanır → tarih geçişi anında olur.
+      let members = _depMembersCache;
+      if (!members) {
+        const token = (currentUser && currentUser.token) || '';
+        const r = await fetch('/api/team-members', { headers: { Authorization: 'Bearer ' + token } });
+        if (r.status === 401) {
+          sessionStorage.removeItem('nc_current_user');
+          window.location.href = 'index.html?relogin=1';
+          return;
+        }
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+        // Sadece agent'lar listelensin — TL'nin kendisi ve diğer lider/yönetici
+        // rolleri hariç. team-members.js ham "Role" değeri döndürdüğü için
+        // ('team-leader' normalize edilmiş değil) rol metnini geniş eşleştir,
+        // ayrıca her ihtimale karşı kullanıcı adına göre kendini de çıkar.
+        const _me = (currentUser.username || '').toLowerCase();
+        const _isBoss = role => /leader|lider|manager|müdür|mudur|admin|yönetici|yonetici/i.test(String(role || ''));
+        members = (data.members || []).filter(m =>
+          (m.username || '').toLowerCase() !== _me && !_isBoss(m.role));
+        _depMembersCache = members;
       }
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
-      // Sadece agent'lar listelensin — TL'nin kendisi ve diğer lider/yönetici
-      // rolleri hariç. team-members.js ham "Role" değeri döndürdüğü için
-      // ('team-leader' normalize edilmiş değil) rol metnini geniş eşleştir,
-      // ayrıca her ihtimale karşı kullanıcı adına göre kendini de çıkar.
-      const _me = (currentUser.username || '').toLowerCase();
-      const _isBoss = role => /leader|lider|manager|müdür|mudur|admin|yönetici|yonetici/i.test(String(role || ''));
-      const members = (data.members || []).filter(m =>
-        (m.username || '').toLowerCase() !== _me && !_isBoss(m.role));
 
       // Kayıtlı günlük veriler — team filtresine güvenme (login'deki ham
       // "Takim Adi" ile kayıttaki değer teorik olarak farklı olabilir); sadece
@@ -5601,6 +5609,23 @@
       // aynı davranış). Alarmlar ekranını bloklamamak için await edilmez.
       loadCancelledDeals();
       loadWonAlarms();
+
+      // Günlük Ekip Girişi üye listesini arka planda önden ısıt — kullanıcı
+      // menüye tıkladığında /api/team-members zaten cache'de olsun, "Yükleniyor"
+      // beklemesin. (Cold serverless çağrısı burada arka planda yapılır.)
+      (async () => {
+        try {
+          if (_depMembersCache) return;
+          const token = (currentUser && currentUser.token) || '';
+          const r = await fetch('/api/team-members', { headers: { Authorization: 'Bearer ' + token } });
+          if (!r.ok) return;
+          const data = await r.json().catch(() => ({}));
+          const _me = (currentUser.username || '').toLowerCase();
+          const _isBoss = role => /leader|lider|manager|müdür|mudur|admin|yönetici|yonetici/i.test(String(role || ''));
+          _depMembersCache = (data.members || []).filter(m =>
+            (m.username || '').toLowerCase() !== _me && !_isBoss(m.role));
+        } catch(_e) {}
+      })();
 
       // RM için özel nav + default view
       if (isRM) {
