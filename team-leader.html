@@ -2433,7 +2433,75 @@
   // ekranda yüklenme animasyonu/"tablo kayboluyor" hissi YARATMAZ, kullanıcı
   // sayfayı okurken/scroll ederken kesintiye uğramaz. Veri sessizce tazelenir,
   // yeni alarm varsa notifyNewAlarms() zaten bir toast gösteriyor — o yeterli.
+  // ── IndexedDB cache (stale-while-revalidate) ─────────────────────────
+  // Sekmeler arası geçişte alarmlar/İptal/Won listeleri her seferinde ağdan
+  // çekilmesin — önce cache'ten anında göster, arka planda tazele. Anahtar
+  // role/takım/bölgeye göre ayrışır (RM'in dar verisi TL'ye sızmasın).
+  const _TL_IDB_NAME = 'nc_tl_cache', _TL_IDB_STORE = 'kv';
+  const _TL_ALARMS_TTL = 5 * 60 * 1000, _TL_LIST_TTL = 5 * 60 * 1000;
+  function _tlScope() {
+    return (currentUser.role === 'regional-manager')
+      ? 'rm_' + getRegion(currentUser)
+      : 'tl_' + (currentUser.team || '');
+  }
+  function _tlAlarmsCacheKey()    { return 'nc_tl_alarms_v1_' + _tlScope(); }
+  function _tlCancelledCacheKey() { return 'nc_tl_cancelled_v1_' + _tlScope(); }
+  function _tlWonCacheKey()       { return 'nc_tl_won_v1_' + _tlScope(); }
+  function _tlIdbOpen() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) { reject(new Error('no idb')); return; }
+      const req = indexedDB.open(_TL_IDB_NAME, 1);
+      req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(_TL_IDB_STORE)) req.result.createObjectStore(_TL_IDB_STORE); };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function _tlGetCached(key, ttl) {
+    try {
+      const db = await _tlIdbOpen();
+      const c = await new Promise((resolve, reject) => {
+        const tx = db.transaction(_TL_IDB_STORE, 'readonly');
+        const rq = tx.objectStore(_TL_IDB_STORE).get(key);
+        rq.onsuccess = () => resolve(rq.result);
+        rq.onerror = () => reject(rq.error);
+      });
+      if (c && Date.now() - c.ts < ttl) return c.data;
+    } catch(e) {}
+    return null;
+  }
+  async function _tlSetCache(key, data) {
+    try {
+      const db = await _tlIdbOpen();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(_TL_IDB_STORE, 'readwrite');
+        tx.objectStore(_TL_IDB_STORE).put({ ts: Date.now(), data }, key);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch(e) {}
+  }
+
   async function loadAlarms(silent = false) {
+    // Cache'ten anında göster, ardından ağdan sessizce tazele (ilk çağrıda)
+    if (!silent) {
+      const cached = await _tlGetCached(_tlAlarmsCacheKey(), _TL_ALARMS_TTL);
+      if (cached && Array.isArray(cached) && cached.length) {
+        allAlarms = cached;
+        updateTabCounts();
+        renderAlarms();
+        renderConsultantStrip();
+        document.getElementById('alarmLoading').style.display = 'none';
+        document.getElementById('alarmTableWrap').style.display   = _alarmsViewMode === 'table'  ? 'block' : 'none';
+        document.getElementById('alarmsKanbanView').style.display = _alarmsViewMode === 'kanban' ? 'block' : 'none';
+        loadDealFinance(cached.map(a => a.deal_id)).then(() => {
+          allAlarms = allAlarms.filter(a => _is2026Created((dealFinanceMap[a.deal_id] || {}).created));
+          updateTabCounts(); renderAlarms(); renderConsultantStrip();
+          if (activeView === 'today') renderToday();
+        }).catch(() => {});
+        loadAlarms(true); // arka planda tazele
+        return;
+      }
+    }
     if (!silent) {
       document.getElementById('alarmLoading').style.display = 'flex';
       document.getElementById('alarmTableWrap').style.display = 'none';
@@ -2487,6 +2555,7 @@
       }
 
       allAlarms = all;
+      _tlSetCache(_tlAlarmsCacheKey(), all);
 
       notifyNewAlarms(all, isRM ? ('region_' + getRegion(currentUser)) : ('team_' + teamVal));
       updateTabCounts();
@@ -3362,12 +3431,18 @@
       if (createdFrom) base += `&created_time=gte.${encodeURIComponent(createdFrom)}`;
       if (createdTo)   base += `&created_time=lte.${encodeURIComponent(createdTo)}T23:59:59`;
 
-      let totalAmt = 0, totalPaid = 0, ftCount = 0, payCount = 0, count = 0, offset = 0;
-      while (true) {
-        const r = await fetch(`${base}&limit=1000&offset=${offset}`, { headers: H });
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const batch = await r.json();
-        if (!Array.isArray(batch) || !batch.length) break;
+      let totalAmt = 0, totalPaid = 0, ftCount = 0, payCount = 0, count = 0;
+      const PAGE = 1000;
+      // İlk sayfayı toplam sayı (Content-Range) ile çek, kalan sayfaları
+      // ardışık değil PARALEL iste — 60 ardışık tur yerine tek dalgada biter
+      const firstR = await fetch(`${base}&limit=${PAGE}&offset=0`, { headers: { ...H, Prefer: 'count=exact' } });
+      if (!firstR.ok) throw new Error('HTTP ' + firstR.status);
+      const firstBatch = await firstR.json();
+      let grandTotal = firstBatch.length;
+      const cr = firstR.headers.get('content-range');
+      if (cr) { const m = cr.match(/\/(\d+)$/); if (m) grandTotal = parseInt(m[1], 10); }
+
+      const accumulate = (batch) => {
         for (const d of batch) {
           count++;
           totalAmt  += Number(d.amount ?? d.ramt) || 0;
@@ -3375,9 +3450,16 @@
           if (d.pft === 'Flight Ticket') ftCount++;
           else if (d.pft === 'Payment') payCount++;
         }
-        if (batch.length < 1000) break;
-        offset += 1000;
-        if (offset >= 60000) break; // güvenlik sınırı
+      };
+      accumulate(firstBatch);
+
+      if (grandTotal > firstBatch.length) {
+        const offsets = [];
+        for (let off = PAGE; off < grandTotal && off < 200000; off += PAGE) offsets.push(off);
+        const pages = await Promise.all(offsets.map(off =>
+          fetch(`${base}&limit=${PAGE}&offset=${off}`, { headers: H }).then(r => r.ok ? r.json() : [])
+        ));
+        pages.forEach(p => { if (Array.isArray(p)) accumulate(p); });
       }
 
       bar.innerHTML = `
@@ -3706,6 +3788,15 @@
     const tbody = document.getElementById('cancelledTbody');
     const empty = document.getElementById('cancelledEmpty');
     if (!silent) {
+      const cached = await _tlGetCached(_tlCancelledCacheKey(), _TL_LIST_TTL);
+      if (cached && Array.isArray(cached)) {
+        cancelledDealsList = cached;
+        const b = document.getElementById('navBadgeCancelled');
+        if (b) { if (cached.length) { b.textContent = cached.length; b.style.display = ''; } else b.style.display = 'none'; }
+        renderCancelledReport();
+        loadCancelledDeals(true); // arka planda tazele
+        return;
+      }
       empty.style.display = 'none';
       tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px 16px;color:#475569;font-size:12px">${I18N.t('Yükleniyor...')}</td></tr>`;
     }
@@ -3762,6 +3853,7 @@
       } catch(e) { /* sessiz — asıl listeyi engellemez */ }
 
       cancelledDealsList = all;
+      _tlSetCache(_tlCancelledCacheKey(), all);
       const badge = document.getElementById('navBadgeCancelled');
       if (badge) {
         if (cancelledDealsList.length) { badge.textContent = cancelledDealsList.length; badge.style.display = ''; }
@@ -4128,6 +4220,16 @@
     const tbody = document.getElementById('wonTbody');
     const empty = document.getElementById('wonEmpty');
     if (!silent) {
+      const cached = await _tlGetCached(_tlWonCacheKey(), _TL_LIST_TTL);
+      if (cached && Array.isArray(cached)) {
+        wonMismatchDeals = cached;
+        const b = document.getElementById('navBadgeWon');
+        if (b) { if (cached.length) { b.textContent = cached.length; b.style.display = ''; } else b.style.display = 'none'; }
+        _waCurrentPage = 1;
+        renderWonAlarms();
+        loadWonAlarms(true); // arka planda tazele
+        return;
+      }
       empty.style.display = 'none';
       tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px 16px;color:#475569;font-size:12px">${I18N.t('Yükleniyor...')}</td></tr>`;
     }
@@ -4167,6 +4269,7 @@
         return { ...d, _total: total, _paid: paid, _diff: diff };
       }).filter(d => d._total !== null && d._diff !== 0);
       wonMismatchDeals.sort((a, b) => Math.abs(b._diff) - Math.abs(a._diff));
+      _tlSetCache(_tlWonCacheKey(), wonMismatchDeals);
       const badge = document.getElementById('navBadgeWon');
       if (badge) {
         if (wonMismatchDeals.length) { badge.textContent = wonMismatchDeals.length; badge.style.display = ''; }
@@ -4919,21 +5022,31 @@
       const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
       const isRM = currentUser.role === 'regional-manager';
       const stageParam = encodeURIComponent('in.(' + AlarmEngine.ACTIVE_STAGES.map(s => '"' + s + '"').join(',') + ')');
-      let all = [], offset = 0;
-      while (true) {
+      const PAGE = 500;
+      const buildUrl = (off) => {
         let url = `${SUPABASE_URL}/rest/v1/deals?select=id,deal_name,deal_owner,stage,team,amount,raw` +
           `&stage=${stageParam}&raw->>Payment_Or_Flight_Ticket=eq.Payment&raw->>Last_Activity_Time=is.null` +
           DEALS_2026_Q +
-          `&limit=500&offset=${offset}`;
+          `&limit=${PAGE}&offset=${off}`;
         if (!isRM && currentUser.team) url += `&team=${TeamMap.inFilter(TeamMap.aliasesFor(currentUser.team))}`;
         else if (isRM) url += `&team=${TeamMap.inFilter(TeamMap.aliasesForRegion(getRegion(currentUser)))}`;
-        const r = await fetch(url, { headers: H });
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const batch = await r.json();
-        if (!Array.isArray(batch) || !batch.length) break;
-        all.push(...batch);
-        if (batch.length < 500) break;
-        offset += 500;
+        return url;
+      };
+      // İlk sayfayı count ile çek, kalanı paralel iste (ardışık tur yerine tek dalga)
+      const firstR = await fetch(buildUrl(0), { headers: { ...H, Prefer: 'count=exact' } });
+      if (!firstR.ok) throw new Error('HTTP ' + firstR.status);
+      let all = await firstR.json();
+      if (!Array.isArray(all)) all = [];
+      let grandTotal = all.length;
+      const cr = firstR.headers.get('content-range');
+      if (cr) { const m = cr.match(/\/(\d+)$/); if (m) grandTotal = parseInt(m[1], 10); }
+      if (grandTotal > all.length) {
+        const offsets = [];
+        for (let off = PAGE; off < grandTotal && off < 100000; off += PAGE) offsets.push(off);
+        const pages = await Promise.all(offsets.map(off =>
+          fetch(buildUrl(off), { headers: H }).then(r => r.ok ? r.json() : [])
+        ));
+        pages.forEach(p => { if (Array.isArray(p)) all.push(...p); });
       }
       noActivityDeals = all;
     } catch(e) {
