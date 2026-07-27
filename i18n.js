@@ -727,6 +727,12 @@
     'Agent ara (ad veya kullanıcı adı)...': 'Search agent (name or username)...',
     'Aramayla eşleşen kişi yok.': 'No one matches your search.',
     'Takımında kayıtlı kişi bulunamadı.': 'No registered members in your team.',
+    'Geçmiş tarih — salt okunur. Düzeltme yetkisi yalnızca admin panelindedir.': 'Past date — read only. Corrections can only be made in the admin panel.',
+    'Bugünün girişi kaydedildi ve kilitlendi. Düzeltme yetkisi yalnızca admin panelindedir.': "Today's entry is saved and locked. Corrections can only be made in the admin panel.",
+    'Kaydedildi ve kilitlendi.': 'Saved and locked.',
+    'Geçmiş tarih düzenlenemez. Düzeltme yetkisi admindedir.': 'Past dates cannot be edited. Corrections are admin-only.',
+    'Kaydedilecek yeni giriş yok (mevcut kayıtlar kilitli).': 'No new entries to save (existing records are locked).',
+    'Dışa aktarılacak veri yok.': 'No data to export.',
   };
 
   function getLang() {

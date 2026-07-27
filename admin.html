@@ -170,6 +170,17 @@
     .tbl th { position:sticky; top:0; background:#111827; z-index:2; }
     .tbl td, .tbl th { padding:8px 10px; font-size:11px; text-align:left; border-bottom:1px solid #1f2937; white-space:nowrap; }
     .tbl tr:hover td { background:#12182b; }
+    /* Günlük Ekip Girişi (admin/RM) */
+    .ade-input { width:64px; box-sizing:border-box; background:#0b1220; border:1px solid #1e293b; border-radius:7px; color:#e2e8f0; font-size:12px; padding:5px 7px; transition:border-color .15s,box-shadow .15s; }
+    .ade-input:focus { outline:none; border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,.15); }
+    .ade-input-time { width:58px; } .ade-input-money { width:82px; }
+    .ade-att-sel { border:1px solid; border-radius:9999px; font-size:10.5px; font-weight:800; padding:5px 10px; cursor:pointer; }
+    .ade-att-sel:focus { outline:none; box-shadow:0 0 0 3px rgba(99,102,241,.15); }
+    .ade-badge { padding:4px 10px; border-radius:9999px; font-size:9.5px; font-weight:800; white-space:nowrap; display:inline-block; }
+    .ade-badge-saved { background:rgba(22,163,74,.15); color:#4ade80; border:1px solid rgba(74,222,128,.25); }
+    .ade-badge-pending { background:rgba(251,191,36,.12); color:#fbbf24; border:1px solid rgba(251,191,36,.25); }
+    .ade-badge-dirty { background:rgba(99,102,241,.15); color:#a5b4fc; border:1px solid rgba(99,102,241,.3); }
+    #adeTable td.ade-num { text-align:left; }
     #dealModal { display:none; position:fixed; inset:0; z-index:9999; align-items:center; justify-content:center; padding:16px; }
     #dealModal.open { display:flex; }
     #userModal { display:none; position:fixed; inset:0; z-index:9998; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,0.75); }
@@ -279,6 +290,10 @@
         <button onclick="switchView('team-members')" class="nav-btn" id="nav-team-members">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
           Takımımdaki Kişiler
+        </button>
+        <button onclick="switchView('daily-entry')" class="nav-btn" id="nav-daily-entry">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h3m-9 5h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zM8 3v4M16 3v4"/></svg>
+          Günlük Ekip Girişi
         </button>
       </div>
 
@@ -728,6 +743,55 @@
         </table>
       </div>
       <div id="tmEmpty" class="hidden text-center py-12 text-slate-500 text-sm">Kayıt bulunamadı.</div>
+    </div>
+
+    <!-- ===== GÜNLÜK EKİP GİRİŞİ (admin/RM — düzeltme yetkili) ===== -->
+    <div id="view-daily-entry" class="hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-3">
+          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#4f46e5,#4338ca);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(79,70,229,.3);flex-shrink:0">
+            <svg style="width:20px;height:20px;color:#fff" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h3m-9 5h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zM8 3v4M16 3v4"/></svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-white">Günlük Ekip Girişi</h2>
+            <p class="text-[11px] text-slate-500 mt-1" id="adeScopeLabel">Takım liderlerinin girdiği günlük performans — düzeltme yetkisi sende.</p>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap items-center">
+          <span id="depExportMount"></span>
+          <button onclick="adeSaveAll()" id="adeSaveBtn" style="padding:9px 18px;background:linear-gradient(135deg,#4f46e5,#4338ca);border:none;border-radius:10px;color:#fff;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 2px 12px rgba(79,70,229,.4);display:flex;align-items:center;gap:6px">
+            <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            Değişiklikleri Kaydet
+          </button>
+        </div>
+      </div>
+      <div class="mb-4 flex flex-wrap gap-2 items-center">
+        <input type="date" id="adeDate" onchange="adeOnDateChange()">
+        <select id="adeTeamFilter" class="filter-select" style="max-width:240px" onchange="adeRender()">
+          <option value="">Tüm Takımlar</option>
+        </select>
+        <div style="position:relative;display:inline-flex;align-items:center;flex:1;min-width:200px;max-width:320px">
+          <svg style="position:absolute;left:11px;width:14px;height:14px;color:#475569;pointer-events:none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="adeSearch" oninput="adeRender()" placeholder="Agent ara (ad veya kullanıcı adı)..." class="filter-input" style="width:100%;padding-left:32px">
+        </div>
+      </div>
+      <div id="adeLoading" class="flex flex-col items-center py-16 gap-4">
+        <div class="spinner-anim"></div><p class="text-slate-400 text-sm">Yükleniyor…</p>
+      </div>
+      <div id="adeEmpty" class="hidden text-center py-12 text-slate-500 text-sm">Kayıt bulunamadı.</div>
+      <div id="adeTableWrap" class="hidden overflow-auto rounded-xl border border-gray-800">
+        <table class="tbl w-full" id="adeTable">
+          <thead>
+            <tr class="text-slate-400">
+              <th>Agent</th><th>Takım</th><th>Attendance</th><th>Customers</th><th>Total Calls</th>
+              <th>Interested Patients</th><th>Sales Opportunities</th><th>Avg. Talk Time</th>
+              <th>Consultation Completed</th><th>Offer Shared</th><th>Deals</th>
+              <th>Same-day Payment (€)</th><th>Flight Tickets Offered</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="adeBody"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- ===== LOGS VIEW ===== -->
@@ -3906,6 +3970,274 @@
       I18N.translateDOM(tbody);
     }
 
+    // ══════════ GÜNLÜK EKİP GİRİŞİ — admin/RM (düzeltme yetkili) ══════════
+    // Admin: tüm takımlar; RM: kendi bölgesindeki takımlar (kapsam /api/team-members
+    // tarafından server-side uygulanır). Her hücre düzenlenebilir; SADECE
+    // değiştirilen (dirty) satırlar Supabase'e upsert edilir — dokunulmayan
+    // agent'lar için sıfır kayıt oluşturulmaz.
+    let adeDate = '';
+    let adeRows = [];        // { username, fullName, team, ...alanlar, _dirty, _fromDb }
+
+    function _adePad(n) { return String(n).padStart(2, '0'); }
+    function _adeLocalISO(d) { return `${d.getFullYear()}-${_adePad(d.getMonth() + 1)}-${_adePad(d.getDate())}`; }
+    function _adeToday() { return _adeLocalISO(new Date()); }
+
+    function adeInitView() {
+      if (!adeDate) adeDate = _adeToday();
+      const cur = document.getElementById('adeDate').value;
+      if (cur !== adeDate) NCDatePicker.setValue('adeDate', adeDate);
+      else adeLoad();
+    }
+
+    function adeOnDateChange() {
+      let v = document.getElementById('adeDate').value;
+      if (!v) { v = _adeToday(); NCDatePicker.setValue('adeDate', v); return; }
+      adeDate = v;
+      adeLoad();
+    }
+
+    async function adeLoad() {
+      const loading = document.getElementById('adeLoading');
+      const empty   = document.getElementById('adeEmpty');
+      const wrap    = document.getElementById('adeTableWrap');
+      loading.classList.remove('hidden'); empty.classList.add('hidden'); wrap.classList.add('hidden');
+      try {
+        const token = (currentUser && currentUser.token) || '';
+        const r = await fetch('/api/team-members', { headers: { Authorization: 'Bearer ' + token } });
+        if (r.status === 401) { sessionStorage.removeItem('nc_current_user'); window.location.href = 'index.html?relogin=1'; return; }
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+        const _isBoss = role => /leader|lider|manager|müdür|mudur|admin|yönetici|yonetici/i.test(String(role || ''));
+        const members = (data.members || []).filter(m => !_isBoss(m.role));
+
+        const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
+        const exR = await fetch(`${SUPABASE_URL}/rest/v1/daily_performance?entry_date=eq.${encodeURIComponent(adeDate)}&select=*`, { headers: H });
+        if (!exR.ok) {
+          let msg = 'HTTP ' + exR.status;
+          try { const eb = await exR.json(); if (eb && (eb.message || eb.error)) msg = eb.message || eb.error; } catch(_e) {}
+          if (exR.status === 404 || /schema cache|does not exist/i.test(msg)) msg = 'daily_performance tablosu Supabase\'de bulunamadı.';
+          throw new Error(msg);
+        }
+        const existing = await exR.json();
+        const byUser = new Map((existing || []).map(row => [row.username, row]));
+
+        adeRows = members.map(m => {
+          const ex = byUser.get(m.username);
+          return ex ? { ...ex, fullName: m.fullName, team: m.team || ex.team || '', _dirty: false, _fromDb: true } : {
+            username: m.username, fullName: m.fullName, team: m.team || '', attendance: 'working',
+            customers: 0, total_calls: 0, interested_patients: 0, sales_opportunities: 0,
+            avg_talk_time: '00:00', consultation_completed: 0, offer_shared: 0, deals: 0,
+            same_day_payment: 0, flight_tickets: 0, status: 'pending', _dirty: false, _fromDb: false,
+          };
+        });
+
+        document.getElementById('adeScopeLabel').textContent = window.isRM
+          ? `${window.rmRegion || ''} bölgesi — takım liderlerinin girdiği günlük performans (düzeltme yetkisi sende).`
+          : 'Tüm takımların günlük performans girişi — düzeltme yetkisi sende.';
+        adePopulateTeamFilter();
+        loading.classList.add('hidden');
+        adeRender();
+      } catch(e) {
+        loading.classList.add('hidden');
+        empty.textContent = I18N.t('Yükleme hatası: ') + e.message;
+        empty.classList.remove('hidden');
+      }
+    }
+
+    function adePopulateTeamFilter() {
+      const sel = document.getElementById('adeTeamFilter');
+      if (!sel) return;
+      const cur = sel.value;
+      const teams = [...new Set(adeRows.map(r => r.team).filter(Boolean))].sort();
+      sel.innerHTML = `<option value="">${I18N.t('Tüm Takımlar')}</option>` + teams.map(t => `<option value="${_escHtml(t)}">${_escHtml(t)}</option>`).join('');
+      sel.value = teams.includes(cur) ? cur : '';
+    }
+
+    function _adeNum(i, field, val) {
+      return `<input type="number" min="0" step="1" value="${val}" onchange="adeOnFieldChange(${i},'${field}',this.value)" class="ade-input">`;
+    }
+    function _adeStatusBadge(row) {
+      if (row._dirty) return '<span class="ade-badge ade-badge-dirty">● Değişti</span>';
+      return (row.status === 'saved')
+        ? '<span class="ade-badge ade-badge-saved">● Saved</span>'
+        : '<span class="ade-badge ade-badge-pending">● Pending</span>';
+    }
+    function _adeRowHtml(row, i) {
+      const isOff = row.attendance === 'off';
+      return `<tr id="adeRow-${i}"${isOff ? ' style="background:rgba(127,29,29,.07)"' : ''}>
+        <td style="color:#f1f5f9;font-weight:700">${fmt(row.fullName)}</td>
+        <td style="color:#64748b;font-size:10px">${fmt(row.team)}</td>
+        <td>
+          <select onchange="adeOnAttendanceChange(${i},this.value)" class="ade-att-sel" style="background:${isOff ? 'rgba(248,113,113,.1)' : 'rgba(74,222,128,.1)'};border-color:${isOff ? 'rgba(248,113,113,.35)' : 'rgba(74,222,128,.35)'};color:${isOff ? '#f87171' : '#4ade80'}">
+            <option value="working" ${!isOff ? 'selected' : ''}>Working</option>
+            <option value="off" ${isOff ? 'selected' : ''}>Off Day</option>
+          </select>
+        </td>
+        <td class="ade-num">${_adeNum(i, 'customers', row.customers)}</td>
+        <td class="ade-num">${_adeNum(i, 'total_calls', row.total_calls)}</td>
+        <td class="ade-num">${_adeNum(i, 'interested_patients', row.interested_patients)}</td>
+        <td class="ade-num">${_adeNum(i, 'sales_opportunities', row.sales_opportunities)}</td>
+        <td><input type="text" value="${fmt(row.avg_talk_time)}" placeholder="00:00" onchange="adeOnFieldChange(${i},'avg_talk_time',this.value)" class="ade-input ade-input-time"></td>
+        <td class="ade-num">${_adeNum(i, 'consultation_completed', row.consultation_completed)}</td>
+        <td class="ade-num">${_adeNum(i, 'offer_shared', row.offer_shared)}</td>
+        <td class="ade-num">${_adeNum(i, 'deals', row.deals)}</td>
+        <td><input type="number" min="0" step="0.01" value="${row.same_day_payment}" onchange="adeOnFieldChange(${i},'same_day_payment',this.value)" class="ade-input ade-input-money"></td>
+        <td class="ade-num">${_adeNum(i, 'flight_tickets', row.flight_tickets)}</td>
+        <td id="adeStatusCell-${i}">${_adeStatusBadge(row)}</td>
+      </tr>`;
+    }
+
+    function adeRender() {
+      const wrap  = document.getElementById('adeTableWrap');
+      const tbody = document.getElementById('adeBody');
+      const empty = document.getElementById('adeEmpty');
+      if (!adeRows.length) { wrap.classList.add('hidden'); empty.classList.remove('hidden'); empty.textContent = I18N.t('Kayıt bulunamadı.'); return; }
+      const q = (document.getElementById('adeSearch').value || '').toLowerCase().trim();
+      const teamF = document.getElementById('adeTeamFilter').value;
+      const view = adeRows
+        .map((row, i) => ({ row, i }))
+        .filter(({ row }) => (!teamF || row.team === teamF) && (!q || (`${row.fullName || ''} ${row.username || ''}`).toLowerCase().includes(q)));
+      if (!view.length) { wrap.classList.add('hidden'); empty.classList.remove('hidden'); empty.textContent = I18N.t('Aramayla eşleşen kişi yok.'); return; }
+      empty.classList.add('hidden');
+      wrap.classList.remove('hidden');
+      tbody.innerHTML = view.map(({ row, i }) => _adeRowHtml(row, i)).join('');
+      I18N.translateDOM(tbody);
+    }
+
+    function adeOnAttendanceChange(i, value) {
+      const row = adeRows[i];
+      if (!row) return;
+      row.attendance = value;
+      if (value === 'off') {
+        row.customers = 0; row.total_calls = 0; row.interested_patients = 0; row.sales_opportunities = 0;
+        row.avg_talk_time = '00:00'; row.consultation_completed = 0; row.offer_shared = 0; row.deals = 0;
+        row.same_day_payment = 0; row.flight_tickets = 0;
+      }
+      row._dirty = true;
+      const el = document.getElementById('adeRow-' + i);
+      if (el) { el.outerHTML = _adeRowHtml(row, i); I18N.translateDOM(document.getElementById('adeRow-' + i)); }
+    }
+
+    function adeOnFieldChange(i, field, value) {
+      const row = adeRows[i];
+      if (!row) return;
+      if (field === 'avg_talk_time') row[field] = value;
+      else { const n = parseFloat(value); row[field] = isNaN(n) || n < 0 ? 0 : n; }
+      row._dirty = true;
+      const cell = document.getElementById('adeStatusCell-' + i);
+      if (cell) cell.innerHTML = '<span class="ade-badge ade-badge-dirty">● Değişti</span>';
+    }
+
+    async function adeSaveAll() {
+      const dirty = adeRows.filter(r => r._dirty);
+      if (!dirty.length) { showSiteNotice('Kaydedilecek değişiklik yok.', 'error'); return; }
+      const btn = document.getElementById('adeSaveBtn');
+      const label = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.style.opacity = '.7'; btn.innerHTML = I18N.t('Kaydediliyor...'); }
+      try {
+        const who = (currentUser && (currentUser.username || currentUser.fullName)) || 'admin';
+        const payload = dirty.map(r => ({
+          entry_date: adeDate, team: r.team || '', username: r.username, full_name: r.fullName,
+          attendance: r.attendance, customers: r.customers, total_calls: r.total_calls,
+          interested_patients: r.interested_patients, sales_opportunities: r.sales_opportunities,
+          avg_talk_time: r.avg_talk_time, consultation_completed: r.consultation_completed,
+          offer_shared: r.offer_shared, deals: r.deals, same_day_payment: r.same_day_payment,
+          flight_tickets: r.flight_tickets, status: 'saved', created_by: who, updated_at: new Date().toISOString(),
+        }));
+        const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' };
+        const resp = await fetch(`${SUPABASE_URL}/rest/v1/daily_performance?on_conflict=entry_date,username`, { method: 'POST', headers: H, body: JSON.stringify(payload) });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        dirty.forEach(r => { r.status = 'saved'; r._dirty = false; r._fromDb = true; });
+        adeRender();
+        addLog('DAILY_ENTRY_EDIT', `${dirty.length} agent günlük performansı düzeltildi (${adeDate})`);
+        showSiteNotice(`${dirty.length} kayıt güncellendi.`, 'success');
+      } catch(e) {
+        showSiteNotice('Kaydedilemedi: ' + e.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = label; }
+      }
+    }
+
+    // ── Export (CSV/XLSX/HTML ortak; PDF kurumsal düzen) ──
+    function _adeTalkToSec(v) { const p = String(v || '').split(':').map(x => parseInt(x, 10)); if (p.length === 2 && p.every(n => !isNaN(n))) return p[0] * 60 + p[1]; if (p.length === 3 && p.every(n => !isNaN(n))) return p[0] * 3600 + p[1] * 60 + p[2]; return 0; }
+    function _adeSecToTalk(s) { s = Math.round(s); return `${_adePad(Math.floor(s / 60))}:${_adePad(s % 60)}`; }
+    function _adeExportData() {
+      const q = (document.getElementById('adeSearch').value || '').toLowerCase().trim();
+      const teamF = document.getElementById('adeTeamFilter').value;
+      return adeRows.filter(r => (!teamF || r.team === teamF) && (!q || (`${r.fullName || ''} ${r.username || ''}`).toLowerCase().includes(q)));
+    }
+    function _adeFilename() {
+      const teamF = document.getElementById('adeTeamFilter').value;
+      const slug = String(teamF || (window.isRM ? window.rmRegion : 'All_Teams') || 'team').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      return `NC_${slug}_Daily_Performance_${adeDate}`;
+    }
+    function exportDailyEntryAdmin(format) {
+      if (format === 'pdf') { adeExportPdf(); return; }
+      const data = _adeExportData();
+      const headers = ['Agent','Takım','Attendance','Customers','Total Calls','Interested Patients','Sales Opportunities','Avg. Talk Time','Consultation Completed','Offer Shared','Deals','Same-day Payment (€)','Flight Tickets Offered','Status'];
+      const rows = data.map(r => [r.fullName, r.team, r.attendance === 'off' ? 'Off Day' : 'Working', r.customers, r.total_calls, r.interested_patients, r.sales_opportunities, r.avg_talk_time, r.consultation_completed, r.offer_shared, r.deals, (Number(r.same_day_payment) || 0).toFixed(2), r.flight_tickets, r.status === 'saved' ? 'Saved' : 'Pending']);
+      NCExport.download(format || 'csv', headers, rows, _adeFilename(), 'Günlük Ekip Girişi — ' + adeDate);
+    }
+    function adeExportPdf() {
+      if (typeof jspdf === 'undefined') { showSiteNotice('PDF kütüphanesi yüklenemedi.', 'error'); return; }
+      const data = _adeExportData();
+      if (!data.length) { showSiteNotice('Dışa aktarılacak veri yok.', 'error'); return; }
+      const doc = new jspdf.jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
+      const M = 30, NAVY = [15, 34, 62], TEAL = [13, 148, 136];
+      const now = new Date(), pad = n => String(n).padStart(2, '0');
+      const dmy = iso => { const p = String(iso).split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
+      const genStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      const teamF = document.getElementById('adeTeamFilter').value;
+      const scopeLabel = teamF || (window.isRM ? (window.rmRegion + ' (Tüm Takımlar)') : 'Tüm Takımlar');
+      const total = data.length, offDay = data.filter(r => r.attendance === 'off').length, active = total - offDay;
+      const completed = data.filter(r => r.attendance !== 'off' && r.status === 'saved').length, missing = active - completed;
+      const sum = f => data.reduce((a, r) => a + (parseFloat(r[f]) || 0), 0);
+      const workRows = data.filter(r => r.attendance !== 'off');
+      const avgTalk = workRows.length ? _adeSecToTalk(workRows.reduce((a, r) => a + _adeTalkToSec(r.avg_talk_time), 0) / workRows.length) : '00:00';
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(...NAVY);
+      doc.text('NATURAL CLINIC', pageW / 2, 42, { align: 'center' });
+      doc.setFontSize(12); doc.setTextColor(...TEAL);
+      doc.text('DAILY TEAM PERFORMANCE REPORT', pageW / 2, 60, { align: 'center' });
+
+      doc.autoTable({
+        startY: 78, theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 7, lineColor: NAVY, lineWidth: 0.5, textColor: NAVY, valign: 'middle' },
+        columnStyles: { 0: { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold', cellWidth: 130 }, 1: { fillColor: [255, 255, 255] }, 2: { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold', cellWidth: 200 }, 3: { fillColor: [255, 255, 255] } },
+        body: [
+          ['Report Date', dmy(adeDate), 'Scope', scopeLabel],
+          ['Generated By', (currentUser.fullName || currentUser.username || '—'), 'Generated At', genStr],
+          ['Active Agents', String(active), 'Completed / Missing / Off Day', `${completed} / ${missing} / ${offDay}`],
+        ],
+        margin: { left: M, right: M },
+      });
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 16,
+        head: [['Customers', 'Calls', 'Interested', 'Sales Opp.', 'Avg Talk', 'Consultation Completed', 'Offer Shared', 'Deals', 'Same-day €', 'Flights']],
+        body: [[sum('customers'), sum('total_calls'), sum('interested_patients'), sum('sales_opportunities'), avgTalk, sum('consultation_completed'), sum('offer_shared'), sum('deals'), '€' + sum('same_day_payment').toFixed(2), sum('flight_tickets')]],
+        theme: 'grid',
+        styles: { fontSize: 8.5, cellPadding: 7, textColor: NAVY, lineColor: [203, 213, 225], lineWidth: 0.5, valign: 'middle' },
+        headStyles: { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+        bodyStyles: { fontStyle: 'bold', fillColor: [240, 249, 248] },
+        margin: { left: M, right: M },
+      });
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 16,
+        head: [['Agent', 'Team', 'Status', 'Cust.', 'Calls', 'Interested', 'Sales Opp.', 'Talk', 'Consultation Completed', 'Offer Shared', 'Deals', 'Same-day €', 'Flights']],
+        body: data.map(r => [r.fullName, r.team, r.attendance === 'off' ? 'OFF DAY' : 'WORKING', r.customers, r.total_calls, r.interested_patients, r.sales_opportunities, r.avg_talk_time, r.consultation_completed, r.offer_shared, r.deals, '€' + (Number(r.same_day_payment) || 0).toFixed(2), r.flight_tickets]),
+        theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 4.5, textColor: NAVY, lineColor: [226, 232, 240], lineWidth: 0.5, valign: 'middle' },
+        headStyles: { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+        alternateRowStyles: { fillColor: [240, 249, 248] },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 96 }, 1: { cellWidth: 82 }, 2: { fontStyle: 'bold', cellWidth: 54 } },
+        margin: { left: M, right: M, top: 30, bottom: 30 },
+        didParseCell: function (d) { if (d.section === 'body' && d.column.index === 2) d.cell.styles.textColor = d.cell.raw === 'OFF DAY' ? [220, 38, 38] : TEAL; },
+        didDrawPage: function () { doc.setFontSize(7.5); doc.setTextColor(148, 163, 184); doc.text('Generated by Natural Clinic Daily Performance System', pageW - M, pageH - 14, { align: 'right' }); },
+      });
+      doc.save(`${_adeFilename()}.pdf`);
+    }
+
     function editAdminMember(i) {
       const m = _amTmFiltered[i];
       if (!m) return;
@@ -4222,6 +4554,7 @@
         cancelledExportMount:    'exportAdminCancelled',
         wonExportMount:          'exportAdminWon',
         teamMembersExportMount: 'exportTeamMembersAdmin',
+        depExportMount:         'exportDailyEntryAdmin',
       };
       for (const [mountId, fnName] of Object.entries(map)) {
         const el = document.getElementById(mountId);
@@ -4723,7 +5056,7 @@
       // Users ve System Logs admin'e özel — RM bu sayfalara geçemez
       if (window.isRM && (v === 'users' || v === 'logs')) return;
       _currentView = v;
-      ['deals','summary','users','logs','alarms-monitor','today','noshow','closed-alarms','cancelled-alarms','won-alarms','activity','team-members'].forEach(name => {
+      ['deals','summary','users','logs','alarms-monitor','today','noshow','closed-alarms','cancelled-alarms','won-alarms','activity','team-members','daily-entry'].forEach(name => {
         document.getElementById('view-' + name).classList.toggle('hidden', name !== v);
         const nb = document.getElementById('nav-' + name); if (nb) nb.classList.toggle('active', name === v);
       });
@@ -4734,6 +5067,7 @@
       if (v === 'users') loadUsers();
       else if (v === 'logs') loadLogs();
       else if (v === 'team-members') loadAdminTeamMembers();
+      else if (v === 'daily-entry') adeInitView();
       // Bu dört sayfanın verisi girişte (init) arka planda önceden yükleniyor
       // (bkz. loadAdminAlarms/loadAdminCancelledDeals/loadAdminWonAlarms init
       // çağrıları) — sayfaya girer girmez ELDEKİ veriyle ANINDA render edilir
@@ -6861,7 +7195,7 @@
         // sütun başlıkları, modal iskeletleri) çevir — dinamik olarak
         // render edilen içerik zaten kendi translateDOM çağrısını yapıyor.
         I18N.translateDOM(document.body);
-        ['dealDateFrom', 'dealDateTo', 'createdDateFrom', 'createdDateTo', 'amDateFrom', 'amDateTo', 'amCreatedFrom', 'amCreatedTo', 'anFilterDateFrom', 'anFilterDateTo', 'anFilterCreatedFrom', 'anFilterCreatedTo', 'logDateFrom', 'logDateTo', 'caArrFrom', 'caArrTo', 'caCreatedFrom', 'caCreatedTo', 'waArrFrom', 'waArrTo', 'waCreatedFrom', 'waCreatedTo', 'actDateFrom', 'actDateTo'].forEach(id => NCDatePicker.attach(id));
+        ['dealDateFrom', 'dealDateTo', 'createdDateFrom', 'createdDateTo', 'amDateFrom', 'amDateTo', 'amCreatedFrom', 'amCreatedTo', 'anFilterDateFrom', 'anFilterDateTo', 'anFilterCreatedFrom', 'anFilterCreatedTo', 'logDateFrom', 'logDateTo', 'caArrFrom', 'caArrTo', 'caCreatedFrom', 'caCreatedTo', 'waArrFrom', 'waArrTo', 'waCreatedFrom', 'waCreatedTo', 'actDateFrom', 'actDateTo', 'adeDate'].forEach(id => NCDatePicker.attach(id));
         _anPopulateTeamOptions();
         loadDeals();
         loadAdminAlarms();
