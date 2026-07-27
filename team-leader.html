@@ -1389,6 +1389,16 @@
   let SUPABASE_KEY = '';
   const _cfg = fetch('/api/config').then(r => r.json()).then(c => { SUPABASE_URL = c.url; SUPABASE_KEY = c.key; });
 
+  // ── Sistem geneli kesim: yalnızca created_time 2026+ olan kayıtlar ──
+  // Deal sorgularına eklenen filtre + alarmları deal created_time'a göre eleme.
+  const CREATED_2026_MIN = '2026-01-01';
+  const DEALS_2026_Q = '&created_time=gte.2026-01-01T00:00:00';
+  function _is2026Created(created) {
+    // created: 'YYYY-MM-DD' | ISO | null. Bilinmiyorsa (null) elenmez.
+    if (!created) return true;
+    return String(created).slice(0, 10) >= CREATED_2026_MIN;
+  }
+
   let currentUser = null;
   let allAlarms   = [];
   let allDeals    = [];
@@ -2492,7 +2502,17 @@
       // için beklemeye gerek yok, hazır olunca ilgili kolon/kartlar
       // kendini günceller (performans)
       loadDealFinance(all.map(a => a.deal_id))
-        .then(() => { renderAlarms(); if (activeView === 'today') renderToday(); })
+        .then(() => {
+          // Sistem geneli kesim: deal created_time 2026 öncesi olan alarmları
+          // ele (finans yüklendikten sonra created bilgisi elde). Bilinmeyen
+          // (created null) korunur.
+          const before = allAlarms.length;
+          allAlarms = allAlarms.filter(a => _is2026Created((dealFinanceMap[a.deal_id] || {}).created));
+          if (allAlarms.length !== before) updateTabCounts();
+          renderAlarms();
+          renderConsultantStrip();
+          if (activeView === 'today') renderToday();
+        })
         .catch(() => {});
     } catch(e) {
       if (!silent) {
@@ -3209,7 +3229,7 @@
       // Postgres varsayılanı DESC'te null'ları öne koyar — nullslast ile boş değerleri sona at
       const nullsMod = dealSortDir === 'desc' ? '.nullslast' : '';
       const orderParam = `${dealSortCol}.${dealSortDir}${nullsMod}${dealSortCol !== 'id' ? ',id.asc' : ''}`;
-      let url = `${SUPABASE_URL}/rest/v1/deals?select=id,deal_name,deal_owner,stage,team,amount,total_paid_amount,arrival_date,payment_or_flight_ticket,raw&order=${orderParam}&limit=${DEAL_PAGE_SIZE}&offset=${offset}`;
+      let url = `${SUPABASE_URL}/rest/v1/deals?select=id,deal_name,deal_owner,stage,team,amount,total_paid_amount,arrival_date,payment_or_flight_ticket,raw&order=${orderParam}&limit=${DEAL_PAGE_SIZE}&offset=${offset}${DEALS_2026_Q}`;
       // Rol bazlı kapsam: TL kendi takımı (tüm yazım varyantları), RM kendi bölgesindeki tüm takımlar
       if (!isRM && currentUser.team) {
         url += `&team=${TeamMap.inFilter(TeamMap.aliasesFor(currentUser.team))}`;
@@ -3274,7 +3294,7 @@
     try {
       const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
       const isRM = currentUser.role === 'regional-manager';
-      let url = `${SUPABASE_URL}/rest/v1/deals?select=stage&limit=1000`;
+      let url = `${SUPABASE_URL}/rest/v1/deals?select=stage&limit=1000${DEALS_2026_Q}`;
       if (!isRM && currentUser.team) url += `&team=${TeamMap.inFilter(TeamMap.aliasesFor(currentUser.team))}`;
       else if (isRM) url += `&team=${TeamMap.inFilter(TeamMap.aliasesForRegion(getRegion(currentUser)))}`;
       const r = await fetch(url, { headers: H });
@@ -3331,7 +3351,7 @@
       const { from: createdFrom, to: createdTo } = _dealCreatedRange();
 
       // Sadece küçük alanları çek — raw'ın tamamı değil, JSON içinden seçilen değerler
-      let base = `${SUPABASE_URL}/rest/v1/deals?select=amount,total_paid_amount,ramt:raw->>Amount,rpaid:raw->>Total_Paid_Amount,pft:raw->>Payment_Or_Flight_Ticket`;
+      let base = `${SUPABASE_URL}/rest/v1/deals?select=amount,total_paid_amount,ramt:raw->>Amount,rpaid:raw->>Total_Paid_Amount,pft:raw->>Payment_Or_Flight_Ticket${DEALS_2026_Q}`;
       if (!isRM && currentUser.team) base += `&team=${TeamMap.inFilter(TeamMap.aliasesFor(currentUser.team))}`;
       else if (isRM) base += `&team=${TeamMap.inFilter(TeamMap.aliasesForRegion(getRegion(currentUser)))}`;
       if (stage)  base += `&stage=eq.${encodeURIComponent(stage)}`;
@@ -3415,7 +3435,7 @@
       const dateTo   = document.getElementById('dealDateTo')?.value || '';
       const { from: createdFrom, to: createdTo } = _dealCreatedRange();
       const PAGE = 1000;
-      let baseUrl = `${SUPABASE_URL}/rest/v1/deals?select=id,deal_id,deal_name,deal_owner,stage,team,amount,total_paid_amount,arrival_date,payment_or_flight_ticket,created_time&order=id.asc`;
+      let baseUrl = `${SUPABASE_URL}/rest/v1/deals?select=id,deal_id,deal_name,deal_owner,stage,team,amount,total_paid_amount,arrival_date,payment_or_flight_ticket,created_time&order=id.asc${DEALS_2026_Q}`;
       if (!isRM && currentUser.team) baseUrl += `&team=${TeamMap.inFilter(TeamMap.aliasesFor(currentUser.team))}`;
       else if (isRM) baseUrl += `&team=${TeamMap.inFilter(TeamMap.aliasesForRegion(getRegion(currentUser)))}`;
       if (stage)  baseUrl += `&stage=eq.${encodeURIComponent(stage)}`;
@@ -3696,7 +3716,7 @@
       const orParam = encodeURIComponent('(stage.ilike.*cancel*,result_code.ilike.8.*)');
       const selectCols = 'id,deal_id,deal_name,deal_owner,team,stage,arrival_date,amount,total_paid_amount,payment_or_flight_ticket,created_time,result_code,sub_code,agent_note';
       const PAGE = 1000;
-      let baseUrl = `${SUPABASE_URL}/rest/v1/deals?or=${orParam}&select=${selectCols}&order=deal_name.asc&limit=${PAGE}`;
+      let baseUrl = `${SUPABASE_URL}/rest/v1/deals?or=${orParam}&select=${selectCols}&order=deal_name.asc&limit=${PAGE}${DEALS_2026_Q}`;
       if (!isRM && currentUser.team) baseUrl += `&team=${TeamMap.inFilter(TeamMap.aliasesFor(currentUser.team))}`;
       else if (isRM) baseUrl += `&team=${TeamMap.inFilter(TeamMap.aliasesForRegion(getRegion(currentUser)))}`;
 
@@ -4120,7 +4140,7 @@
       const stageParam = encodeURIComponent('ilike.*won*');
       const selectCols = 'id,deal_id,deal_name,deal_owner,team,stage,arrival_date,amount,total_paid_amount,created_time,result_code,sub_code,agent_note';
       const PAGE = 1000;
-      let baseUrl = `${SUPABASE_URL}/rest/v1/deals?stage=${stageParam}&select=${selectCols}&order=deal_name.asc&limit=${PAGE}`;
+      let baseUrl = `${SUPABASE_URL}/rest/v1/deals?stage=${stageParam}&select=${selectCols}&order=deal_name.asc&limit=${PAGE}${DEALS_2026_Q}`;
       if (!isRM && currentUser.team) baseUrl += `&team=${TeamMap.inFilter(TeamMap.aliasesFor(currentUser.team))}`;
       else if (isRM) baseUrl += `&team=${TeamMap.inFilter(TeamMap.aliasesForRegion(getRegion(currentUser)))}`;
 
@@ -4903,6 +4923,7 @@
       while (true) {
         let url = `${SUPABASE_URL}/rest/v1/deals?select=id,deal_name,deal_owner,stage,team,amount,raw` +
           `&stage=${stageParam}&raw->>Payment_Or_Flight_Ticket=eq.Payment&raw->>Last_Activity_Time=is.null` +
+          DEALS_2026_Q +
           `&limit=500&offset=${offset}`;
         if (!isRM && currentUser.team) url += `&team=${TeamMap.inFilter(TeamMap.aliasesFor(currentUser.team))}`;
         else if (isRM) url += `&team=${TeamMap.inFilter(TeamMap.aliasesForRegion(getRegion(currentUser)))}`;

@@ -17,6 +17,10 @@ window.AlarmEngine = (function () {
   let THRESHOLDS = buildThresholds([45, 30, 15, 7, 3]);
   let MISSING_REPEAT_DAYS = 3;
 
+  // Sistem geneli kesim: yalnızca created_time 2026 ve sonrası olan deallerden
+  // alarm üret. (Önceki yıllar sistemden tamamen gizleniyor.)
+  const CREATED_2026_Q = '&created_time=gte.2026-01-01T00:00:00';
+
   // app_settings tablosundan parametreleri yükle — tablo yoksa varsayılanlar kalır
   async function loadSettings(BASE, KEY) {
     try {
@@ -194,6 +198,7 @@ window.AlarmEngine = (function () {
     while (true) {
       const url = `${BASE}/rest/v1/deals?stage=${stageParam}` +
         `&select=id,deal_name,deal_owner,stage,team,amount,total_paid_amount,raw` +
+        CREATED_2026_Q +
         `&limit=500&offset=${offset}`;
       const r = await fetch(url, { headers: H });
       if (!r.ok) {
@@ -337,7 +342,7 @@ window.AlarmEngine = (function () {
     const stageParam = encodeURIComponent('ilike.*cancel*');
     let dealIds = [], offset = 0;
     while (true) {
-      const url = `${BASE}/rest/v1/deals?stage=${stageParam}&select=id&limit=1000&offset=${offset}`;
+      const url = `${BASE}/rest/v1/deals?stage=${stageParam}&select=id${CREATED_2026_Q}&limit=1000&offset=${offset}`;
       const r = await fetch(url, { headers: H });
       if (!r.ok) break;
       const batch = await r.json();
@@ -382,7 +387,7 @@ window.AlarmEngine = (function () {
     const stageParam = encodeURIComponent('ilike.*won*');
     let deals = [], offset = 0;
     while (true) {
-      const url = `${BASE}/rest/v1/deals?stage=${stageParam}&select=id,amount,total_paid_amount&limit=1000&offset=${offset}`;
+      const url = `${BASE}/rest/v1/deals?stage=${stageParam}&select=id,amount,total_paid_amount${CREATED_2026_Q}&limit=1000&offset=${offset}`;
       const r = await fetch(url, { headers: H });
       if (!r.ok) break;
       const batch = await r.json();

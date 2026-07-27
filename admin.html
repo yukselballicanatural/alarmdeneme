@@ -1899,6 +1899,14 @@
     let allLogs = [];
     let currentUser = null;
 
+    // ── Sistem geneli kesim: yalnızca created_time 2026+ olan kayıtlar ──
+    const CREATED_2026_MIN = '2026-01-01';
+    const DEALS_2026_Q = '&created_time=gte.2026-01-01T00:00:00';
+    function _is2026Created(created) {
+      if (!created) return true;               // bilinmiyorsa elenmez
+      return String(created).slice(0, 10) >= CREATED_2026_MIN;
+    }
+
     async function safeJson(response) {
       const text = await response.text();
       const fixed = text.replace(/"db\.Deal Id"\s*:\s*(\d+)/g, '"db.Deal Id":"$1"');
@@ -2074,6 +2082,23 @@
       }
     }
 
+    // Sistem geneli kesim: deal created_time 2026 öncesi olan alarmları ele.
+    // allDeals zaten yalnızca 2026 dealleri içerir (sorgu filtresi); bu yüzden
+    // allDeals'te OLMAYAN deal_id'li alarmlar pre-2026 sayılıp gizlenir.
+    // (allDeals henüz yüklenmediyse eleme yapılmaz — yanlışlıkla gizleme olmasın.)
+    function _admPruneAlarms2026() {
+      if (!allDeals.length || !adminAllAlarms.length) return;
+      const ok = new Set(allDeals.map(d => String(d.id)));
+      const before = adminAllAlarms.length;
+      adminAllAlarms = adminAllAlarms.filter(a => a.deal_id == null || ok.has(String(a.deal_id)));
+      if (adminAllAlarms.length !== before) {
+        updateAdminAlarmKPIs();
+        renderRegionPanels();
+        if (typeof renderAdminAlarmTable === 'function') renderAdminAlarmTable();
+        _amUpdateBadges(adminAllAlarms);
+      }
+    }
+
     async function loadAdminAlarms(silent) {
       // Soğuk başlangıç (sayfa ilk açılışı veya dil değişimi sonrası reload):
       // ağ isteği bitmeden önce cache'teki (biraz bayat ama doğru civarda)
@@ -2118,6 +2143,7 @@
           rest.forEach(p => { if (Array.isArray(p)) all.push(...p); });
         }
         adminAllAlarms = all;
+        _admPruneAlarms2026();
         updateAdminAlarmKPIs();
         renderRegionPanels();
         if (!silent) {
@@ -2530,7 +2556,7 @@
         const selectCols = 'id,deal_id,deal_name,deal_owner,team,stage,arrival_date,amount,total_paid_amount,created_time,result_code,sub_code,agent_note';
         const PAGE = 1000;
         const teamQ = window.rmTeams ? `&team=${TeamMap.inFilter(window.rmTeams)}` : '';
-        const baseUrl = `${SUPABASE_URL}/rest/v1/deals?or=${orParam}${teamQ}&select=${selectCols}&order=deal_name.asc&limit=${PAGE}`;
+        const baseUrl = `${SUPABASE_URL}/rest/v1/deals?or=${orParam}${teamQ}&select=${selectCols}&order=deal_name.asc&limit=${PAGE}${DEALS_2026_Q}`;
         const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, Prefer: 'count=exact' };
         const first = await fetch(`${baseUrl}&offset=0`, { headers: H });
         if (!first.ok) throw new Error('HTTP ' + first.status);
@@ -2906,7 +2932,7 @@
         const selectCols = 'id,deal_id,deal_name,deal_owner,team,stage,arrival_date,amount,total_paid_amount,created_time,result_code,sub_code,agent_note';
         const PAGE = 1000;
         const teamQ = window.rmTeams ? `&team=${TeamMap.inFilter(window.rmTeams)}` : '';
-        const baseUrl = `${SUPABASE_URL}/rest/v1/deals?stage=${stageParam}${teamQ}&select=${selectCols}&order=deal_name.asc&limit=${PAGE}`;
+        const baseUrl = `${SUPABASE_URL}/rest/v1/deals?stage=${stageParam}${teamQ}&select=${selectCols}&order=deal_name.asc&limit=${PAGE}${DEALS_2026_Q}`;
         const first = await fetch(`${baseUrl}&offset=0`, { headers: H });
         if (!first.ok) throw new Error('HTTP ' + first.status);
         const firstRows = await first.json();
@@ -6086,6 +6112,12 @@
         // takımlarına kısıtlanır (seçili takım filtresi zaten bölgeye ait —
         // dropdown bölgeye kısıtlı veriden doluyor, daraltmak güvenli).
         if (window.rmTeams && !body.p_teams) body.p_teams = window.rmTeams;
+        // Sistem geneli kesim: KPI/rozet/Analytics her zaman created_time 2026+
+        // olan dealleri sayar. Kullanıcı 2026 içi bir tarih seçtiyse ona saygı
+        // gösterilir; 2026 öncesi seçilse bile 2026'ya sabitlenir.
+        if (!body.p_created_from || String(body.p_created_from) < CREATED_2026_MIN) {
+          body.p_created_from = CREATED_2026_MIN;
+        }
         const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_deal_summary`, {
           method: 'POST',
           headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
@@ -6877,7 +6909,7 @@
     // RM'in bölgeye kısıtlı verisi ile admin'in tam verisi AYNI cache
     // anahtarını paylaşmamalı — yoksa RM'in dar verisi admin'e (veya tersi)
     // servis edilir. Anahtar role/bölgeye göre ayrışır.
-    const _DEALS_CACHE_BASE = 'nc_admin_deals_v1';
+    const _DEALS_CACHE_BASE = 'nc_admin_deals_v2_2026';
     function _dealsCacheKey() {
       return _DEALS_CACHE_BASE + (window.isRM ? '_rm_' + window.rmRegion : '');
     }
@@ -6892,9 +6924,9 @@
     // Alarm durumu deal verisinden daha sık değiştiği için TTL daha kısa.
     const _ALARMS_TTL = 5 * 60 * 1000; // 5 dk
     const _LIST_CACHE_TTL = 5 * 60 * 1000; // 5 dk — İptal/Won listeleri
-    function _alarmsCacheKey() { return 'nc_admin_alarms_v1' + (window.isRM ? '_rm_' + window.rmRegion : ''); }
-    function _cancelledCacheKey() { return 'nc_admin_cancelled_v1' + (window.isRM ? '_rm_' + window.rmRegion : ''); }
-    function _wonCacheKey() { return 'nc_admin_won_v1' + (window.isRM ? '_rm_' + window.rmRegion : ''); }
+    function _alarmsCacheKey() { return 'nc_admin_alarms_v2_2026' + (window.isRM ? '_rm_' + window.rmRegion : ''); }
+    function _cancelledCacheKey() { return 'nc_admin_cancelled_v2_2026' + (window.isRM ? '_rm_' + window.rmRegion : ''); }
+    function _wonCacheKey() { return 'nc_admin_won_v2_2026' + (window.isRM ? '_rm_' + window.rmRegion : ''); }
 
     function _idbOpen() {
       return new Promise((resolve, reject) => {
@@ -6961,7 +6993,7 @@
       // ve daha uzun aralıklı deneme yapılıyor; bir sayfa gerçekten tükenirse
       // (5 deneme sonrası) o sayfa boş döner, tüm yükleme iptal edilmez.
       async function fetchRange(offset, limit, attempt) {
-        const r = await fetch(`${SUPABASE_URL}/rest/v1/deals?select=${_DEALS_SELECT}${teamQ}&limit=${limit}&offset=${offset}`, { headers: h });
+        const r = await fetch(`${SUPABASE_URL}/rest/v1/deals?select=${_DEALS_SELECT}${teamQ}${DEALS_2026_Q}&limit=${limit}&offset=${offset}`, { headers: h });
         if (!r.ok) {
           if (r.status >= 500 && attempt < 5) { await sleep(600 * attempt); return fetchRange(offset, limit, attempt + 1); }
           throw new Error('HTTP ' + r.status);
@@ -6970,7 +7002,7 @@
       }
 
       // 1. Toplam satır sayısını al (veri indirme yok)
-      const cr = await fetch(`${SUPABASE_URL}/rest/v1/deals?select=id${teamQ}&limit=1`, {
+      const cr = await fetch(`${SUPABASE_URL}/rest/v1/deals?select=id${teamQ}${DEALS_2026_Q}&limit=1`, {
         headers: { ...h, Prefer: 'count=exact' }
       });
       if (!cr.ok) throw new Error('HTTP ' + cr.status);
@@ -7070,6 +7102,7 @@
         if (cached) {
           allDeals = cached;
           _applyAll();
+          _admPruneAlarms2026();
           spinEl.classList.add('hidden');
           cardEl.classList.remove('hidden');
           // Arka planda sessizce güncelle — kullanıcı eski (ama doğru) rakamları
@@ -7079,6 +7112,7 @@
             _setCache(_dealsCacheKey(), deals);
             allDeals = deals;
             _applyAll();
+            _admPruneAlarms2026();
             document.getElementById('lastRefresh').textContent = 'Updated: ' + new Date().toLocaleTimeString();
           }).catch(() => {});
           return;
@@ -7109,6 +7143,7 @@
         });
         allDeals = mapDeals(raw);
         _setCache(_dealsCacheKey(), allDeals);
+        _admPruneAlarms2026();   // deal listesi hazır → alarmları 2026'ya göre ele
         document.getElementById('lastRefresh').textContent = 'Updated: ' + new Date().toLocaleTimeString();
       } catch(e) {
         if (!firstBatchShown) {
