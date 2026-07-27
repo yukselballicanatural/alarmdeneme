@@ -733,6 +733,8 @@
     'Geçmiş tarih düzenlenemez. Düzeltme yetkisi admindedir.': 'Past dates cannot be edited. Corrections are admin-only.',
     'Kaydedilecek yeni giriş yok (mevcut kayıtlar kilitli).': 'No new entries to save (existing records are locked).',
     'Dışa aktarılacak veri yok.': 'No data to export.',
+    'Bu tarih salt okunur — yalnızca bugün ve dün düzenlenebilir. Daha eski günlerin düzeltme yetkisi admin panelindedir.': 'This date is read-only — only today and yesterday are editable. Older days can only be corrected in the admin panel.',
+    'Bu tarih düzenlenemez — yalnızca bugün ve dün. Daha eski günler için düzeltme yetkisi admindedir.': 'This date cannot be edited — only today and yesterday. Older days are admin-only.',
     'GÜN SONU RAPORLAMA': 'END-OF-DAY REPORTING',
     "Yöneticiye WhatsApp'tan bildir": 'Notify Manager on WhatsApp',
     "Sistem Natural Clinic PDF'ini indirir, rapor mesajını panoya kopyalar ve WhatsApp sohbetini açar. İndirilen PDF'i ekleyip Gönder'e bas.": 'The system downloads the Natural Clinic PDF, copies the report message, and opens the WhatsApp chat. Attach the downloaded PDF and press Send.',

@@ -4721,10 +4721,13 @@
     }
   }
 
-  // Kilit kaldırıldı — TL artık geçmiş tarihleri ve kaydedilmiş satırları da
-  // düzenleyip yeniden kaydedebilir.
+  // TL yalnızca BUGÜN ve DÜN'ü düzenleyebilir; daha eski günler salt-okunur.
+  // (Kaydedilmiş satırlar dahil bugün/dün serbestçe düzeltilebilir.)
+  function _depDateEditable() {
+    return depDate === _depToday() || depDate === _depAddDays(_depToday(), -1);
+  }
   function _depRowLocked(row) {
-    return false;
+    return !_depDateEditable();
   }
 
   function _depNumInput(rowIdx, field, value, disabled) {
@@ -4800,12 +4803,25 @@
     _depUpdateSaveState();
   }
 
-  // Kilit kaldırıldı — Save her zaman aktif, salt-okunur banner gizli.
+  // Yalnızca bugün/dün düzenlenebilir; daha eski tarihte salt-okunur uyarısı
+  // göster, Save butonunu pasifleştir.
   function _depUpdateSaveState() {
+    const editable = _depDateEditable();
     const btn = document.getElementById('depSaveBtn');
-    if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
+    if (btn) {
+      btn.disabled = !editable;
+      btn.style.opacity = editable ? '1' : '.45';
+      btn.style.cursor = editable ? 'pointer' : 'not-allowed';
+    }
     const banner = document.getElementById('depReadonlyBanner');
-    if (banner) banner.style.display = 'none';
+    if (banner) {
+      if (!editable) {
+        banner.style.display = 'flex';
+        banner.querySelector('span').textContent = I18N.t('Bu tarih salt okunur — yalnızca bugün ve dün düzenlenebilir. Daha eski günlerin düzeltme yetkisi admin panelindedir.');
+      } else {
+        banner.style.display = 'none';
+      }
+    }
   }
 
   function depOnAttendanceChange(i, value) {
@@ -4856,6 +4872,7 @@
 
   async function depSaveAll() {
     if (!depRows.length) return;
+    if (!_depDateEditable()) { showNotice('Bu tarih düzenlenemez — yalnızca bugün ve dün. Daha eski günler için düzeltme yetkisi admindedir.', 'error'); return; }
     const toSave = depRows;
     const btn = document.getElementById('depSaveBtn');
     const btnLabel = btn ? btn.textContent : '';
