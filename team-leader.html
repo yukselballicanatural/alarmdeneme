@@ -1432,7 +1432,6 @@
   const _dbAlarmSearch    = _debounce(() => { updateTabCounts(); renderAlarms(); }, 300);
   const _dbRenderToday    = _debounce(() => renderToday(), 250);
   const _dbRmAlarmTable   = _debounce(() => renderRmAlarmTable(), 300);
-  const _dbRenderNoshow   = _debounce(() => renderNoshow(), 250);
   const _dbRenderClosedAlarms = _debounce(() => renderClosedAlarms(), 250);
   const _dbCancelledReport = _debounce(() => renderCancelledReport(), 250);
   const _dbWaApplyFilters = _debounce(() => _waApplyFilters(), 250);
@@ -2364,14 +2363,6 @@
     else nbA.style.display = 'none';
     if (todayCnt > 0) { nbT.textContent = todayCnt; nbT.style.display = 'inline-flex'; }
     else nbT.style.display = 'none';
-
-    // No-show menü rozeti — sayfaya hiç girilmeden de doğru sayı görünsün
-    const nbN = document.getElementById('navBadgeNoshow');
-    if (nbN) {
-      const noshowCnt = allAlarms.filter(a => a.status === 'no_show').length;
-      if (noshowCnt > 0) { nbN.textContent = noshowCnt; nbN.style.display = 'inline-flex'; }
-      else nbN.style.display = 'none';
-    }
 
     // Kapatılan Alarmlar menü rozeti — tüm kapatılmış alarmlar (deal/satır gizlenmiyor)
     const nbC = document.getElementById('navBadgeClosedAlarms');
@@ -3684,44 +3675,6 @@
     document.getElementById('dealModal').classList.remove('open');
     document.body.style.overflow = '';
     currentDeal = null;
-  }
-
-  let _noshowOwnersPopulated = false;
-  function _noshowPopulateOwnerFilter() {
-    if (_noshowOwnersPopulated) return;
-    const sel = document.getElementById('noshowOwnerFilter');
-    if (!sel) return;
-    const owners = [...new Set(allAlarms.map(a => a.deal_owner).filter(Boolean))].sort();
-    if (!owners.length) return;
-    sel.innerHTML = `<option value="">${I18N.t('Tüm Danışmanlar')}</option>` + owners.map(o => `<option value="${fmt(o)}">${fmt(o)}</option>`).join('');
-    _noshowOwnersPopulated = true;
-  }
-
-  // ── No-show raporu ───────────────────────────────────────────────
-  function renderNoshow() {
-    let data = allAlarms.filter(a => a.status === 'no_show').sort((a,b) => (b.closed_at||'').localeCompare(a.closed_at||''));
-    _noshowPopulateOwnerFilter();
-    const ownerSel = document.getElementById('noshowOwnerFilter');
-    if (ownerSel && ownerSel.value) data = data.filter(a => a.deal_owner === ownerSel.value);
-    const search = (document.getElementById('noshowSearch')?.value || '').toLowerCase().trim();
-    if (search) data = data.filter(a => [a.deal_name, a.deal_owner].join(' ').toLowerCase().includes(search));
-    const tbody = document.getElementById('noshowTbody');
-    const empty = document.getElementById('noshowEmpty');
-    if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-    empty.style.display = 'none';
-    tbody.innerHTML = data.map((a, i) => `<tr>
-      <td style="color:#475569;font-size:10px">${i+1}</td>
-      <td style="font-weight:600;color:#f1f5f9;font-size:12px;white-space:nowrap"><a href="https://crm.zoho.eu/crm/org20093728832/tab/Potentials/${a.deal_id}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-decoration-style:dotted" onmouseover="this.style.color='#818cf8'" onmouseout="this.style.color=''">${fmt(a.deal_name)}</a></td>
-      <td style="color:#94a3b8;font-size:11px;white-space:nowrap">${fmt(a.deal_owner)}</td>
-      <td style="color:#94a3b8;font-size:10px;white-space:nowrap">${fmt((typeof TeamMap!=='undefined' && TeamMap.normalize(a.team)) || a.team)}</td>
-      <td style="color:#64748b;font-size:10px;white-space:nowrap">${fmt(a.region)}</td>
-      <td style="color:#94a3b8;font-size:11px">${fieldLabel(a.reference_field)}</td>
-      <td style="color:#f87171;font-size:11px;white-space:nowrap">${formatDate(a.reference_date)}</td>
-      <td style="color:#64748b;font-size:11px;white-space:nowrap">${formatDateTime(a.closed_at)}</td>
-      <td>${paymentCellHtml(a.deal_id)}</td>
-      <td style="text-align:center">${_noteBtn(a.note)}</td>
-    </tr>`).join('');
-    I18N.translateDOM(tbody);
   }
 
   // ── Kapatılan Alarmlar raporu ──────────────────────────────────────
@@ -5373,17 +5326,6 @@
     NCExport.download(format || 'csv', headers, rows, 'bugun_gelecekler', 'Bugün Gelecek Hastalar');
   }
 
-  function exportNoshow(format) {
-    const data = allAlarms.filter(a => a.status === 'no_show');
-    const headers = ['Hasta','Deal ID','Danışman','Takım','Bölge','Ref Alan','Planlanan Tarih','Gelemedi Tarihi','Tutar','Ödenen','Kalan','Not'];
-    const rows = data.map(a => {
-      const fin = dealFinanceMap[a.deal_id] || {};
-      return [a.deal_name, fin.ref || a.deal_id, a.deal_owner, (TeamMap.normalize(a.team)||a.team), a.region,
-        fieldLabel(a.reference_field), a.reference_date, a.closed_at, fin.total, fin.paid, fin.remaining, a.note];
-    });
-    NCExport.download(format || 'csv', headers, rows, 'noshow_raporu', 'No-show Raporu');
-  }
-
   function exportClosedAlarms(format) {
     const data = allAlarms.filter(a => a.status === 'closed');
     const headers = ['Hasta','Deal ID','Danışman','Takım','Alarm Tipi','Ref. Tarih','Kapatılma Tarihi','Kapatan','Sonuç Kodu','Not'];
@@ -5622,7 +5564,6 @@
       alarmsExportMount:       'exportAlarms',
       todayExportMount:        'exportToday',
       dealsExportMount:        'exportDeals',
-      noshowExportMount:       'exportNoshow',
       closedAlarmsExportMount: 'exportClosedAlarms',
       cancelledExportMount:    'exportCancelled',
       wonExportMount:          'exportWonAlarms',
