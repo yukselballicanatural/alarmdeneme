@@ -1755,6 +1755,30 @@
     </div>
   </div>
 
+  <!-- ════════════════ SONUÇ (Geldi/Muayene/İşlemlerde/Gelemedi) MODALI ════════════════ -->
+  <!-- team-leader.html'deki promptOutcome akışının admin/RM karşılığı -->
+  <div id="amOutcomeModal" style="display:none;position:fixed;inset:0;z-index:10001;align-items:center;justify-content:center">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(3px)" onclick="closeAdminOutcomeModal()"></div>
+    <div style="position:relative;background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:24px;width:100%;max-width:420px;margin:16px;box-shadow:0 25px 60px rgba(0,0,0,0.6)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <div id="amOutcomeIconWrap" style="width:32px;height:32px;border-radius:8px;background:#450a0a;border:1px solid #7f1d1d;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg id="amOutcomeIcon" style="width:16px;height:16px;color:#f87171" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </div>
+        <div>
+          <div id="amOutcomeTitle" style="font-size:14px;font-weight:700;color:#f1f5f9">Gelemedi — Açıklama</div>
+          <div style="font-size:11px;color:#64748b" id="amOutcomePatientName"></div>
+        </div>
+      </div>
+      <label style="font-size:11px;color:#94a3b8;font-weight:700;display:block;margin-bottom:6px">Not <span style="color:#475569;font-weight:400">(isteğe bağlı)</span></label>
+      <textarea id="amOutcomeNote" rows="3" maxlength="200" placeholder="Kısa not (isteğe bağlı)…" class="filter-select" style="width:100%;box-sizing:border-box;resize:none;font-size:12px" oninput="document.getElementById('amOutcomeNoteCount').textContent=this.value.length+' / 200'"></textarea>
+      <div style="text-align:right;font-size:10px;color:#475569;margin-top:3px;margin-bottom:16px"><span id="amOutcomeNoteCount">0 / 200</span></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeAdminOutcomeModal()" style="flex:1;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer">İptal</button>
+        <button id="amOutcomeConfirmBtn" onclick="confirmAdminOutcome()" style="flex:1;padding:10px;background:#0d9488;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
   <!-- WhatsApp gönderiminde numarası olmayan danışman için hızlı numara ekleme -->
   <div id="amWaPhoneModal">
     <div class="modal-backdrop" onclick="_amWaPhoneModalClose()"></div>
@@ -2324,7 +2348,23 @@
         const dealIdCell = a.deal_id
           ? `<a href="https://crm.zoho.eu/crm/org20093728832/tab/Potentials/${a.deal_id}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#818cf8;text-decoration:underline;text-decoration-style:dotted" title="${I18N.t("Zoho'da Aç")}">${shortRef} ↗</a>`
           : '—';
-        return `<tr style="cursor:pointer" onclick="openAdminAlarmModal('${a.id}')">
+        // Sonuç girilmiş alarmlarda tek "Geri Al", girilmemişlerde 4 sonuç butonu
+        // (TL panelindeki Bugün Gelecekler kartlarıyla aynı akış).
+        const nm = _escHtml(a.deal_name || '');
+        const outcomeBtns = ['arrived','examined','processing','no_show','closed'].includes(a.status)
+          ? `<button onclick="event.stopPropagation();adminUndoQuickAction('${a.id}')" style="padding:3px 10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:9px;font-weight:700;cursor:pointer">${I18N.t('Geri Al')}</button>`
+          : `<div style="display:flex;gap:4px;flex-wrap:wrap">
+              <button onclick="event.stopPropagation();promptAdminOutcome('${a.id}','arrived','${nm}')" style="padding:3px 8px;background:#052e16;border:1px solid #166534;border-radius:6px;color:#4ade80;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap">${I18N.t('Hasta Geldi')}</button>
+              <button onclick="event.stopPropagation();promptAdminOutcome('${a.id}','examined','${nm}')" style="padding:3px 8px;background:#083344;border:1px solid #0e7490;border-radius:6px;color:#67e8f9;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap">${I18N.t('Muayene')}</button>
+              <button onclick="event.stopPropagation();promptAdminOutcome('${a.id}','processing','${nm}')" style="padding:3px 8px;background:#042f2e;border:1px solid #0d9488;border-radius:6px;color:#2dd4bf;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap">${I18N.t('İşlemlerde')}</button>
+              <button onclick="event.stopPropagation();promptAdminOutcome('${a.id}','no_show','${nm}')" style="padding:3px 8px;background:#450a0a;border:1px solid #7f1d1d;border-radius:6px;color:#f87171;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap">${I18N.t('Gelemedi')}</button>
+            </div>`;
+        const isNoShow = a.status === 'no_show';
+        const rowBg = isNoShow ? 'background:rgba(127,29,29,0.14);' : '';
+        const statusCell = isNoShow
+          ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:9px;font-weight:800;background:#450a0a;color:#f87171;border:1px solid #7f1d1d">✕ ${I18N.t('GELMEDİ')}</span>`
+          : `<span style="padding:2px 8px;border-radius:9999px;font-size:9px;font-weight:700;background:${sm.color}22;color:${sm.color}">${fmt(sm.label)}</span>`;
+        return `<tr style="cursor:pointer;${rowBg}" onclick="openAdminAlarmModal('${a.id}')">
           <td style="padding:8px 10px;font-size:10px;color:#475569;${bd}">${i+1}</td>
           <td style="padding:8px 10px;${bd}">
             <div style="font-size:12px;font-weight:600;color:#f1f5f9;white-space:nowrap">${fmt(a.deal_name)}</div>
@@ -2337,15 +2377,142 @@
           <td style="padding:8px 10px;font-size:11px;color:#60a5fa;${bd};text-align:right;white-space:nowrap">${info.amount || info.amount === 0 ? fmtMoney(info.amount) : '—'}</td>
           <td style="padding:8px 10px;font-size:11px;color:#4ade80;${bd};text-align:right;white-space:nowrap">${info.paid || info.paid === 0 ? fmtMoney(info.paid) : '—'}</td>
           <td style="padding:8px 10px;font-size:11px;color:#f87171;${bd};text-align:right;white-space:nowrap">${info.unpaid || info.unpaid === 0 ? fmtMoney(info.unpaid) : '—'}</td>
-          <td style="padding:8px 10px;${bd};white-space:nowrap"><span style="padding:2px 8px;border-radius:9999px;font-size:9px;font-weight:700;background:${sm.color}22;color:${sm.color}">${fmt(sm.label)}</span></td>
+          <td style="padding:8px 10px;${bd};white-space:nowrap">${statusCell}</td>
           <td style="padding:8px 10px;${bd};text-align:center">${_noteBtn(a.note)}</td>
-          <td style="padding:8px 10px;${bd};white-space:nowrap">
-            <button onclick="event.stopPropagation();openAdminAlarmModal('${a.id}')" style="padding:3px 10px;background:#042f2e;border:1px solid #0d9488;border-radius:6px;color:#2dd4bf;font-size:9px;font-weight:700;cursor:pointer">${I18N.t('Detay')}</button>
+          <td style="padding:8px 10px;${bd}">
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+              ${outcomeBtns}
+              <button onclick="event.stopPropagation();openAdminAlarmModal('${a.id}')" style="padding:3px 10px;background:#042f2e;border:1px solid #0d9488;border-radius:6px;color:#2dd4bf;font-size:9px;font-weight:700;cursor:pointer">${I18N.t('Detay')}</button>
+            </div>
           </td>
         </tr>`;
       }).join('');
     }
 
+
+    // ── Bugün Gelecekler: sonuç kaydı (Geldi/Muayene/İşlemlerde/Gelemedi) ──
+    // team-leader.html'deki promptOutcome/quickAction akışının admin/RM karşılığı;
+    // aksiyon alarm_logs'a + Logs'a yazılır, böylece Aktivite sayfasında görünür.
+    let _amOutcomePendingId = null;
+    let _amOutcomePendingStatus = null;
+
+    const _AM_OUTCOME_META = {
+      arrived:    { title: 'Hasta Geldi', icon: 'M5 13l4 4L19 7', bg: '#052e16', bd: '#166534', color: '#4ade80', btn: '#166534', btnText: 'Kaydet' },
+      examined:   { title: 'Muayenede',   icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', bg: '#083344', bd: '#0e7490', color: '#67e8f9', btn: '#0e7490', btnText: 'Kaydet' },
+      processing: { title: 'İşlemlerde',  icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', bg: '#042f2e', bd: '#0d9488', color: '#2dd4bf', btn: '#0d9488', btnText: 'Kaydet' },
+      no_show:    { title: 'Gelemedi — Açıklama', icon: 'M6 18L18 6M6 6l12 12', bg: '#450a0a', bd: '#7f1d1d', color: '#f87171', btn: '#7f1d1d', btnText: 'Gelemedi Olarak İşaretle' },
+    };
+
+    function promptAdminOutcome(alarmId, status, patientName) {
+      _amOutcomePendingId = alarmId;
+      _amOutcomePendingStatus = status;
+      const meta = _AM_OUTCOME_META[status] || _AM_OUTCOME_META.no_show;
+      const note  = document.getElementById('amOutcomeNote');
+      note.value = '';
+      document.getElementById('amOutcomeNoteCount').textContent = '0 / 200';
+      document.getElementById('amOutcomePatientName').textContent = patientName || '';
+      document.getElementById('amOutcomeTitle').textContent = I18N.t(meta.title);
+      const iw = document.getElementById('amOutcomeIconWrap');
+      iw.style.background = meta.bg; iw.style.borderColor = meta.bd;
+      const ic = document.getElementById('amOutcomeIcon');
+      ic.style.color = meta.color;
+      ic.querySelector('path').setAttribute('d', meta.icon);
+      const btn = document.getElementById('amOutcomeConfirmBtn');
+      btn.style.background = meta.btn;
+      btn.textContent = I18N.t(meta.btnText);
+      document.getElementById('amOutcomeModal').style.display = 'flex';
+      setTimeout(() => note.focus(), 50);
+    }
+
+    function closeAdminOutcomeModal() {
+      document.getElementById('amOutcomeModal').style.display = 'none';
+      _amOutcomePendingId = null;
+      _amOutcomePendingStatus = null;
+    }
+
+    function confirmAdminOutcome() {
+      if (!_amOutcomePendingId) return;
+      const alarmId = _amOutcomePendingId;
+      const status = _amOutcomePendingStatus || 'no_show';
+      const note = document.getElementById('amOutcomeNote').value.trim();
+      closeAdminOutcomeModal();
+      adminQuickAction(alarmId, status, note);
+    }
+
+    // Alarmı hem görünür listede hem ham listede güncelle — yıl filtresi
+    // _amAlarmsRaw'dan türediği için ikisi ayrışırsa değişiklik kaybolur.
+    function _amPatchLocalAlarm(alarmId, updates) {
+      [adminAllAlarms, _amAlarmsRaw].forEach(list => {
+        const i = (list || []).findIndex(x => x.id === alarmId);
+        if (i >= 0) list[i] = { ...list[i], ...updates };
+      });
+    }
+
+    async function adminQuickAction(alarmId, status, note) {
+      const a = adminAllAlarms.find(x => x.id === alarmId);
+      if (!a) return;
+      const now = new Date().toISOString();
+      const who = (currentUser && (currentUser.fullName || currentUser.username)) || 'Admin';
+      const updates = { status, actioned_at: now };
+      if (['no_show','closed'].includes(status)) {
+        updates.closed_at    = now;
+        updates.closed_by    = who;
+        updates.close_reason = status === 'no_show' ? 'no_show' : 'completed';
+      }
+      if (note) updates.note = note;
+      try {
+        const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
+        const r = await fetch(`${SUPABASE_URL}/rest/v1/alarms?id=eq.${alarmId}`, { method: 'PATCH', headers: H, body: JSON.stringify(updates) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const actionType = ['no_show','closed'].includes(status) ? 'closed' : 'status_change';
+        fetch(`${SUPABASE_URL}/rest/v1/alarm_logs`, {
+          method: 'POST', headers: H,
+          body: JSON.stringify({
+            alarm_id: alarmId, deal_id: a.deal_id || null,
+            action_type: actionType, old_status: a.status, new_status: status,
+            note: note || null, action_by: who, action_role: currentUser.role,
+          }),
+        }).catch(() => {});
+        addLog(actionType === 'closed' ? 'ALARM_CLOSE' : 'ALARM_QUICK_ACTION', `Hızlı aksiyon: ${a.status} → ${status}`, a.deal_id, a.deal_name);
+        _amPatchLocalAlarm(alarmId, updates);
+        updateAdminAlarmKPIs();
+        renderRegionPanels();
+        renderAdminToday();
+        renderAdminAlarmTable();
+        showSiteNotice('Güncellendi.', 'success');
+      } catch(e) { showSiteNotice('Hata: ' + e.message, 'error'); }
+    }
+
+    async function adminUndoQuickAction(alarmId) {
+      const a = adminAllAlarms.find(x => x.id === alarmId);
+      if (!a) return;
+      const prevStatus = a.status;
+      const who = (currentUser && (currentUser.fullName || currentUser.username)) || 'Admin';
+      const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
+      try {
+        const statusUpdates = { status: 'open', actioned_at: null, closed_at: null, closed_by: null, close_reason: null };
+        const r = await fetch(`${SUPABASE_URL}/rest/v1/alarms?id=eq.${alarmId}`, { method: 'PATCH', headers: H, body: JSON.stringify(statusUpdates) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        // Notu ayrı PATCH ile sil — bazı PostgREST sürümlerinde birleşik
+        // PATCH'te null değer atlanabiliyor (bkz. team-leader.html aynı düzeltme).
+        await fetch(`${SUPABASE_URL}/rest/v1/alarms?id=eq.${alarmId}`, { method: 'PATCH', headers: H, body: JSON.stringify({ note: null }) }).catch(() => {});
+        fetch(`${SUPABASE_URL}/rest/v1/alarm_logs`, {
+          method: 'POST', headers: H,
+          body: JSON.stringify({
+            alarm_id: alarmId, deal_id: a.deal_id || null,
+            action_type: 'reopened', old_status: prevStatus, new_status: 'open',
+            note: null, action_by: who, action_role: currentUser.role,
+          }),
+        }).catch(() => {});
+        addLog('ALARM_REOPEN', `Alarm yeniden açıldı (${prevStatus} → open)`, a.deal_id, a.deal_name);
+        _amPatchLocalAlarm(alarmId, { ...statusUpdates, note: null });
+        updateAdminAlarmKPIs();
+        renderRegionPanels();
+        renderAdminToday();
+        renderAdminAlarmTable();
+        showSiteNotice('Aksiyon geri alındı.', 'success');
+      } catch(e) { showSiteNotice('Hata: ' + e.message, 'error'); }
+    }
 
     // ── Kapatılan Alarmlar (G — "Kapatıldı" statüsü aldıktan sonra alarm
     // sekmelerinden kaybolan kayıtların "nereye gittiğini" gösteren rapor) ──
