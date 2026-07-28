@@ -1055,11 +1055,11 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
           <div>
             <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Ara</label>
-            <input id="amSearch" type="text" placeholder="Hasta, danışman..." oninput="_dbRenderAdminAlarmTbl()" class="filter-select">
+            <input id="amSearch" type="text" placeholder="Hasta, danışman..." oninput="_dbAmScopeFilterChange()" class="filter-select">
           </div>
           <div>
             <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Bölge</label>
-            <select id="amFilterRegion" onchange="renderAdminAlarmTable()" class="filter-select">
+            <select id="amFilterRegion" onchange="_amOnScopeFilterChange()" class="filter-select">
               <option value="">Tüm Bölgeler</option>
               <option value="Istanbul">Istanbul</option>
               <option value="Morocco">Morocco</option>
@@ -1067,19 +1067,19 @@
           </div>
           <div>
             <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Team Leader</label>
-            <select id="amFilterTeam" onchange="renderAdminAlarmTable()" class="filter-select">
+            <select id="amFilterTeam" onchange="_amOnScopeFilterChange()" class="filter-select">
               <option value="">Tüm Team Leader'lar</option>
             </select>
           </div>
           <div>
             <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Deal Owner</label>
-            <select id="amFilterOwner" onchange="renderAdminAlarmTable()" class="filter-select">
+            <select id="amFilterOwner" onchange="_amOnScopeFilterChange()" class="filter-select">
               <option value="">Tüm Deal Owner'lar</option>
             </select>
           </div>
           <div>
             <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Alarm Tipi</label>
-            <select id="amFilterType" onchange="renderAdminAlarmTable()" class="filter-select">
+            <select id="amFilterType" onchange="_amOnScopeFilterChange()" class="filter-select">
               <option value="">Tüm Tipler</option>
               <option value="arrival_approaching">Arrival Yaklaşıyor</option>
               <option value="visit_approaching">Vizit Yaklaşıyor</option>
@@ -1103,7 +1103,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div>
             <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Stage</label>
-            <select id="amFilterStage" onchange="renderAdminAlarmTable()" class="filter-select">
+            <select id="amFilterStage" onchange="_amOnScopeFilterChange()" class="filter-select">
               <option value="">Tüm Stage'ler</option>
               <option value="Waiting appointment">Waiting appointment</option>
               <option value="Reservation Pending">Reservation Pending</option>
@@ -1118,7 +1118,7 @@
           </div>
           <div>
             <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Payment / Ticket</label>
-            <select id="amFilterPft" onchange="renderAdminAlarmTable()" class="filter-select">
+            <select id="amFilterPft" onchange="_amOnScopeFilterChange()" class="filter-select">
               <option value="">Tümü</option>
               <option value="Payment">Payment</option>
               <option value="Flight Ticket">Flight Ticket</option>
@@ -2267,7 +2267,7 @@
     function selectAdminTeam(team) {
       const sel = document.getElementById('amFilterTeam');
       if (sel) sel.value = team;
-      renderAdminAlarmTable();
+      _amOnScopeFilterChange();
       const section = document.getElementById('adminAlarmTbody')?.closest('.bg-gray-900');
       if (section) section.scrollIntoView({ behavior:'smooth', block:'start' });
     }
@@ -4771,20 +4771,38 @@
       return dr !== null && Math.abs(dr) <= n;
     }
 
-    // Aktif gün filtresine göre daraltılmış alarm listesi — KPI kartları ve
-    // bölge panelleri bunun üzerinden hesaplanır ki chip'e basınca üstteki
-    // rakamlar da değişsin. Filtre boşsa tüm liste döner.
-    // KPI kartları + bölge panellerinin hesaplandığı "istatistik tabanı":
-    // seçili yıl (adminAllAlarms zaten yıla göre süzülü) + gün penceresi +
-    // Arrival tarih aralığı + Created tarih aralığı. Status/tip/arama gibi
-    // tablo-özel filtreler burada UYGULANMAZ (KPI'lar zaten duruma göre sayar).
+    // Aktif filtrelere göre daraltılmış alarm listesi — KPI kartları ve
+    // bölge panelleri bunun üzerinden hesaplanır ki Bölge/Team Leader/Deal
+    // Owner/Alarm Tipi/Stage/Payment-Ticket/Arama/Gün Penceresi/Tarih
+    // aralığı filtrelerinden HERHANGİ biri değişince üstteki rakamlar da
+    // aşağıdaki Alarm Listesi tablosuyla birebir tutarlı değişsin.
+    // "Durum" (amFilterStatus) dropdown'ı BİLEREK hariç tutulur: KPI
+    // kartlarının (Açık/Bugün/Gecikmiş/No-show vb.) her biri zaten kendi
+    // duruma göre alt kümesini sayıyor — status dropdown'ı da üstüne
+    // uygulanırsa (ör. "Kapatıldı" seçilince) neredeyse tüm kartlar
+    // anlamsızca sıfıra düşer. Status filtresi bu yüzden sadece tabloyu
+    // daraltır (bkz. filterAdminAlarms), diğer tüm filtreler burada da geçerli.
     function _amDayWindowAlarms() {
+      const region = document.getElementById('amFilterRegion')?.value || '';
+      const team   = document.getElementById('amFilterTeam')?.value || '';
+      const owner  = document.getElementById('amFilterOwner')?.value || '';
+      const type   = document.getElementById('amFilterType')?.value || '';
+      const stage  = document.getElementById('amFilterStage')?.value || '';
+      const pft    = document.getElementById('amFilterPft')?.value || '';
+      const search = (document.getElementById('amSearch')?.value || '').toLowerCase();
       const thresh = document.getElementById('amFilterThresh')?.value || '';
       const dFrom  = document.getElementById('amDateFrom')?.value || '';
       const dTo    = document.getElementById('amDateTo')?.value || '';
       const cFrom  = document.getElementById('amCreatedFrom')?.value || '';
       const cTo    = document.getElementById('amCreatedTo')?.value || '';
       let list = adminAllAlarms;
+      if (region) list = list.filter(a => a.region === region);
+      if (team)   list = list.filter(a => (TeamMap.normalize(a.team) || a.team) === team);
+      if (owner)  list = list.filter(a => a.deal_owner === owner);
+      if (type)   list = list.filter(a => a.alarm_type === type);
+      if (stage)  list = list.filter(a => (_amDealInfoFor(a.deal_id)?.stage || '') === stage);
+      if (pft)    list = list.filter(a => a.payment_or_flight_ticket === pft);
+      if (search) list = list.filter(a => [a.deal_name, a.deal_owner, a.team, a.region].join(' ').toLowerCase().includes(search));
       if (thresh) { const n = Number(thresh); list = list.filter(a => _amInDayWindow(a, n)); }
       if (dFrom) list = list.filter(a => a.reference_date && a.reference_date >= dFrom);
       if (dTo)   list = list.filter(a => a.reference_date && a.reference_date <= dTo);
@@ -4833,6 +4851,17 @@
       renderRegionPanels();
       renderAdminAlarmTable();
     }
+
+    // Bölge/Team Leader/Deal Owner/Alarm Tipi/Stage/Payment-Ticket/Arama
+    // filtrelerinden biri değişince: tarih filtresiyle aynı desen — hem
+    // tablo hem üstteki KPI kartları hem bölge panelleri güncellensin
+    // (ör. bir danışman seçilince o danışmanın rakamları her yerde yansısın).
+    function _amOnScopeFilterChange() {
+      updateAdminAlarmKPIs();
+      renderRegionPanels();
+      renderAdminAlarmTable();
+    }
+    const _dbAmScopeFilterChange = _debounce(() => _amOnScopeFilterChange(), 300);
 
     function _amRenderDayFilterChips() {
       const sel = document.getElementById('amFilterThresh');
