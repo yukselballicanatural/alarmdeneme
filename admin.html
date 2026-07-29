@@ -1730,12 +1730,11 @@
         </div>
         <select id="wrmResultCode" style="background:#111827;border:1px solid #374151;color:#e2e8f0;border-radius:8px;padding:9px 12px;font-size:12px;width:100%">
           <option value="">— Seç —</option>
-          <option value="Ödeme Tamamlandı">Ödeme Tamamlandı</option>
-          <option value="Kısmi Ödeme Alındı">Kısmi Ödeme Alındı</option>
-          <option value="Ödeme Sözü Alındı">Ödeme Sözü Alındı</option>
-          <option value="İndirim/Tutar Güncellendi">İndirim/Tutar Güncellendi (Yeniden Kontrol Et)</option>
-          <option value="Finansa Aktarıldı">Finansa Aktarıldı</option>
-          <option value="Won Statüsü Hatalı">Won Statüsü Hatalı</option>
+          <option value="Eksik Ödeme Kontrolü İletildi">Eksik Ödeme Kontrolü İletildi</option>
+          <option value="Paid Amount Güncelleme Talebi İletildi">Paid Amount Güncelleme Talebi İletildi</option>
+          <option value="Deal Amount Kontrolü İletildi">Deal Amount Kontrolü İletildi</option>
+          <option value="Ödeme Kaydı Kontrolü İletildi">Ödeme Kaydı Kontrolü İletildi</option>
+          <option value="Won Stage Kontrolü İletildi">Won Stage Kontrolü İletildi</option>
         </select>
       </div>
       <div style="margin-bottom:14px">
@@ -3718,34 +3717,32 @@
     // yorum). action: 'close' | 'cancel' | 'followup' (Takip Tarihi zorunlu) | 'wait'
     const AAM_RESULT_CODE_MAP = {
       today: [
-        { code: 'Hasta Geldi',        action: 'close' },
-        { code: 'Geliş Teyit Edildi', action: 'followup' },
-        { code: 'Tarih Değiştirildi', action: 'wait' },
-        { code: 'Hasta Gelmedi',      action: 'followup' },
-        { code: 'Ulaşılamadı',        action: 'followup' },
-        { code: 'İptal Edildi',       action: 'cancel' },
+        { code: 'Hasta Geliş Durumu Kontrolü İletildi',      action: 'wait' },
+        { code: 'Arrival Date Güncelleme Talebi İletildi',   action: 'wait' },
+        { code: 'Hasta Statüsü Güncelleme Talebi İletildi', action: 'wait' },
+        { code: 'No Show Kontrolü İletildi',                 action: 'wait' },
+        { code: 'İptal Durumu Kontrolü İletildi',            action: 'wait' },
       ],
       approaching: [
-        { code: 'Geliş Teyit Edildi',        action: 'followup' },
-        { code: 'Yeni Takip Tarihi Verildi', action: 'followup' },
-        { code: 'Arrival Date Güncellendi',  action: 'wait' },
-        { code: 'Ulaşılamadı',               action: 'followup' },
-        { code: 'İptal Talebi',              action: 'followup' },
+        { code: 'Hasta Geliş Teyidi Talebi İletildi',      action: 'wait' },
+        { code: 'Arrival Date Kontrolü İletildi',           action: 'wait' },
+        { code: 'Seyahat Planı Kontrolü İletildi',          action: 'wait' },
+        { code: 'Uçuş Bilgisi Güncelleme Talebi İletildi', action: 'wait' },
+        { code: 'Hasta ile İletişim Talebi İletildi',       action: 'wait' },
       ],
       missing: [
-        { code: 'Arrival Date Eklendi',     action: 'wait' },
-        { code: 'Karar Bekleniyor',         action: 'followup' },
-        { code: 'Seyahat Planı Bekleniyor', action: 'followup' },
-        { code: 'Ulaşılamadı',              action: 'followup' },
-        { code: 'Deal Geçersiz',            action: 'close' },
+        { code: 'Arrival Date Ekleme Talebi İletildi',       action: 'wait' },
+        { code: 'Hastadan Tarih Bilgisi Alınması İletildi',  action: 'wait' },
+        { code: 'Seyahat Planı Takibi İletildi',             action: 'wait' },
+        { code: 'Deal Geçerlilik Kontrolü İletildi',         action: 'wait' },
+        { code: 'İptal Bilgisi Güncelleme Talebi İletildi',  action: 'wait' },
       ],
       overdue: [
-        { code: 'Hasta Geldi',        action: 'close' },
-        { code: 'Yeni Tarih Verildi', action: 'wait' },
-        { code: 'No Show',            action: 'followup' },
-        { code: 'Ulaşılamadı',        action: 'followup' },
-        { code: 'İptal Edildi',       action: 'cancel' },
-        { code: 'Tarih Hatalıydı',    action: 'wait' },
+        { code: 'Gecikmiş Arrival Date Kontrolü İletildi',  action: 'wait' },
+        { code: 'Yeni Arrival Date Girilmesi İletildi',     action: 'wait' },
+        { code: 'Hasta Geliş Durumu Kontrolü İletildi',     action: 'wait' },
+        { code: 'No Show Güncelleme Talebi İletildi',       action: 'wait' },
+        { code: 'İptal Statüsü Güncelleme Talebi İletildi', action: 'wait' },
       ],
     };
 
@@ -3971,12 +3968,14 @@
 
     function _amOpenWhatsAppLink(alarm, resultCode, note, digits) {
       const dealLink = alarm.deal_id ? `https://crm.zoho.eu/crm/org20093728832/tab/Potentials/${alarm.deal_id}` : '';
+      const isEN = I18N.getLang() === 'en';
+      const translatedCode = isEN ? I18N.t(resultCode) : resultCode;
       const lines = [
-        'Alarm Result Code Update',
+        isEN ? 'Alarm Result Code Update' : 'Alarm Güncelleme Bildirimi',
         `Deal: ${alarm.deal_name || '-'}`,
         dealLink ? `Link: ${dealLink}` : '',
-        `Result Code: ${resultCode}`,
-        note ? `Note: ${note}` : '',
+        `${isEN ? 'Result Code' : 'Sonuç Kodu'}: ${translatedCode}`,
+        note ? `${isEN ? 'Note' : 'Not'}: ${note}` : '',
       ].filter(Boolean);
       window.open(`https://wa.me/${digits}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener');
     }
