@@ -222,7 +222,7 @@
     .aam-info-label { font-size:9px; color:#475569; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:3px; }
     .aam-info-val { font-size:12px; color:#e2e8f0; font-weight:500; overflow-wrap:anywhere; }
     .aam-info-section { grid-column:1/-1; font-size:10px; font-weight:700; color:#818cf8; text-transform:uppercase; letter-spacing:0.08em; }
-    textarea.aam-note { background:#111827; border:1px solid #374151; color:#e2e8f0; border-radius:10px; padding:10px 12px; font-size:12px; width:100%; resize:vertical; min-height:80px; box-sizing:border-box; }
+    textarea.aam-note { background:#111827; border:1px solid #374151; color:#e2e8f0; border-radius:10px; padding:10px 12px; font-size:12px; width:100%; resize:vertical; min-height:120px; box-sizing:border-box; }
     textarea.aam-note:focus { outline:none; border-color:#0d9488; }
   </style>
 </head>
@@ -1601,9 +1601,9 @@
       <div style="margin-bottom:18px">
         <label style="font-size:11px;color:#94a3b8;font-weight:700;display:flex;justify-content:space-between;margin-bottom:6px">
           <span>Not <span style="color:#475569;font-weight:400">(isteğe bağlı)</span></span>
-          <span id="aamNoteCount" style="color:#475569;font-weight:400;font-size:10px">0 / 100</span>
+          <span id="aamNoteCount" style="color:#475569;font-weight:400;font-size:10px">0 / 300</span>
         </label>
-        <textarea id="aamNoteInput" class="aam-note" maxlength="100" placeholder="Hasta durumu, arama sonucu, notlar... (en fazla 100 karakter)" oninput="document.getElementById('aamNoteCount').textContent=this.value.length+' / 100'"></textarea>
+        <textarea id="aamNoteInput" class="aam-note" maxlength="300" placeholder="Hasta durumu, arama sonucu, notlar... (en fazla 300 karakter)" oninput="document.getElementById('aamNoteCount').textContent=this.value.length+' / 300'"></textarea>
       </div>
 
       <div id="aamHistoryWrap" style="display:none;margin-bottom:18px">
@@ -3861,7 +3861,7 @@
       }
       document.getElementById('aamNewStatus').value = '';
       document.getElementById('aamNoteInput').value = '';
-      const aamNC = document.getElementById('aamNoteCount'); if (aamNC) aamNC.textContent = '0 / 100';
+      const aamNC = document.getElementById('aamNoteCount'); if (aamNC) aamNC.textContent = '0 / 300';
       document.getElementById('aamCloseReasonWrap').style.display = 'none';
       populateAamResultCodeSelect(a);
       document.getElementById('adminAlarmModal').classList.add('open');
@@ -4248,19 +4248,18 @@
         <td style="color:#f1f5f9;font-weight:700">${fmt(row.fullName)}</td>
         <td style="color:#64748b;font-size:10px">${fmt(row.team)}</td>
         <td>
-          <div class="ade-att-dd" id="adeAttDd-${i}">
-            <div class="ade-att-trigger" onclick="_adeAttToggle(${i},event)"
-              style="background:${isOff ? '#450a0a' : '#052e16'};border-color:${isOff ? '#7f1d1d' : '#166534'};color:${isOff ? '#f87171' : '#4ade80'}">
-              <span class="ade-att-dot" style="background:${isOff ? '#f87171' : '#4ade80'}"></span>
+          <div style="position:relative;display:inline-block">
+            <div id="adeAttTrigger-${i}" onclick="_adeAttToggle(${i},event)" style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:9999px;font-size:10.5px;font-weight:800;cursor:pointer;border:1px solid;user-select:none;background:${isOff ? '#450a0a' : '#052e16'};border-color:${isOff ? '#7f1d1d' : '#166534'};color:${isOff ? '#f87171' : '#4ade80'}">
+              <span id="adeAttDot-${i}" style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:${isOff ? '#f87171' : '#4ade80'}"></span>
               <span id="adeAttLabel-${i}">${isOff ? 'Off Day' : 'Working'}</span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
             </div>
-            <div class="ade-att-menu">
-              <div class="ade-att-opt" onclick="_adeAttSelect(${i},'working')" style="color:#4ade80">
-                <span class="ade-att-dot" style="background:#4ade80"></span> Working
+            <div id="adeAttMenu-${i}" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:9999;background:#0f172a;border:1px solid #334155;border-radius:12px;padding:5px;min-width:130px;box-shadow:0 16px 40px rgba(0,0,0,.75)">
+              <div onclick="_adeAttSelect(${i},'working')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;color:#4ade80" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='transparent'">
+                <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0"></span> Working
               </div>
-              <div class="ade-att-opt" onclick="_adeAttSelect(${i},'off')" style="color:#f87171">
-                <span class="ade-att-dot" style="background:#f87171"></span> Off Day
+              <div onclick="_adeAttSelect(${i},'off')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;color:#f87171" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='transparent'">
+                <span style="width:7px;height:7px;border-radius:50%;background:#f87171;flex-shrink:0"></span> Off Day
               </div>
             </div>
           </div>
@@ -4296,33 +4295,33 @@
       I18N.translateDOM(tbody);
     }
 
+    function _adeAttCloseAll() {
+      document.querySelectorAll('[id^="adeAttMenu-"]').forEach(m => { m.style.display = 'none'; });
+    }
     function _adeAttToggle(i, e) {
       e.stopPropagation();
-      const dd = document.getElementById('adeAttDd-' + i);
-      if (!dd) return;
-      const isOpen = dd.classList.contains('open');
-      document.querySelectorAll('.ade-att-dd.open').forEach(el => el.classList.remove('open'));
-      if (!isOpen) dd.classList.add('open');
+      const menu = document.getElementById('adeAttMenu-' + i);
+      if (!menu) return;
+      const isOpen = menu.style.display === 'block';
+      _adeAttCloseAll();
+      if (!isOpen) menu.style.display = 'block';
     }
     function _adeAttSelect(i, value) {
-      const dd = document.getElementById('adeAttDd-' + i);
-      if (dd) dd.classList.remove('open');
-      const trigger = dd ? dd.querySelector('.ade-att-trigger') : null;
+      _adeAttCloseAll();
+      const trigger = document.getElementById('adeAttTrigger-' + i);
       const label   = document.getElementById('adeAttLabel-' + i);
-      const dot     = trigger ? trigger.querySelector('.ade-att-dot') : null;
+      const dot     = document.getElementById('adeAttDot-' + i);
       const isOff   = value === 'off';
       if (trigger) {
-        trigger.style.background    = isOff ? '#450a0a' : '#052e16';
-        trigger.style.borderColor   = isOff ? '#7f1d1d' : '#166534';
-        trigger.style.color         = isOff ? '#f87171' : '#4ade80';
+        trigger.style.background  = isOff ? '#450a0a' : '#052e16';
+        trigger.style.borderColor = isOff ? '#7f1d1d' : '#166534';
+        trigger.style.color       = isOff ? '#f87171' : '#4ade80';
       }
       if (dot)   dot.style.background = isOff ? '#f87171' : '#4ade80';
       if (label) label.textContent    = isOff ? 'Off Day' : 'Working';
       adeOnAttendanceChange(i, value);
     }
-    document.addEventListener('click', function() {
-      document.querySelectorAll('.ade-att-dd.open').forEach(el => el.classList.remove('open'));
-    });
+    document.addEventListener('click', _adeAttCloseAll);
 
     function adeOnAttendanceChange(i, value) {
       const row = adeRows[i];
