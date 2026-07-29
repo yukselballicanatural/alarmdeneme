@@ -276,7 +276,7 @@ end;
 $$;
 
 grant execute on function public.admin_deal_summary_debug() to anon, authenticated;
-
+ 
 -- Test:
 -- select public.admin_deal_summary();
 -- select public.admin_deal_summary(array['Askif Team'], '2026-01-01', '2026-12-31');

@@ -4474,6 +4474,7 @@
     saveSpan.id = 'tmSaveCancel-' + i;
     saveSpan.innerHTML = `<button onclick="saveMember(${i})" style="padding:5px 12px;background:#0f766e;border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px">Kaydet</button><button onclick="cancelMember(${i})" style="padding:5px 10px;background:#1e293b;border:1px solid #334155;border-radius:7px;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px">İptal</button>`;
     td.insertBefore(saveSpan, editBtn);
+    I18N.translateDOM(saveSpan);
     const phoneInp = document.getElementById('tmPhone-' + i);
     phoneInp && phoneInp.focus();
   }
@@ -4482,8 +4483,8 @@
     const row = document.getElementById('tmRow-' + i);
     if (!row) return;
     const m = _teamMembers[i];
-    const rowBg = i % 2 === 0 ? '' : 'background:#0a1120';
     row.outerHTML = _tmRowHtml(m, i);
+    I18N.translateDOM(document.getElementById('tmRow-' + i));
   }
 
   function _validatePhone(suffix) {
@@ -4528,7 +4529,10 @@
       m.phone = phone;
       m.email = email;
       const row = document.getElementById('tmRow-' + i);
-      if (row) row.outerHTML = _tmRowHtml(m, i);
+      if (row) {
+        row.outerHTML = _tmRowHtml(m, i);
+        I18N.translateDOM(document.getElementById('tmRow-' + i));
+      }
       showNotice('Kaydedildi.', 'success');
     } catch(e) {
       showNotice('Kaydedilemedi: ' + e.message, 'error');
