@@ -2919,7 +2919,6 @@
     const resultCode = document.getElementById('alarmResultCode').value;
     if (!resultCode) { showNotice('WhatsApp bildirimi göndermek için önce bir Sonuç Kodu seçin.', 'error'); return; }
     const note = document.getElementById('noteInput').value.trim();
-    if (!note) { showNotice('WhatsApp bildirimi göndermek için Not alanını doldurun.', 'error'); return; }
     sendResultCodeWhatsApp(currentAlarm, resultCode, note);
   }
 
@@ -4099,7 +4098,6 @@
     const code = document.getElementById('wrResultCode').value;
     if (!code) { showNotice('WhatsApp bildirimi göndermek için önce bir Sonuç Kodu seçin.', 'error'); return; }
     const note = document.getElementById('wrReasonNote').value.trim();
-    if (!note) { showNotice('WhatsApp bildirimi göndermek için Açıklama alanını doldurun.', 'error'); return; }
     sendResultCodeWhatsApp({ deal_id: d.id, deal_name: d.deal_name, deal_owner: d.deal_owner }, code, note);
   }
 

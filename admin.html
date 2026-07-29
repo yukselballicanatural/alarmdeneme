@@ -3400,7 +3400,6 @@
       const code = document.getElementById('wrmResultCode').value;
       if (!code) { showSiteNotice(I18N.t('WhatsApp bildirimi göndermek için önce bir Sonuç Kodu seçin.'), 'error'); return; }
       const note = document.getElementById('wrmReasonNote').value.trim();
-      if (!note) { showSiteNotice(I18N.t('WhatsApp bildirimi göndermek için Açıklama alanını doldurun.'), 'error'); return; }
       sendAdminResultCodeWhatsApp({ deal_id: d.id, deal_name: d.deal_name, deal_owner: d.deal_owner }, code, note);
     }
 
@@ -3931,7 +3930,6 @@
       const resultCode = document.getElementById('aamResultCode').value;
       if (!resultCode) { showSiteNotice(I18N.t('WhatsApp bildirimi göndermek için önce bir Sonuç Kodu seçin.'), 'error'); return; }
       const note = document.getElementById('aamNoteInput').value.trim();
-      if (!note) { showSiteNotice(I18N.t('WhatsApp bildirimi göndermek için Not alanını doldurun.'), 'error'); return; }
       sendAdminResultCodeWhatsApp(currentAdminAlarm, resultCode, note);
     }
 
