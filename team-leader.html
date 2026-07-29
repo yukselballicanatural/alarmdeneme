@@ -2959,12 +2959,14 @@
 
   function _openWhatsAppLink(alarm, resultCode, note, digits) {
     const dealLink = alarm.deal_id ? `https://crm.zoho.eu/crm/org20093728832/tab/Potentials/${alarm.deal_id}` : '';
+    const isEN = I18N.getLang() === 'en';
+    const translatedCode = isEN ? I18N.t(resultCode) : resultCode;
     const lines = [
-      'Alarm Result Code Update',
+      isEN ? 'Alarm Result Code Update' : 'Alarm Güncelleme Bildirimi',
       `Deal: ${alarm.deal_name || '-'}`,
       dealLink ? `Link: ${dealLink}` : '',
-      `Result Code: ${resultCode}`,
-      note ? `Note: ${note}` : '',
+      `${isEN ? 'Result Code' : 'Sonuç Kodu'}: ${translatedCode}`,
+      note ? `${isEN ? 'Note' : 'Not'}: ${note}` : '',
     ].filter(Boolean);
     window.open(`https://wa.me/${digits}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener');
   }
