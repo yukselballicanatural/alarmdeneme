@@ -2919,6 +2919,7 @@
     const resultCode = document.getElementById('alarmResultCode').value;
     if (!resultCode) { showNotice('WhatsApp bildirimi göndermek için önce bir Sonuç Kodu seçin.', 'error'); return; }
     const note = document.getElementById('noteInput').value.trim();
+    if (!note) { showNotice('WhatsApp bildirimi göndermek için Not alanını doldurun.', 'error'); return; }
     sendResultCodeWhatsApp(currentAlarm, resultCode, note);
   }
 
@@ -2968,7 +2969,7 @@
       `${isEN ? 'Result Code' : 'Sonuç Kodu'}: ${translatedCode}`,
       note ? `${isEN ? 'Note' : 'Not'}: ${note}` : '',
     ].filter(Boolean);
-    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener');
+    window.open(`https://web.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener');
   }
 
   // Danışmanın telefonu Takımımdaki Kişiler'de kayıtlı değilse, WhatsApp
@@ -4098,6 +4099,7 @@
     const code = document.getElementById('wrResultCode').value;
     if (!code) { showNotice('WhatsApp bildirimi göndermek için önce bir Sonuç Kodu seçin.', 'error'); return; }
     const note = document.getElementById('wrReasonNote').value.trim();
+    if (!note) { showNotice('WhatsApp bildirimi göndermek için Açıklama alanını doldurun.', 'error'); return; }
     sendResultCodeWhatsApp({ deal_id: d.id, deal_name: d.deal_name, deal_owner: d.deal_owner }, code, note);
   }
 
@@ -4402,6 +4404,7 @@
   // kullandığı yetkilendirilmiş api/team-members.js (service_role, token'daki
   // kullanıcının GÜNCEL takımıyla server-side kapsamlanmış) üzerinden okunur/yazılır.
   let _teamMembers = [];
+  let _tmEditingIndex = -1; // aynı anda sadece bir satır düzenlenebilsin diye
 
   async function loadTeamMembers() {
     const loading = document.getElementById('tmLoading');
@@ -4458,11 +4461,14 @@
     wrap.style.display = 'block';
     tbody.innerHTML = _teamMembers.map((m, i) => _tmRowHtml(m, i)).join('');
     I18N.translateDOM(tbody);
+    _tmEditingIndex = -1;
   }
 
   function editMember(i) {
     const m = _teamMembers[i];
     if (!m) return;
+    if (_tmEditingIndex !== -1 && _tmEditingIndex !== i) cancelMember(_tmEditingIndex);
+    _tmEditingIndex = i;
     const phoneCell = document.getElementById('tmPhoneCell-' + i);
     const emailCell = document.getElementById('tmEmailCell-' + i);
     const editBtn   = document.getElementById('tmEditBtn-' + i);
@@ -4487,6 +4493,7 @@
     const m = _teamMembers[i];
     row.outerHTML = _tmRowHtml(m, i);
     I18N.translateDOM(document.getElementById('tmRow-' + i));
+    if (_tmEditingIndex === i) _tmEditingIndex = -1;
   }
 
   function _validatePhone(suffix) {
@@ -4535,6 +4542,7 @@
         row.outerHTML = _tmRowHtml(m, i);
         I18N.translateDOM(document.getElementById('tmRow-' + i));
       }
+      if (_tmEditingIndex === i) _tmEditingIndex = -1;
       showNotice('Kaydedildi.', 'success');
     } catch(e) {
       showNotice('Kaydedilemedi: ' + e.message, 'error');

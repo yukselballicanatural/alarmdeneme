@@ -3400,6 +3400,7 @@
       const code = document.getElementById('wrmResultCode').value;
       if (!code) { showSiteNotice(I18N.t('WhatsApp bildirimi göndermek için önce bir Sonuç Kodu seçin.'), 'error'); return; }
       const note = document.getElementById('wrmReasonNote').value.trim();
+      if (!note) { showSiteNotice(I18N.t('WhatsApp bildirimi göndermek için Açıklama alanını doldurun.'), 'error'); return; }
       sendAdminResultCodeWhatsApp({ deal_id: d.id, deal_name: d.deal_name, deal_owner: d.deal_owner }, code, note);
     }
 
@@ -3930,6 +3931,7 @@
       const resultCode = document.getElementById('aamResultCode').value;
       if (!resultCode) { showSiteNotice(I18N.t('WhatsApp bildirimi göndermek için önce bir Sonuç Kodu seçin.'), 'error'); return; }
       const note = document.getElementById('aamNoteInput').value.trim();
+      if (!note) { showSiteNotice(I18N.t('WhatsApp bildirimi göndermek için Not alanını doldurun.'), 'error'); return; }
       sendAdminResultCodeWhatsApp(currentAdminAlarm, resultCode, note);
     }
 
@@ -3977,7 +3979,7 @@
         `${isEN ? 'Result Code' : 'Sonuç Kodu'}: ${translatedCode}`,
         note ? `${isEN ? 'Note' : 'Not'}: ${note}` : '',
       ].filter(Boolean);
-      window.open(`https://wa.me/${digits}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener');
+      window.open(`https://web.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener');
     }
 
     // Danışmanın telefonu Takımımdaki Kişiler'de kayıtlı değilse, WhatsApp
