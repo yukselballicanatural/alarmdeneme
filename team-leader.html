@@ -1287,12 +1287,11 @@
       </div>
       <select id="wrResultCode" class="filter-sel" style="width:100%" onchange="_wrOnResultCodeChange()">
         <option value="">— Seç —</option>
-        <option value="Ödeme Tamamlandı" data-action="wait">Ödeme Tamamlandı</option>
-        <option value="Kısmi Ödeme Alındı" data-action="followup">Kısmi Ödeme Alındı</option>
-        <option value="Ödeme Sözü Alındı" data-action="followup">Ödeme Sözü Alındı</option>
-        <option value="İndirim/Tutar Güncellendi" data-action="wait">İndirim/Tutar Güncellendi (Yeniden Kontrol Et)</option>
-        <option value="Finansa Aktarıldı" data-action="followup">Finansa Aktarıldı</option>
-        <option value="Won Statüsü Hatalı" data-action="wait">Won Statüsü Hatalı</option>
+        <option value="Eksik Ödeme Kontrolü İletildi" data-action="wait">Eksik Ödeme Kontrolü İletildi</option>
+        <option value="Paid Amount Güncelleme Talebi İletildi" data-action="wait">Paid Amount Güncelleme Talebi İletildi</option>
+        <option value="Deal Amount Kontrolü İletildi" data-action="wait">Deal Amount Kontrolü İletildi</option>
+        <option value="Ödeme Kaydı Kontrolü İletildi" data-action="wait">Ödeme Kaydı Kontrolü İletildi</option>
+        <option value="Won Stage Kontrolü İletildi" data-action="wait">Won Stage Kontrolü İletildi</option>
       </select>
     </div>
     <div style="margin-bottom:14px">
@@ -2654,34 +2653,32 @@
   //   'wait'     → Zoho Güncellemesini / Otomatik Kapanışı Bekle (sadece kaydeder, durum değişmez)
   const RESULT_CODE_MAP = {
     today: [
-      { code: 'Hasta Geldi',        action: 'close' },
-      { code: 'Geliş Teyit Edildi', action: 'followup' },
-      { code: 'Tarih Değiştirildi', action: 'wait' },
-      { code: 'Hasta Gelmedi',      action: 'followup' },
-      { code: 'Ulaşılamadı',        action: 'followup' },
-      { code: 'İptal Edildi',       action: 'cancel' },
+      { code: 'Hasta Geliş Durumu Kontrolü İletildi',  action: 'wait' },
+      { code: 'Arrival Date Güncelleme Talebi İletildi', action: 'wait' },
+      { code: 'Hasta Statüsü Güncelleme Talebi İletildi', action: 'wait' },
+      { code: 'No Show Kontrolü İletildi',              action: 'wait' },
+      { code: 'İptal Durumu Kontrolü İletildi',         action: 'wait' },
     ],
     approaching: [
-      { code: 'Geliş Teyit Edildi',       action: 'followup' },
-      { code: 'Yeni Takip Tarihi Verildi', action: 'followup' },
-      { code: 'Arrival Date Güncellendi', action: 'wait' },
-      { code: 'Ulaşılamadı',              action: 'followup' },
-      { code: 'İptal Talebi',             action: 'followup' },
+      { code: 'Hasta Geliş Teyidi Talebi İletildi',       action: 'wait' },
+      { code: 'Arrival Date Kontrolü İletildi',            action: 'wait' },
+      { code: 'Seyahat Planı Kontrolü İletildi',           action: 'wait' },
+      { code: 'Uçuş Bilgisi Güncelleme Talebi İletildi',  action: 'wait' },
+      { code: 'Hasta ile İletişim Talebi İletildi',        action: 'wait' },
     ],
     missing: [
-      { code: 'Arrival Date Eklendi',       action: 'wait' },
-      { code: 'Karar Bekleniyor',           action: 'followup' },
-      { code: 'Seyahat Planı Bekleniyor',   action: 'followup' },
-      { code: 'Ulaşılamadı',                action: 'followup' },
-      { code: 'Deal Geçersiz',              action: 'close' },
+      { code: 'Arrival Date Ekleme Talebi İletildi',        action: 'wait' },
+      { code: 'Hastadan Tarih Bilgisi Alınması İletildi',   action: 'wait' },
+      { code: 'Seyahat Planı Takibi İletildi',              action: 'wait' },
+      { code: 'Deal Geçerlilik Kontrolü İletildi',          action: 'wait' },
+      { code: 'İptal Bilgisi Güncelleme Talebi İletildi',   action: 'wait' },
     ],
     overdue: [
-      { code: 'Hasta Geldi',        action: 'close' },
-      { code: 'Yeni Tarih Verildi', action: 'wait' },
-      { code: 'No Show',            action: 'followup' },
-      { code: 'Ulaşılamadı',        action: 'followup' },
-      { code: 'İptal Edildi',       action: 'cancel' },
-      { code: 'Tarih Hatalıydı',    action: 'wait' },
+      { code: 'Gecikmiş Arrival Date Kontrolü İletildi', action: 'wait' },
+      { code: 'Yeni Arrival Date Girilmesi İletildi',    action: 'wait' },
+      { code: 'Hasta Geliş Durumu Kontrolü İletildi',    action: 'wait' },
+      { code: 'No Show Güncelleme Talebi İletildi',      action: 'wait' },
+      { code: 'İptal Statüsü Güncelleme Talebi İletildi', action: 'wait' },
     ],
   };
 
