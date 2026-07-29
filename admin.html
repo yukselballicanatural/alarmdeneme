@@ -1464,6 +1464,7 @@
             <option value="reopened">Yeniden Açıldı</option>
             <option value="note">Not Eklendi</option>
             <option value="auto_closed">Otomatik Kapatıldı</option>
+            <option value="whatsapp_sent">WhatsApp Gönderildi</option>
           </select>
         </div>
         <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Deal Owner</label>
@@ -2632,7 +2633,7 @@
       document.getElementById('actCount').textContent = data.length;
       if (!data.length) { tbody.innerHTML = ''; empty.textContent = I18N.t('Kayıtlı aksiyon bulunamadı.'); empty.style.display = 'block'; return; }
       empty.style.display = 'none';
-      const actionLabels = { status_change:I18N.t('Durum Değişti'), note:I18N.t('Not Eklendi'), closed:I18N.t('Kapatıldı'), reopened:I18N.t('Yeniden Açıldı'), created:I18N.t('Oluşturuldu'), auto_closed:I18N.t('Otomatik Kapatıldı') };
+      const actionLabels = { status_change:I18N.t('Durum Değişti'), note:I18N.t('Not Eklendi'), closed:I18N.t('Kapatıldı'), reopened:I18N.t('Yeniden Açıldı'), created:I18N.t('Oluşturuldu'), auto_closed:I18N.t('Otomatik Kapatıldı'), whatsapp_sent:I18N.t('WhatsApp Gönderildi') };
       tbody.innerHTML = data.slice(0, 500).map(l => {
         const act = actionLabels[l.action_type] || l.action_type;
         const transition = (l.new_status && l.new_status !== l.old_status)
@@ -3911,7 +3912,7 @@
         if (!r.ok) return;
         const logs = await r.json();
         if (!Array.isArray(logs) || !logs.length) return;
-        const actionLabels = { status_change:I18N.t('Durum Değişti'), note:I18N.t('Not Eklendi'), closed:I18N.t('Kapatıldı'), reopened:I18N.t('Yeniden Açıldı'), created:I18N.t('Oluşturuldu'), auto_closed:I18N.t('Otomatik Kapatıldı') };
+        const actionLabels = { status_change:I18N.t('Durum Değişti'), note:I18N.t('Not Eklendi'), closed:I18N.t('Kapatıldı'), reopened:I18N.t('Yeniden Açıldı'), created:I18N.t('Oluşturuldu'), auto_closed:I18N.t('Otomatik Kapatıldı'), whatsapp_sent:I18N.t('WhatsApp Gönderildi') };
         list.innerHTML = logs.map(l => `
           <div style="padding:6px 0;border-bottom:1px solid #0f172a">
             <div style="display:flex;justify-content:space-between;gap:8px">
@@ -3978,6 +3979,14 @@
         note ? `${isEN ? 'Note' : 'Not'}: ${note}` : '',
       ].filter(Boolean);
       window.open(`https://web.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener');
+      if (alarm.id) {
+        const logNote = `Sonuç Kodu: ${resultCode}${note ? ' | Not: ' + note : ''}`;
+        const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
+        fetch(`${SUPABASE_URL}/rest/v1/alarm_logs`, {
+          method: 'POST', headers: H,
+          body: JSON.stringify({ alarm_id: alarm.id, deal_id: alarm.deal_id || null, action_type: 'whatsapp_sent', old_status: alarm.status || null, new_status: alarm.status || null, note: logNote, action_by: currentUser.fullName || currentUser.username, action_role: currentUser.role }),
+        }).catch(() => {});
+      }
     }
 
     // Danışmanın telefonu Takımımdaki Kişiler'de kayıtlı değilse, WhatsApp

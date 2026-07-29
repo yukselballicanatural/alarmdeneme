@@ -2769,7 +2769,7 @@
       if (!r.ok) return;
       const logs = await r.json();
       if (!Array.isArray(logs) || !logs.length) return;
-      const actionLabels = { status_change:I18N.t('Durum Değişti'), note:I18N.t('Not Eklendi'), closed:I18N.t('Kapatıldı'), reopened:I18N.t('Yeniden Açıldı'), created:I18N.t('Oluşturuldu'), auto_closed:I18N.t('Otomatik Kapatıldı') };
+      const actionLabels = { status_change:I18N.t('Durum Değişti'), note:I18N.t('Not Eklendi'), closed:I18N.t('Kapatıldı'), reopened:I18N.t('Yeniden Açıldı'), created:I18N.t('Oluşturuldu'), auto_closed:I18N.t('Otomatik Kapatıldı'), whatsapp_sent:I18N.t('WhatsApp Gönderildi') };
       list.innerHTML = logs.map(l => `
         <div style="padding:6px 0;border-bottom:1px solid #0f172a">
           <div style="display:flex;justify-content:space-between;gap:8px">
@@ -2969,6 +2969,10 @@
       note ? `${isEN ? 'Note' : 'Not'}: ${note}` : '',
     ].filter(Boolean);
     window.open(`https://web.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener');
+    if (alarm.id) {
+      const logNote = `Sonuç Kodu: ${resultCode}${note ? ' | Not: ' + note : ''}`;
+      logAlarmAction(alarm, 'whatsapp_sent', alarm.status, alarm.status, logNote);
+    }
   }
 
   // Danışmanın telefonu Takımımdaki Kişiler'de kayıtlı değilse, WhatsApp
