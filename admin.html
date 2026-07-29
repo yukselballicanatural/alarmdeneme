@@ -4237,9 +4237,9 @@
         <td style="color:#f1f5f9;font-weight:700">${fmt(row.fullName)}</td>
         <td style="color:#64748b;font-size:10px">${fmt(row.team)}</td>
         <td>
-          <select onchange="adeOnAttendanceChange(${i},this.value)" class="ade-att-sel" style="background:${isOff ? 'rgba(248,113,113,.1)' : 'rgba(74,222,128,.1)'};border-color:${isOff ? 'rgba(248,113,113,.35)' : 'rgba(74,222,128,.35)'};color:${isOff ? '#f87171' : '#4ade80'}">
-            <option value="working" ${!isOff ? 'selected' : ''}>Working</option>
-            <option value="off" ${isOff ? 'selected' : ''}>Off Day</option>
+          <select onchange="adeOnAttendanceChange(${i},this.value)" class="ade-att-sel" style="background:${isOff ? '#450a0a' : '#052e16'};border-color:${isOff ? '#7f1d1d' : '#166534'};color:${isOff ? '#f87171' : '#4ade80'}">
+            <option value="working" ${!isOff ? 'selected' : ''} style="background:#1e293b;color:#4ade80">Working</option>
+            <option value="off" ${isOff ? 'selected' : ''} style="background:#1e293b;color:#f87171">Off Day</option>
           </select>
         </td>
         <td class="ade-num">${_adeNum(i, 'customers', row.customers)}</td>
