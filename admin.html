@@ -176,6 +176,17 @@
     .ade-input-time { width:58px; } .ade-input-money { width:82px; }
     .ade-att-sel { border:1px solid; border-radius:9999px; font-size:10.5px; font-weight:800; padding:5px 10px; cursor:pointer; }
     .ade-att-sel:focus { outline:none; box-shadow:0 0 0 3px rgba(99,102,241,.15); }
+    /* Custom attendance dropdown */
+    .ade-att-dd { position:relative; display:inline-block; }
+    .ade-att-trigger { display:inline-flex; align-items:center; gap:6px; padding:5px 10px 5px 10px; border-radius:9999px; font-size:10.5px; font-weight:800; cursor:pointer; border:1px solid; user-select:none; transition:opacity .12s,box-shadow .12s; white-space:nowrap; }
+    .ade-att-trigger:hover { opacity:.85; }
+    .ade-att-trigger svg { flex-shrink:0; transition:transform .15s; }
+    .ade-att-dd.open .ade-att-trigger svg { transform:rotate(180deg); }
+    .ade-att-menu { display:none; position:absolute; top:calc(100% + 5px); left:0; z-index:600; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:5px; min-width:130px; box-shadow:0 16px 40px rgba(0,0,0,.6); }
+    .ade-att-dd.open .ade-att-menu { display:block; }
+    .ade-att-opt { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; transition:background .1s; white-space:nowrap; }
+    .ade-att-opt:hover { background:#1e293b; }
+    .ade-att-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
     .ade-badge { padding:4px 10px; border-radius:9999px; font-size:9.5px; font-weight:800; white-space:nowrap; display:inline-block; }
     .ade-badge-saved { background:rgba(22,163,74,.15); color:#4ade80; border:1px solid rgba(74,222,128,.25); }
     .ade-badge-pending { background:rgba(251,191,36,.12); color:#fbbf24; border:1px solid rgba(251,191,36,.25); }
@@ -4237,10 +4248,22 @@
         <td style="color:#f1f5f9;font-weight:700">${fmt(row.fullName)}</td>
         <td style="color:#64748b;font-size:10px">${fmt(row.team)}</td>
         <td>
-          <select onchange="adeOnAttendanceChange(${i},this.value)" class="ade-att-sel" style="background:${isOff ? '#450a0a' : '#052e16'};border-color:${isOff ? '#7f1d1d' : '#166534'};color:${isOff ? '#f87171' : '#4ade80'}">
-            <option value="working" ${!isOff ? 'selected' : ''} style="background:#1e293b;color:#4ade80">Working</option>
-            <option value="off" ${isOff ? 'selected' : ''} style="background:#1e293b;color:#f87171">Off Day</option>
-          </select>
+          <div class="ade-att-dd" id="adeAttDd-${i}">
+            <div class="ade-att-trigger" onclick="_adeAttToggle(${i},event)"
+              style="background:${isOff ? '#450a0a' : '#052e16'};border-color:${isOff ? '#7f1d1d' : '#166534'};color:${isOff ? '#f87171' : '#4ade80'}">
+              <span class="ade-att-dot" style="background:${isOff ? '#f87171' : '#4ade80'}"></span>
+              <span id="adeAttLabel-${i}">${isOff ? 'Off Day' : 'Working'}</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+            <div class="ade-att-menu">
+              <div class="ade-att-opt" onclick="_adeAttSelect(${i},'working')" style="color:#4ade80">
+                <span class="ade-att-dot" style="background:#4ade80"></span> Working
+              </div>
+              <div class="ade-att-opt" onclick="_adeAttSelect(${i},'off')" style="color:#f87171">
+                <span class="ade-att-dot" style="background:#f87171"></span> Off Day
+              </div>
+            </div>
+          </div>
         </td>
         <td class="ade-num">${_adeNum(i, 'customers', row.customers)}</td>
         <td class="ade-num">${_adeNum(i, 'total_calls', row.total_calls)}</td>
@@ -4272,6 +4295,34 @@
       tbody.innerHTML = view.map(({ row, i }) => _adeRowHtml(row, i)).join('');
       I18N.translateDOM(tbody);
     }
+
+    function _adeAttToggle(i, e) {
+      e.stopPropagation();
+      const dd = document.getElementById('adeAttDd-' + i);
+      if (!dd) return;
+      const isOpen = dd.classList.contains('open');
+      document.querySelectorAll('.ade-att-dd.open').forEach(el => el.classList.remove('open'));
+      if (!isOpen) dd.classList.add('open');
+    }
+    function _adeAttSelect(i, value) {
+      const dd = document.getElementById('adeAttDd-' + i);
+      if (dd) dd.classList.remove('open');
+      const trigger = dd ? dd.querySelector('.ade-att-trigger') : null;
+      const label   = document.getElementById('adeAttLabel-' + i);
+      const dot     = trigger ? trigger.querySelector('.ade-att-dot') : null;
+      const isOff   = value === 'off';
+      if (trigger) {
+        trigger.style.background    = isOff ? '#450a0a' : '#052e16';
+        trigger.style.borderColor   = isOff ? '#7f1d1d' : '#166534';
+        trigger.style.color         = isOff ? '#f87171' : '#4ade80';
+      }
+      if (dot)   dot.style.background = isOff ? '#f87171' : '#4ade80';
+      if (label) label.textContent    = isOff ? 'Off Day' : 'Working';
+      adeOnAttendanceChange(i, value);
+    }
+    document.addEventListener('click', function() {
+      document.querySelectorAll('.ade-att-dd.open').forEach(el => el.classList.remove('open'));
+    });
 
     function adeOnAttendanceChange(i, value) {
       const row = adeRows[i];
