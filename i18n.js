@@ -440,6 +440,17 @@
       'All actions on this alarm will be deleted: status returns to Open; result code, note, follow-up date and closing details are cleared. The alarm returns to its untouched state. This cannot be undone.',
     'Alarm sıfırlandı — hiç işlem yapılmamış hâline döndü.': 'Alarm reset — restored to its untouched state.',
     'Sıfırlanamadı: ': 'Reset failed: ',
+    'Takımı Güncelle': 'Update Team',
+    "Zoho'da": 'In Zoho',
+    'Zoho deal verisi bu danışmanı farklı bir takımda gösteriyor': 'Zoho deal data shows this consultant in a different team',
+    'Bu danışmanın takımı Users tablosunda güncellenecek. Takım bilgisi hangi verileri görebileceğini de belirler — takım lideri panelleri ve günlük ekip girişi buna göre kapsanır.':
+      "This consultant's team will be updated in the Users table. Team membership also determines what data they can see — team leader panels and daily team entry are scoped by it.",
+    // Şablonlu: kısa/genel kelimeleri ('deal', 'gündeki') ayrı anahtar yapmak
+    // riskli — translateDOM tüm metin düğümlerini eşleştirdiği için başka
+    // yerlerdeki aynı kelimeler de çevrilirdi.
+    'Kaynak: son {d} gündeki {n} deal': 'Source: last {d} days, {n} deals',
+    'Takım güncellendi.': 'Team updated.',
+    'Takım güncellenemedi: ': 'Team update failed: ',
     'Hasta, Deal ID veya danışman ara...': 'Search patient, Deal ID or consultant...',
     'Takımımdaki Kişiler': 'My Team Members',
     "Takımındaki danışmanların WhatsApp numaraları — bir numara girip kaydettikten sonra \"WhatsApp'tan Yaz\" ile o kişiyle sohbet doğrudan açılır.":

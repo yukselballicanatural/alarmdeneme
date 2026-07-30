@@ -4160,11 +4160,116 @@
         _amTmPopulateTeamFilter();
         loading.classList.add('hidden');
         renderAdminTeamMembers();
+        // Takım kayması taramasını arka planda yap — tablo beklemesin.
+        _amTmDetectTeamDrift().then(() => renderAdminTeamMembers()).catch(() => {});
       } catch(e) {
         loading.classList.add('hidden');
         empty.textContent = I18N.t('Yükleme hatası: ') + e.message;
         empty.classList.remove('hidden');
       }
+    }
+
+    // ── Takım kayması tespiti (Users."Takim Adi" ↔ Zoho) ────────────────
+    // Bu sayfa Users tablosunu her açılışta CANLI okuyor (cache yok), ama
+    // Users."Takim Adi" değerini Zoho'dan güncelleyen hiçbir mekanizma yok —
+    // dış senkron yalnızca deals tablosuna yazıyor. Bir danışman Zoho'da takım
+    // değiştirdiğinde burada ESKİ liderinin altında görünmeye devam ediyordu
+    // (ör. Adam Naciri, Moutaharrik Team'e geçtiği hâlde Sara/Giulia takımında).
+    //
+    // deals.team NEDEN DOĞRUDAN KAYNAK OLARAK KULLANILMIYOR: o alan deal'in
+    // oluşturulduğu andaki takımın anlık görüntüsü, kişinin güncel takımı
+    // değil. Örnek: Marco Rahimi'nin 55 deal'i "Farah Team" derken 2024
+    // tarihli bir deal'i "Team Leader - Moutaharrik Marco" diyor — "en son
+    // deal'in takımı kazanır" kuralı sürekli oynar ve Users."Takim Adi"
+    // yetkilendirme kapsamını (TL'nin hangi takımın verisini gördüğünü)
+    // belirlediği için hatalı yazma doğrudan güvenlik sorunu olur.
+    //
+    // Bu yüzden SESSİZCE YAZMIYORUZ: yalnızca yüksek güvenli kaymayı işaretleyip
+    // admin'e tek tıkla uygulama sunuyoruz. Güven ölçütü — son 60 gündeki TÜM
+    // dealleri tek bir takımda birleşiyor VE o takım TeamMap'te tanınan bir
+    // satış takımı (Profclinic/Finance/VIP gibi satış dışı birimler önerilmez).
+    const _TM_DRIFT_WINDOW_DAYS = 60;
+    let _amTmDrift = new Map();   // fullName(lower) → { from, to, dealCount }
+
+    async function _amTmDetectTeamDrift() {
+      _amTmDrift = new Map();
+      if (typeof TeamMap === 'undefined' || !(_amTeamMembers || []).length) return;
+      const since = new Date(Date.now() - _TM_DRIFT_WINDOW_DAYS * 86400000).toISOString();
+      const h = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
+      // RM ise yalnızca kendi bölgesi — /api/team-members ile aynı kapsam.
+      const teamQ = window.rmTeams ? `&team=${TeamMap.inFilter(window.rmTeams)}` : '';
+
+      const rows = [];
+      let offset = 0;
+      while (true) {
+        const url = `${SUPABASE_URL}/rest/v1/deals?select=deal_owner,team` +
+          `&created_time=gte.${encodeURIComponent(since)}${teamQ}&limit=1000&offset=${offset}`;
+        const r = await fetch(url, { headers: h });
+        if (!r.ok) return;
+        const batch = await r.json();
+        if (!Array.isArray(batch) || !batch.length) break;
+        rows.push(...batch);
+        if (batch.length < 1000) break;
+        offset += 1000;
+        if (rows.length >= 20000) break;   // emniyet supabı
+      }
+
+      // deal_owner → pencere içindeki farklı (kanonik) takımlar
+      const byOwner = new Map();
+      for (const row of rows) {
+        const owner = String(row.deal_owner || '').trim().toLowerCase();
+        if (!owner) continue;
+        const canonical = TeamMap.normalize(row.team);
+        if (!canonical) continue;          // satış dışı birim / tanınmayan ad
+        let e = byOwner.get(owner);
+        if (!e) { e = { teams: new Set(), count: 0 }; byOwner.set(owner, e); }
+        e.teams.add(canonical);
+        e.count++;
+      }
+
+      for (const m of _amTeamMembers) {
+        const key = String(m.fullName || '').trim().toLowerCase();
+        const e = byOwner.get(key);
+        if (!e || e.teams.size !== 1) continue;   // sinyal yok ya da çelişkili
+        const zohoTeam = [...e.teams][0];
+        const usersTeam = TeamMap.normalize(m.team) || String(m.team || '').trim();
+        if (!usersTeam || usersTeam === zohoTeam) continue;
+        _amTmDrift.set(key, { from: m.team, to: zohoTeam, dealCount: e.count });
+      }
+    }
+
+    // Kaymayı uygula — Users."Takim Adi"yi Zoho'daki takıma çeker. Yetkilendirme
+    // kapsamını değiştirdiği için onay diyalogu arkasında.
+    function amTmApplyDrift(idx) {
+      const m = _amTmFiltered[idx];
+      if (!m) return;
+      const d = _amTmDrift.get(String(m.fullName || '').trim().toLowerCase());
+      if (!d) return;
+      const body = I18N.t('Bu danışmanın takımı Users tablosunda güncellenecek. Takım bilgisi hangi verileri görebileceğini de belirler — takım lideri panelleri ve günlük ekip girişi buna göre kapsanır.')
+        + `<br><br><b>${_escHtml(m.fullName)}</b><br>${_escHtml(d.from || '—')} → <b>${_escHtml(d.to)}</b>`
+        + `<br><span style="font-size:11px;color:#64748b">${_escHtml(
+             I18N.t('Kaynak: son {d} gündeki {n} deal')
+               .replace('{d}', _TM_DRIFT_WINDOW_DAYS).replace('{n}', d.dealCount)
+           )}</span>`;
+      showSiteConfirm('Takımı Güncelle', body, 'Güncelle', '#0d9488', () => _amTmDoApplyDrift(m, d));
+    }
+
+    async function _amTmDoApplyDrift(m, d) {
+      try {
+        const token = (currentUser && currentUser.token) || '';
+        const r = await fetch('/api/admin-users', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ username: m.username, payload: { 'Takim Adi': d.to } }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+        addLog('USER_TEAM_SYNC', `Takım güncellendi: ${m.fullName} — ${d.from || '—'} → ${d.to} (son ${_TM_DRIFT_WINDOW_DAYS} gündeki ${d.dealCount} deal'e göre)`);
+        showSiteNotice('Takım güncellendi.', 'success');
+        // Günlük Ekip Girişi üye cache'i artık bayat — sıfırla.
+        _adeMembersCache = null;
+        loadAdminTeamMembers();
+      } catch(e) { showSiteNotice('Takım güncellenemedi: ' + e.message, 'error'); }
     }
 
     function _amTmPopulateTeamFilter() {
@@ -4176,6 +4281,19 @@
       sel.value = teams.includes(cur) ? cur : '';
     }
 
+    // Takım kayması varsa takım hücresinin altında uyarı + tek tıkla düzeltme.
+    function _amTmDriftBadge(m, i) {
+      const d = _amTmDrift.get(String(m.fullName || '').trim().toLowerCase());
+      if (!d) return '';
+      return `<div style="margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="padding:2px 7px;border-radius:6px;background:#78350f;border:1px solid #b45309;color:#fbbf24;font-size:9px;font-weight:800;white-space:nowrap"
+              title="${I18N.t('Zoho deal verisi bu danışmanı farklı bir takımda gösteriyor')} — ${_escHtml(d.dealCount + " deal / " + _TM_DRIFT_WINDOW_DAYS + " gün")}">
+          ${I18N.t("Zoho'da")}: ${_escHtml(d.to)}
+        </span>
+        <button onclick="amTmApplyDrift(${i})" style="padding:2px 8px;background:#042f2e;border:1px solid #0d9488;border-radius:6px;color:#2dd4bf;font-size:9px;font-weight:800;cursor:pointer;white-space:nowrap">${I18N.t('Güncelle')}</button>
+      </div>`;
+    }
+
     function _amTmRowHtml(m, i) {
       const rowBg = i % 2 === 0 ? '' : 'background:#0a1120';
       const phoneDisplay = m.phone || '<span style="color:#334155">—</span>';
@@ -4183,7 +4301,7 @@
       return `<tr id="tmRow-${i}" style="${rowBg};border-bottom:1px solid #1e293b">
         <td style="padding:8px 12px;color:#475569;font-size:11px;white-space:nowrap">${i + 1}</td>
         <td style="padding:8px 12px;color:#f1f5f9;font-weight:600;white-space:nowrap">${_escHtml(m.fullName)}</td>
-        <td style="padding:8px 12px;color:#64748b;font-size:11px;white-space:nowrap">${_escHtml(m.team)}</td>
+        <td style="padding:8px 12px;color:#64748b;font-size:11px;white-space:nowrap">${_escHtml(m.team)}${_amTmDriftBadge(m, i)}</td>
         <td style="padding:8px 12px;color:#64748b;white-space:nowrap">${_escHtml(m.role)}</td>
         <td id="tmPhoneCell-${i}" style="padding:8px 12px;color:#cbd5e1;white-space:nowrap;min-width:170px">${phoneDisplay}</td>
         <td id="tmEmailCell-${i}" style="padding:8px 12px;color:#cbd5e1;min-width:200px">${emailDisplay}</td>

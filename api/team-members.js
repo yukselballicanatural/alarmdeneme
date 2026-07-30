@@ -35,6 +35,7 @@ const REGION_BY_TEAM = {
   'Sara Team - Morocco': 'Morocco',
   'Selma Team - Morocco': 'Morocco',
   'Ramadan Team - Morocco': 'Morocco',
+  'Moutaharrik Team - Morocco': 'Morocco',
 };
 
 function regionForTeam(team) {

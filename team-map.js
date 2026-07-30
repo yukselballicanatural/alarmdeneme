@@ -67,6 +67,17 @@ window.TeamMap = (function () {
       label: 'Ramadan Team', leader: 'Ramadane Abdellatif', region: 'Morocco',
       aliases: ['Ramadan Team - Morocco', 'Team Leader - Abdelatif Ramadan'],
     },
+    // Yeni Morocco takımı — bu haritada HİÇ yoktu. Sonucu: aliasesForRegion
+    // ('Morocco') bu takımı döndürmediği için Morocco bölge yöneticisinin
+    // panelinde (Dealler, İptal, Won, KPI'lar — hepsi team=in.(...) ile
+    // filtreli) bu takımın dealleri TAMAMEN görünmüyordu; normalize() de null
+    // döndüğü için takım adı ham hâliyle kalıyordu.
+    // leader: Users tablosundan doğrulanamadı (bu ad yalnızca ekran etiketinde
+    // kullanılıyor, boşsa gösterilmiyor) — takım lideri adı netleşince doldur.
+    'Moutaharrik Team - Morocco': {
+      label: 'Moutaharrik Team', leader: '', region: 'Morocco',
+      aliases: ['Moutaharrik Team - Morocco', 'Team Leader - Moutaharrik Marco'],
+    },
   };
 
   // Karşılaştırma anahtarı: lowercase + tüm boşluk dizilerini tek boşluğa indir
