@@ -539,7 +539,7 @@
       <div class="filter-row">
         <div class="filter-group" style="flex:1 1 200px;min-width:200px">
           <label class="filter-label">Ara</label>
-          <input id="dealSearch" class="filter-inp" placeholder="Hasta veya danışman ara..." oninput="debounceDealSearch()">
+          <input id="dealSearch" class="filter-inp" placeholder="Hasta, Deal ID veya danışman ara..." oninput="debounceDealSearch()">
         </div>
         <div class="filter-group" style="width:160px">
           <label class="filter-label">Stage</label>
@@ -1383,6 +1383,7 @@
 <script src="team-map.js"></script>
 <script src="alarm-engine.js"></script>
 <script src="export-util.js"></script>
+<script src="deals-live.js"></script>
 <script>
   let SUPABASE_URL = '';
   let SUPABASE_KEY = '';
@@ -3231,6 +3232,22 @@
     dealSearchTimer = setTimeout(() => loadDeals(true), 400);
   }
 
+  // "Hasta veya danışman ara..." kutusu yalnızca deal_name'de arıyordu: Deal ID
+  // (ör. 0726-53325) yazan kullanıcı deal tabloda DURUYOR olsa bile hiç sonuç
+  // alamıyor, "bizim sistemimizde yok" sanıyordu — placeholder'ın vaat ettiği
+  // danışman adı da aranmıyordu. Artık hasta adı + Deal ID + danışman birlikte.
+  function _dealSearchQuery(search) {
+    const s = String(search || '').trim();
+    if (!s) return '';
+    // PostgREST or=(...) sözdiziminde virgül alan, parantez grup ayırıcısı —
+    // arama metninde geçerse sorguyu bozar, temizle.
+    const safe = s.replace(/[(),]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!safe) return '';
+    return '&or=' + encodeURIComponent(
+      `(deal_name.ilike.*${safe}*,deal_id.ilike.*${safe}*,deal_owner.ilike.*${safe}*)`
+    );
+  }
+
   function dealChangePage(dir) {
     const maxPage = Math.ceil(dealTotalCount / DEAL_PAGE_SIZE) - 1;
     dealCurrentPage = Math.max(0, Math.min(maxPage, dealCurrentPage + dir));
@@ -3267,12 +3284,16 @@
     });
   }
 
-  async function loadDeals(resetPage = false) {
+  // silent=true: "yükleniyor" göstergesi ve tablonun kaybolması YOK — canlı
+  // yenileme (deals-live) kullanıcı tabloyu okurken kesintiye uğratmasın diye.
+  async function loadDeals(resetPage = false, silent = false) {
     if (resetPage) dealCurrentPage = 0;
     const dealLoadEl = document.getElementById('dealLoading');
     const dealWrap   = document.getElementById('dealTableWrap');
-    if (dealLoadEl) dealLoadEl.style.display = 'flex';
-    if (dealWrap)   dealWrap.style.display   = 'none';
+    if (!silent) {
+      if (dealLoadEl) dealLoadEl.style.display = 'flex';
+      if (dealWrap)   dealWrap.style.display   = 'none';
+    }
 
     try {
       const H = {
@@ -3300,7 +3321,7 @@
         url += `&team=${TeamMap.inFilter(TeamMap.aliasesForRegion(getRegion(currentUser)))}`;
       }
       if (stage)  url += `&stage=eq.${encodeURIComponent(stage)}`;
-      if (search) url += `&deal_name=ilike.*${encodeURIComponent(search)}*`;
+      url += _dealSearchQuery(search);
       if (owner)  url += `&deal_owner=ilike.*${encodeURIComponent(owner)}*`;
       if (dateFrom) url += `&arrival_date=gte.${encodeURIComponent(dateFrom)}`;
       if (dateTo)   url += `&arrival_date=lte.${encodeURIComponent(dateTo)}`;
@@ -3345,7 +3366,10 @@
       // seti kullandığı için tablo sayfası ile karışmaz.
       if (_dealsViewMode === 'kanban') loadTlKanban();
     } catch(e) {
-      showNotice('Deallar yüklenemedi: ' + e.message, 'error');
+      // Sessiz yenilemede hata kullanıcıyı rahatsız etmesin — ekranda zaten
+      // geçerli (biraz eski) veri duruyor, sonraki tur yeniden dener.
+      if (!silent) showNotice('Deallar yüklenemedi: ' + e.message, 'error');
+      else console.warn('deals silent refresh:', e.message);
     } finally {
       if (dealLoadEl) dealLoadEl.style.display = 'none';
       if (dealWrap)   dealWrap.style.display   = (_dealsViewMode === 'table') ? 'block' : 'none';
@@ -3418,7 +3442,7 @@
       if (!isRM && currentUser.team) base += `&team=${TeamMap.inFilter(TeamMap.aliasesFor(currentUser.team))}`;
       else if (isRM) base += `&team=${TeamMap.inFilter(TeamMap.aliasesForRegion(getRegion(currentUser)))}`;
       if (stage)  base += `&stage=eq.${encodeURIComponent(stage)}`;
-      if (search) base += `&deal_name=ilike.*${encodeURIComponent(search)}*`;
+      base += _dealSearchQuery(search);
       if (owner)  base += `&deal_owner=ilike.*${encodeURIComponent(owner)}*`;
       if (dateFrom) base += `&arrival_date=gte.${encodeURIComponent(dateFrom)}`;
       if (dateTo)   base += `&arrival_date=lte.${encodeURIComponent(dateTo)}`;
@@ -3515,7 +3539,7 @@
       if (!isRM && currentUser.team) baseUrl += `&team=${TeamMap.inFilter(TeamMap.aliasesFor(currentUser.team))}`;
       else if (isRM) baseUrl += `&team=${TeamMap.inFilter(TeamMap.aliasesForRegion(getRegion(currentUser)))}`;
       if (stage)  baseUrl += `&stage=eq.${encodeURIComponent(stage)}`;
-      if (search) baseUrl += `&deal_name=ilike.*${encodeURIComponent(search)}*`;
+      baseUrl += _dealSearchQuery(search);
       if (owner)  baseUrl += `&deal_owner=ilike.*${encodeURIComponent(owner)}*`;
       if (dateFrom) baseUrl += `&arrival_date=gte.${encodeURIComponent(dateFrom)}`;
       if (dateTo)   baseUrl += `&arrival_date=lte.${encodeURIComponent(dateTo)}`;
@@ -5674,6 +5698,7 @@
       // eşiğini yukarıdaki runEngine zaten kendisi kontrol ediyor).
       setInterval(() => runEngine(false), 15 * 60 * 1000);
       _startLiveRefresh();
+      _startDealsLive();
     } catch(e) {
       sessionStorage.removeItem('nc_current_user');
       window.location.href = 'index.html';
@@ -5696,6 +5721,60 @@
       else if (activeView === 'cancelled') loadCancelledDeals(true);
       else if (activeView === 'won')       loadWonAlarms(true);
     }, 60000);
+  }
+
+  // ── Canlı deal senkronu (deals-live.js) ────────────────────────────
+  // Yukarıdaki _startLiveRefresh yalnızca ALARM tablolarını tazeliyordu;
+  // "Dealler" sayfası açıkken hiç yenilenmiyordu. Zoho senkronu bir deal'in
+  // stage/tutar/Result_Codes/tarih alanlarını değiştirdiğinde ya da takıma
+  // yeni bir deal düştüğünde, sekme kapatılıp açılmadan bunu göremiyorduk.
+  //
+  // Burada tüm listeyi yeniden çekmiyoruz: change feed yalnızca DEĞİŞEN
+  // satırları getiriyor, biz de sadece bir değişiklik OLDUĞUNDA o an açık olan
+  // sayfayı sessizce tazeliyoruz. (Dealler sayfası sunucu taraflı sayfalama +
+  // filtre ile çalıştığı için değişen satırı listeye elle yamamak yanlış olur:
+  // satır o anki filtreye/sayfaya ait olmayabilir — doğru olan sorguyu
+  // tekrarlamak.)
+  let _dealsLive = null;
+  const _dealsLiveStartedAt = new Date().toISOString();
+  function _startDealsLive() {
+    if (_dealsLive || typeof NCDealsLive === 'undefined') return;
+    const isRM = currentUser.role === 'regional-manager';
+    let scopeQuery = '';
+    if (!isRM && currentUser.team) {
+      scopeQuery = `&team=${TeamMap.inFilter(TeamMap.aliasesFor(currentUser.team))}`;
+    } else if (isRM) {
+      scopeQuery = `&team=${TeamMap.inFilter(TeamMap.aliasesForRegion(getRegion(currentUser)))}`;
+    }
+    _dealsLive = NCDealsLive.watch({
+      url: SUPABASE_URL,
+      key: SUPABASE_KEY,
+      // Değişikliği yalnızca SİNYAL olarak kullanıyoruz — ağır kolonlara
+      // (özellikle raw JSONB) gerek yok; yeni deal bildirimi için deal_owner
+      // ve deal_name yeterli.
+      select: 'id,deal_id,deal_name,deal_owner,stage,created_time',
+      scopeQuery,
+      intervalMs: 30000,
+      onRows(rows) {
+        // Takıma YENİ düşen deal'leri ayrıca duyur (created_time damgası
+        // izlemeye başladığımız andan sonraysa gerçekten yeni bir kayıttır).
+        const fresh = rows.filter(r => r.created_time && r.created_time >= _dealsLiveStartedAt);
+        if (fresh.length) {
+          const who = [...new Set(fresh.map(r => r.deal_owner).filter(Boolean))].join(', ');
+          showNotice(
+            `${fresh.length} ${I18N.t('yeni deal takımınıza düştü')}${who ? ' — ' + who : ''}`,
+            'success'
+          );
+        }
+        if (activeView === 'deals') loadDeals(false, true);
+        else if (activeView === 'cancelled') loadCancelledDeals(true);
+        else if (activeView === 'won')       loadWonAlarms(true);
+        // Alarm sayfalarındaki finans kolonları (Tutar/Ödenen/Kalan) deals
+        // tablosundan besleniyor — deal tutarı değiştiyse onlar da tazelensin.
+        else if (['alarms','today'].includes(activeView)) loadAlarms(true);
+      },
+      onError(e) { console.warn('deals-live:', e.message); },
+    });
   }
 </script>
 </body>

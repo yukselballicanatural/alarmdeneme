@@ -432,6 +432,8 @@
     'Lütfen açıklama gir.': 'Please enter a description.',
     'Kaydedilemedi: ': 'Save failed: ',
     'Yükleme hatası: ': 'Load error: ',
+    'yeni deal takımınıza düştü': 'new deal(s) assigned to your team',
+    'Hasta, Deal ID veya danışman ara...': 'Search patient, Deal ID or consultant...',
     'Takımımdaki Kişiler': 'My Team Members',
     "Takımındaki danışmanların WhatsApp numaraları — bir numara girip kaydettikten sonra \"WhatsApp'tan Yaz\" ile o kişiyle sohbet doğrudan açılır.":
       "WhatsApp numbers of your team's consultants — after entering and saving a number, \"Message on WhatsApp\" opens a chat with that person directly.",

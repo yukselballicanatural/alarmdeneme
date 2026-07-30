@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="i18n.js"></script>
   <script src="team-map.js"></script>
+  <script src="deals-live.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* Tüm tablolardaki sütun başlıkları (th) kırmızı — hangi sınıf/inline
@@ -941,6 +942,15 @@
     const _AGENT_CACHE_KEY = 'nc_agent_deals_v1';
     const _AGENT_CACHE_TTL = 5 * 60 * 1000;
 
+    // deals-live.js de aynı kolon listesini kullanıyor — bu yüzden loadData'nın
+    // içinden modül kapsamına çıkarıldı.
+    const DEALS_SELECT = 'id,deal_id,deal_name,deal_owner,team,stage,amount,total_paid_amount,remaining_amount,' +
+      'arrival_date,visit_date_1,visit_date_2,visit_date_3,payment_or_flight_ticket,created_time,' +
+      'result_code,sub_code,agent_note,deal_status,lock_approval_requested,' +
+      'rawLang:raw->>Language,rawAmount:raw->>Amount,rawPaid:raw->>Total_Paid_Amount,' +
+      'rawArrival:raw->>Arrival_Date,rawV1:raw->>Visit_Date,rawV2:raw->>Visit_Date1,rawV3:raw->>Visit_Date2,' +
+      'rawPft:raw->>Payment_Or_Flight_Ticket';
+
     async function loadData(forceRefresh) {
       const spinEl = document.getElementById('loadingState');
       const cardEl = document.getElementById('cardsContainer');
@@ -948,12 +958,7 @@
 
       const dealOwnerName = (currentUser.fullName || '').trim();
       const h = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
-      const SELECT = 'id,deal_id,deal_name,deal_owner,team,stage,amount,total_paid_amount,remaining_amount,' +
-        'arrival_date,visit_date_1,visit_date_2,visit_date_3,payment_or_flight_ticket,created_time,' +
-        'result_code,sub_code,agent_note,deal_status,lock_approval_requested,' +
-        'rawLang:raw->>Language,rawAmount:raw->>Amount,rawPaid:raw->>Total_Paid_Amount,' +
-        'rawArrival:raw->>Arrival_Date,rawV1:raw->>Visit_Date,rawV2:raw->>Visit_Date1,rawV3:raw->>Visit_Date2,' +
-        'rawPft:raw->>Payment_Or_Flight_Ticket';
+      const SELECT = DEALS_SELECT;
 
       async function doFetch() {
         let all = [], offset = 0;
@@ -1030,6 +1035,43 @@
       }
     }
 
+    // ── Canlı deal senkronu ───────────────────────────────────────────
+    // Zoho senkronu (5–20 dk) bir deal'i güncellediğinde veya takım lideri /
+    // admin bir deal'e sonuç kodu yazdığında, açık duran bu sekme eskiden
+    // hiç yenilenmiyordu — yalnızca 5 dk'lık sessionStorage cache'i vardı ve
+    // süresi dolsa bile kendi başına yeni veri çekmiyordu. deals-live.js
+    // yalnızca DEĞİŞEN satırları çekip listeye yerinde işliyor.
+    let _dealsLive = null;
+    function _startDealsLive() {
+      if (_dealsLive || typeof NCDealsLive === 'undefined') return;
+      const dealOwnerName = (currentUser.fullName || '').trim();
+      if (!dealOwnerName) return;
+      _dealsLive = NCDealsLive.watch({
+        url: SUPABASE_URL,
+        key: SUPABASE_KEY,
+        select: DEALS_SELECT,
+        scopeQuery: `&deal_owner=eq.${encodeURIComponent(dealOwnerName)}`,
+        intervalMs: 30000,
+        onRows(rows) {
+          const mapped = mapDeals(rows);
+          const { added, updated } = NCDealsLive.mergeById(allDeals, mapped, d => d['Deal Id']);
+          if (!added && !updated) return;
+          try {
+            sessionStorage.setItem(_AGENT_CACHE_KEY,
+              JSON.stringify({ ts: Date.now(), owner: dealOwnerName, deals: allDeals }));
+          } catch (e) {}
+          populateFilters(allDeals);
+          updateTabBadges();
+          updateKPIs();
+          applyFilters();
+          const lr = document.getElementById('lastRefresh');
+          if (lr) lr.textContent = 'Updated: ' + new Date().toLocaleTimeString();
+          if (added) showSiteNotice(`${added} new deal${added > 1 ? 's' : ''} assigned to you`, 'success');
+        },
+        onError(e) { console.warn('deals-live:', e.message); },
+      });
+    }
+
     (async function init() {
       try {
         await _cfg;
@@ -1046,6 +1088,7 @@
         document.getElementById('userAvatar').textContent = (session.fullName || 'A')[0].toUpperCase();
         document.getElementById('langToggleMount').innerHTML = I18N.renderToggleButton();
         loadData();
+        _startDealsLive();
       } catch(e) { sessionStorage.removeItem('nc_current_user'); window.location.href = 'index.html'; }
     })();
   </script>

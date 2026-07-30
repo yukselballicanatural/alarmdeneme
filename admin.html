@@ -10,6 +10,7 @@
   <script src="team-map.js"></script>
   <script src="alarm-engine.js"></script>
   <script src="export-util.js"></script>
+  <script src="deals-live.js"></script>
   <!-- PDF export için (xlsx zaten yukarıda cdn.sheetjs.com'dan yükleniyor) -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -7383,6 +7384,45 @@
       }
     }
 
+    // ── Canlı deal senkronu (deals-live.js) ──────────────────────────
+    // Admin panelinde deal verisi IndexedDB'de 20 dk TTL ile tutuluyor ve
+    // "Dealler" sayfası açıkken periyodik olarak yenilenmiyordu (canlı
+    // yenileme yalnızca alarm sayfalarını kapsıyor, bkz. _startLiveAlarmRefresh).
+    // Zoho senkronu bir deal'in stage/tutar/Result_Codes/tarih alanlarını
+    // değiştirdiğinde veya yeni bir deal düştüğünde bunu sayfa yenilenmeden
+    // göremiyorduk.
+    //
+    // 49K+ satırın tamamını yeniden çekmek yerine change feed yalnızca DEĞİŞEN
+    // satırları getiriyor; allDeals içinde id ile yerinde güncellenip cache de
+    // tazeleniyor. Bu sayede tazelik maliyeti satır sayısından bağımsız.
+    let _dealsLive = null;
+    function _startDealsLive() {
+      if (_dealsLive || typeof NCDealsLive === 'undefined') return;
+      // RM ise kapsam kendi bölgesinin takımlarına kısıtlı — _fetchAllRaw ile
+      // birebir aynı filtre, yoksa bölge dışı satırlar allDeals'e sızardı.
+      const teamQ = window.rmTeams ? `&team=${TeamMap.inFilter(window.rmTeams)}` : '';
+      _dealsLive = NCDealsLive.watch({
+        url: SUPABASE_URL,
+        key: SUPABASE_KEY,
+        select: _DEALS_SELECT,
+        scopeQuery: teamQ + DEALS_2026_Q,
+        intervalMs: 30000,
+        onRows(rows) {
+          // İlk (parçalı) yükleme sürerken araya girme — allDeals o sırada
+          // doldurulup sonunda mapDeals(raw) ile tamamen yeniden atanıyor,
+          // buraya yazdığımız satırlar kaybolurdu.
+          if (_dealsLoadInProgress) return;
+          const { added, updated } = NCDealsLive.mergeById(allDeals, mapDeals(rows), d => d['Deal Id']);
+          if (!added && !updated) return;
+          _setCache(_dealsCacheKey(), allDeals);
+          _applyAll();
+          const lr = document.getElementById('lastRefresh');
+          if (lr) lr.textContent = 'Updated: ' + new Date().toLocaleTimeString();
+        },
+        onError(e) { console.warn('deals-live:', e.message); },
+      });
+    }
+
     // ── Regional Manager desteği ─────────────────────────────────────
     // RM'ler admin panelinin AYNISINI kullanır ama tüm veri kaynakları
     // (deals, alarmlar, RPC özet, İptal/Won listeleri, cache) kendi
@@ -7489,6 +7529,7 @@
         // dakikalık dahili eşiğini (yukarıdaki adminRunEngine) zaten
         // kendisi kontrol ediyor, burada sadece "hatırlatan" bir zamanlayıcı.
         setInterval(() => adminRunEngine(false), 15 * 60 * 1000);
+        _startDealsLive();
       } catch(e) { sessionStorage.removeItem('nc_current_user'); window.location.href = 'index.html'; }
     })();
   </script>
