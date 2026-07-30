@@ -5,6 +5,7 @@
     { "source": "/api/config", "destination": "/api/config.js" },
     { "source": "/api/login", "destination": "/api/login.js" },
     { "source": "/api/admin-users", "destination": "/api/admin-users.js" },
-    { "source": "/api/team-members", "destination": "/api/team-members.js" }
+    { "source": "/api/team-members", "destination": "/api/team-members.js" },
+    { "source": "/api/sync-user-teams", "destination": "/api/sync-user-teams.js" }
   ]
 }
