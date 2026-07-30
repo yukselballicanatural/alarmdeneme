@@ -452,6 +452,15 @@
     'Takımları Eşitle': 'Sync Teams',
     "Tümünü Zoho'ya Göre Eşitle": 'Sync All From Zoho',
     "Kaynak: her danışmanın en son deal'indeki takım.": "Source: the team on each consultant's most recent deal.",
+    'Kaynak: Zoho kullanıcı kayıtları.': 'Source: Zoho user records.',
+    "{n} kişi Zoho'da artık aktif değil.": '{n} people are no longer active in Zoho.',
+    '{n} ayrılan kişinin girişini kapat': 'Disable {n} departed users',
+    'Girişleri Kapat': 'Disable Logins',
+    '{n} kişiyi kapat': 'Disable {n} users',
+    '{n} kişinin girişi kapatıldı.': '{n} logins disabled.',
+    'Aşağıdaki kişiler Zoho\'da artık aktif değil. Girişleri kapatılacak ve listelerde görünmeyecekler. Kayıtları SİLİNMEZ — günlük performans ve alarm geçmişleri korunur.':
+      'The following people are no longer active in Zoho. Their logins will be disabled and they will not appear in lists. Their records are NOT deleted — daily performance and alarm history are preserved.',
+    'Bu hesap devre dışı bırakılmış. Yöneticinizle görüşün.': 'This account has been disabled. Please contact your administrator.',
     'Aşağıdaki danışmanların takımı Zoho\'daki (en son deal) takıma göre güncellenecek. Takım bilgisi bu kişilerin ve takım liderlerinin hangi veriyi görebileceğini de belirler.':
       "The following consultants' teams will be updated to match Zoho (most recent deal). Team membership also determines what data they and their team leaders can see.",
     '{n} kişiyi güncelle': 'Update {n} consultants',

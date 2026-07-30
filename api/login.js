@@ -75,6 +75,21 @@ export default async function handler(req, res) {
 
     if (!ok) { res.status(401).json({ error: GENERIC }); return; }
 
+    // İşten ayrılanların girişi kapatılır. Kayıt SİLİNMİYOR (daily_performance,
+    // alarm_logs ve audit geçmişi bu satıra bağlı) — yalnızca giriş reddedilir.
+    // is_active kolonu zoho_users_sync.sql ile eklenir ve VARSAYILANI true'dur;
+    // kolon henüz yoksa `undefined === false` olmadığı için bu kontrol hiçbir
+    // mevcut kullanıcıyı etkilemez.
+    //
+    // Şifre doğrulandıktan SONRA kontrol ediliyor: aksi halde "şifre yanlış" ile
+    // "hesap kapalı" cevapları ayrışır ve doğru şifre bilinmeden hesabın
+    // durumu öğrenilebilirdi. Ayrıca bu sayede yanlış şifre girene, hesabın
+    // varlığını ima eden bir mesaj gitmiyor.
+    if (user['is_active'] === false) {
+      res.status(403).json({ error: 'Bu hesap devre dışı bırakılmış. Yöneticinizle görüşün.' });
+      return;
+    }
+
     delete user.Password; // Client'a asla şifre/hash dönmez
 
     // admin/super-admin ise, Users sayfasının service_role gerektiren

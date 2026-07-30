@@ -102,7 +102,13 @@ export default async function handler(req, res) {
       if (claims.r === 'team-leader' && !myTeam) { res.status(200).json({ team: '', members: [] }); return; }
       const r = await fetch(`${SUPABASE_URL}/rest/v1/Users?select=*&order=id.asc&limit=2000`, { headers: H });
       if (!r.ok) { res.status(502).json({ error: 'Veritabanı hatası.' }); return; }
-      const rows = await r.json();
+      const allRows = await r.json();
+      // İşten ayrılanlar (is_active=false) listelerde görünmez — bu uç hem
+      // "Takımımdaki Kişiler" hem "Günlük Ekip Girişi" üye listesini besliyor,
+      // takım lideri her gün ayrılmış kişi için satır görmesin.
+      // is_active kolonu zoho_users_sync.sql ile eklenir ve varsayılanı true;
+      // kolon yokken `undefined !== false` olduğu için hiçbir şey filtrelenmez.
+      const rows = allRows.filter(u => u['is_active'] !== false);
       const { rows: scoped, scopeLabel } = scopeRows(rows);
       const members = scoped
         .map(u => ({

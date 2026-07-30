@@ -99,6 +99,28 @@ export default async function handler(req, res) {
   const HJ = { ...H, 'Content-Type': 'application/json; charset=utf-8' };
 
   try {
+    // ── 0. Zoho kullanıcı aynası (varsa BİRİNCİL kaynak) ──────────────
+    // zoho_users, Zoho'nun Users modülünün aynası (bkz. zoho_users_sync.sql):
+    // takımı DOĞRUDAN söyler ve aktif/pasif durumu taşır — "en son deal'in
+    // takımı" ise yalnızca bir VEKİL göstergeydi (deal sahibi olmayanları hiç
+    // görmez, ayrılanları anlamaz). Tablo henüz kurulmadıysa (404) sessizce
+    // eski vekil kurala düşülür.
+    const zoho = new Map();      // nameKey → { team, status, id, email }
+    let zohoAvailable = false;
+    {
+      const zr = await fetch(
+        `${SUPABASE_URL}/rest/v1/zoho_users?select=id,full_name,email,team,status&limit=5000`,
+        { headers: H }
+      );
+      if (zr.ok) {
+        zohoAvailable = true;
+        for (const z of await zr.json()) {
+          const k = nameKey(z.full_name);
+          if (k) zoho.set(k, z);
+        }
+      }
+    }
+
     // ── 1. Her deal sahibinin EN SON (tanınan takımdaki) deal'ini bul ──
     // created_time'a göre ARTAN gidiyoruz; aynı sahip için sonraki kayıt
     // öncekini eziyor, böylece döngü sonunda elimizde en son takım kalıyor.
@@ -136,31 +158,74 @@ export default async function handler(req, res) {
     if (!uR.ok) { res.status(502).json({ error: 'Veritabanı hatası (Users).' }); return; }
     const users = await uR.json();
 
-    const changes = [];
+    const changes = [];     // takım değişiklikleri
+    const leavers = [];     // Zoho'da artık aktif olmayanlar
     let skippedBoss = 0;
     for (const u of users) {
-      // Yönetici rolleri asla otomatik taşınmaz (bkz. isBossRole notu).
-      if (isBossRole(u['Role'])) { skippedBoss++; continue; }
       const ownerName = u['Deal Owner Name'] || u['Username'] || '';
-      const info = latest.get(nameKey(ownerName));
-      if (!info) continue;                                   // hiç tanınan deal'i yok
+      const z = zoho.get(nameKey(ownerName));
+
+      // ── Ayrılanlar ──
+      // Zoho'da status<>'active' ise girişi kapatılmalı. Yönetici rolleri de
+      // dahil: ayrılan bir takım lideri de sisteme girmemeli. Kayıt silinmiyor,
+      // yalnızca is_active=false (geçmiş veriye bağlı).
+      if (z && String(z.status || '').toLowerCase() !== 'active' && u['is_active'] !== false) {
+        leavers.push({
+          username: u['Username'] || '',
+          fullName: ownerName,
+          role: u['Role'] || '',
+          team: String(u['Takim Adi'] || '').trim(),
+          zohoStatus: z.status || '(bilinmiyor)',
+        });
+        continue;   // ayrılan biri için takım güncellemesi anlamsız
+      }
+
+      // ── Takım ──
+      // Yönetici rollerinin takımı görevle atanır, veriden türetilemez
+      // (bkz. isBossRole notu).
+      if (isBossRole(u['Role'])) { skippedBoss++; continue; }
+
+      // Kaynak tercihi: zoho_users.team (doğrudan bilgi) > en son deal (vekil).
+      let target = null, source = null, dealCount = null, lastDealDate = null;
+      const zTeam = z && normalizeTeam(z.team);
+      if (zTeam) {
+        target = zTeam;
+        source = 'zoho_users';
+      } else {
+        const info = latest.get(nameKey(ownerName));
+        if (!info) continue;                                 // hiç sinyal yok
+        target = info.team;
+        source = 'latest_deal';
+        dealCount = info.count;
+        lastDealDate = info.date;
+      }
+
       const current = String(u['Takim Adi'] || '').trim();
       // Users'taki mevcut değeri de kanonize et — yalnızca yazım varyantı
       // farkıysa (ör. "Arij Team" ↔ "Arij  Team") gereksiz yazma yapmayalım.
-      if ((normalizeTeam(current) || current) === info.team) continue;
+      if ((normalizeTeam(current) || current) === target) continue;
       changes.push({
         username: u['Username'] || '',
         fullName: ownerName,
         role: u['Role'] || '',
         from: current,
-        to: info.team,
-        dealCount: info.count,
-        lastDealDate: info.date,
+        to: target,
+        source,
+        dealCount,
+        lastDealDate,
       });
     }
 
     if (req.method === 'GET') {
-      res.status(200).json({ scanned: users.length, owners: latest.size, skippedBoss, changes });
+      res.status(200).json({
+        scanned: users.length,
+        owners: latest.size,
+        zohoAvailable,          // false → zoho_users kurulmamış, vekil kural kullanılıyor
+        zohoUsers: zoho.size,
+        skippedBoss,
+        changes,
+        leavers,
+      });
       return;
     }
 
@@ -169,22 +234,48 @@ export default async function handler(req, res) {
       if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
       // Belirli kullanıcı(lar) istenirse yalnızca onlar uygulanır; verilmezse tümü.
       const only = Array.isArray(body?.usernames) ? new Set(body.usernames.map(String)) : null;
-      const target = only ? changes.filter(c => only.has(c.username)) : changes;
+      // Ayrılanların girişini kapatmak AYRI ve açık bir onay gerektiriyor —
+      // takım güncellemesiyle birlikte sessizce olmasın.
+      const doDeactivate = body?.deactivateLeavers === true;
 
-      const applied = [];
-      const failed  = [];
-      for (const c of target) {
-        if (!c.username) { failed.push({ ...c, error: 'Username boş' }); continue; }
-        // Users.id bigint JS safe-integer sınırını aşabiliyor — Username ile
-        // hedefle (bkz. api/team-members.js'deki aynı not).
-        const pR = await fetch(
-          `${SUPABASE_URL}/rest/v1/Users?Username=eq.${encodeURIComponent(c.username)}`,
-          { method: 'PATCH', headers: { ...HJ, Prefer: 'return=minimal' }, body: JSON.stringify({ 'Takim Adi': c.to }) }
+      // Users.id bigint JS safe-integer sınırını aşabiliyor — Username ile
+      // hedefle (bkz. api/team-members.js'deki aynı not).
+      async function patchUser(username, payload) {
+        return fetch(
+          `${SUPABASE_URL}/rest/v1/Users?Username=eq.${encodeURIComponent(username)}`,
+          { method: 'PATCH', headers: { ...HJ, Prefer: 'return=minimal' }, body: JSON.stringify(payload) }
         );
+      }
+
+      const applied = [], failed = [];
+      for (const c of (only ? changes.filter(x => only.has(x.username)) : changes)) {
+        if (!c.username) { failed.push({ ...c, error: 'Username boş' }); continue; }
+        const pR = await patchUser(c.username, { 'Takim Adi': c.to, updated_at: new Date().toISOString() });
         if (pR.ok) applied.push(c);
         else failed.push({ ...c, error: 'HTTP ' + pR.status });
       }
-      res.status(200).json({ applied, failed, appliedCount: applied.length, failedCount: failed.length });
+
+      const deactivated = [];
+      if (doDeactivate) {
+        for (const l of (only ? leavers.filter(x => only.has(x.username)) : leavers)) {
+          if (!l.username) { failed.push({ ...l, error: 'Username boş' }); continue; }
+          const pR = await patchUser(l.username, {
+            is_active: false,
+            deactivated_at: new Date().toISOString(),
+            deactivation_reason: `Zoho status: ${l.zohoStatus}`,
+            updated_at: new Date().toISOString(),
+          });
+          if (pR.ok) deactivated.push(l);
+          else failed.push({ ...l, error: 'HTTP ' + pR.status });
+        }
+      }
+
+      res.status(200).json({
+        applied, deactivated, failed,
+        appliedCount: applied.length,
+        deactivatedCount: deactivated.length,
+        failedCount: failed.length,
+      });
       return;
     }
 
