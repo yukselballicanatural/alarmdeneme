@@ -729,6 +729,13 @@
           <option value="">Tüm Takımlar</option>
         </select>
       </div>
+      <!-- Users."Takim Adi" ile Zoho (deals.team) uyuşmazlığı — api/sync-user-teams -->
+      <div id="tmSyncBar" style="display:none;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:11px 14px;background:#78350f21;border:1px solid #b45309;border-radius:11px">
+        <svg style="width:16px;height:16px;color:#fbbf24;flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span id="tmSyncMsg" style="color:#fbbf24;font-size:12px;font-weight:700"></span>
+        <span style="color:#b45309;font-size:11px">Kaynak: her danışmanın en son deal'indeki takım.</span>
+        <button onclick="amTmApplyAllDrift()" style="margin-left:auto;padding:7px 14px;background:#0d9488;border:none;border-radius:9px;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap">Tümünü Zoho'ya Göre Eşitle</button>
+      </div>
       <div id="tmLoading" class="flex flex-col items-center py-16 gap-4">
         <div class="spinner-anim"></div>
         <p class="text-slate-400 text-sm">Yükleniyor…</p>
@@ -4160,8 +4167,8 @@
         _amTmPopulateTeamFilter();
         loading.classList.add('hidden');
         renderAdminTeamMembers();
-        // Takım kayması taramasını arka planda yap — tablo beklemesin.
-        _amTmDetectTeamDrift().then(() => renderAdminTeamMembers()).catch(() => {});
+        // Takım uyuşmazlığı taramasını arka planda yap — tablo beklemesin.
+        _amTmFetchDrift().then(() => renderAdminTeamMembers()).catch(() => {});
       } catch(e) {
         loading.classList.add('hidden');
         empty.textContent = I18N.t('Yükleme hatası: ') + e.message;
@@ -4169,77 +4176,44 @@
       }
     }
 
-    // ── Takım kayması tespiti (Users."Takim Adi" ↔ Zoho) ────────────────
+    // ── Takım senkronu (Users."Takim Adi" ← deals.team / Zoho) ──────────
     // Bu sayfa Users tablosunu her açılışta CANLI okuyor (cache yok), ama
-    // Users."Takim Adi" değerini Zoho'dan güncelleyen hiçbir mekanizma yok —
+    // Users."Takim Adi" değerini Zoho'dan güncelleyen hiçbir mekanizma yoktu —
     // dış senkron yalnızca deals tablosuna yazıyor. Bir danışman Zoho'da takım
     // değiştirdiğinde burada ESKİ liderinin altında görünmeye devam ediyordu
-    // (ör. Adam Naciri, Moutaharrik Team'e geçtiği hâlde Sara/Giulia takımında).
+    // (Adam Naciri → Moutaharrik'e geçti, Sara/Giulia'da görünüyordu;
+    //  Edward Blake → Joel Team'e geçti, Ali Omer Team'de görünüyordu).
     //
-    // deals.team NEDEN DOĞRUDAN KAYNAK OLARAK KULLANILMIYOR: o alan deal'in
-    // oluşturulduğu andaki takımın anlık görüntüsü, kişinin güncel takımı
-    // değil. Örnek: Marco Rahimi'nin 55 deal'i "Farah Team" derken 2024
-    // tarihli bir deal'i "Team Leader - Moutaharrik Marco" diyor — "en son
-    // deal'in takımı kazanır" kuralı sürekli oynar ve Users."Takim Adi"
-    // yetkilendirme kapsamını (TL'nin hangi takımın verisini gördüğünü)
-    // belirlediği için hatalı yazma doğrudan güvenlik sorunu olur.
-    //
-    // Bu yüzden SESSİZCE YAZMIYORUZ: yalnızca yüksek güvenli kaymayı işaretleyip
-    // admin'e tek tıkla uygulama sunuyoruz. Güven ölçütü — son 60 gündeki TÜM
-    // dealleri tek bir takımda birleşiyor VE o takım TeamMap'te tanınan bir
-    // satış takımı (Profclinic/Finance/VIP gibi satış dışı birimler önerilmez).
-    const _TM_DRIFT_WINDOW_DAYS = 60;
-    let _amTmDrift = new Map();   // fullName(lower) → { from, to, dealCount }
+    // KURAL kişinin EN SON deal'inin takımı = güncel takımı. Kural ve
+    // uygulaması api/sync-user-teams.js'de — TEK kaynak; burada istemci tarafı
+    // ayrı bir tahmin YAPILMIYOR, o uçtan okunuyor. Kuralın gerekçesi ve canlı
+    // veriyle doğrulanması o dosyanın başındaki nota yazılı.
+    let _amTmDrift = new Map();   // fullName(lower) → { username, from, to, dealCount, lastDealDate }
+    let _amTmSyncBusy = false;
 
-    async function _amTmDetectTeamDrift() {
+    async function _amTmFetchDrift() {
       _amTmDrift = new Map();
-      if (typeof TeamMap === 'undefined' || !(_amTeamMembers || []).length) return;
-      const since = new Date(Date.now() - _TM_DRIFT_WINDOW_DAYS * 86400000).toISOString();
-      const h = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
-      // RM ise yalnızca kendi bölgesi — /api/team-members ile aynı kapsam.
-      const teamQ = window.rmTeams ? `&team=${TeamMap.inFilter(window.rmTeams)}` : '';
-
-      const rows = [];
-      let offset = 0;
-      while (true) {
-        const url = `${SUPABASE_URL}/rest/v1/deals?select=deal_owner,team` +
-          `&created_time=gte.${encodeURIComponent(since)}${teamQ}&limit=1000&offset=${offset}`;
-        const r = await fetch(url, { headers: h });
-        if (!r.ok) return;
-        const batch = await r.json();
-        if (!Array.isArray(batch) || !batch.length) break;
-        rows.push(...batch);
-        if (batch.length < 1000) break;
-        offset += 1000;
-        if (rows.length >= 20000) break;   // emniyet supabı
+      const token = (currentUser && currentUser.token) || '';
+      const r = await fetch('/api/sync-user-teams', { headers: { Authorization: 'Bearer ' + token } });
+      if (!r.ok) return;   // RM'de 401 — bu uç admin'e özel, sessiz geç
+      const data = await r.json().catch(() => ({}));
+      for (const c of (data.changes || [])) {
+        _amTmDrift.set(String(c.fullName || '').trim().toLowerCase(), c);
       }
-
-      // deal_owner → pencere içindeki farklı (kanonik) takımlar
-      const byOwner = new Map();
-      for (const row of rows) {
-        const owner = String(row.deal_owner || '').trim().toLowerCase();
-        if (!owner) continue;
-        const canonical = TeamMap.normalize(row.team);
-        if (!canonical) continue;          // satış dışı birim / tanınmayan ad
-        let e = byOwner.get(owner);
-        if (!e) { e = { teams: new Set(), count: 0 }; byOwner.set(owner, e); }
-        e.teams.add(canonical);
-        e.count++;
-      }
-
-      for (const m of _amTeamMembers) {
-        const key = String(m.fullName || '').trim().toLowerCase();
-        const e = byOwner.get(key);
-        if (!e || e.teams.size !== 1) continue;   // sinyal yok ya da çelişkili
-        const zohoTeam = [...e.teams][0];
-        const usersTeam = TeamMap.normalize(m.team) || String(m.team || '').trim();
-        if (!usersTeam || usersTeam === zohoTeam) continue;
-        _amTmDrift.set(key, { from: m.team, to: zohoTeam, dealCount: e.count });
-      }
+      _amTmRenderSyncBar();
     }
 
-    // Kaymayı uygula — Users."Takim Adi"yi Zoho'daki takıma çeker. Yetkilendirme
-    // kapsamını değiştirdiği için onay diyalogu arkasında.
+    function _amTmRenderSyncBar() {
+      const bar = document.getElementById('tmSyncBar');
+      if (!bar) return;
+      const n = _amTmDrift.size;
+      if (!n) { bar.style.display = 'none'; return; }
+      bar.style.display = 'flex';
+      document.getElementById('tmSyncMsg').textContent =
+        I18N.t('{n} danışmanın takımı Zoho ile uyuşmuyor.').replace('{n}', n);
+    }
+
+    // Tek danışman
     function amTmApplyDrift(idx) {
       const m = _amTmFiltered[idx];
       if (!m) return;
@@ -4247,29 +4221,61 @@
       if (!d) return;
       const body = I18N.t('Bu danışmanın takımı Users tablosunda güncellenecek. Takım bilgisi hangi verileri görebileceğini de belirler — takım lideri panelleri ve günlük ekip girişi buna göre kapsanır.')
         + `<br><br><b>${_escHtml(m.fullName)}</b><br>${_escHtml(d.from || '—')} → <b>${_escHtml(d.to)}</b>`
-        + `<br><span style="font-size:11px;color:#64748b">${_escHtml(
-             I18N.t('Kaynak: son {d} gündeki {n} deal')
-               .replace('{d}', _TM_DRIFT_WINDOW_DAYS).replace('{n}', d.dealCount)
-           )}</span>`;
-      showSiteConfirm('Takımı Güncelle', body, 'Güncelle', '#0d9488', () => _amTmDoApplyDrift(m, d));
+        + `<br><span style="font-size:11px;color:#64748b">${_escHtml(_amTmSourceLabel(d))}</span>`;
+      showSiteConfirm('Takımı Güncelle', body, 'Güncelle', '#0d9488', () => _amTmRunSync([d.username]));
     }
 
-    async function _amTmDoApplyDrift(m, d) {
+    // Tümü
+    function amTmApplyAllDrift() {
+      const all = [..._amTmDrift.values()];
+      if (!all.length) return;
+      const list = all.slice(0, 12).map(d =>
+        `<div style="margin-top:3px">${_escHtml(d.fullName)}: ${_escHtml(d.from || '—')} → <b>${_escHtml(d.to)}</b></div>`
+      ).join('');
+      const more = all.length > 12
+        ? `<div style="margin-top:4px;color:#64748b">${_escHtml(I18N.t('+{n} kişi daha').replace('{n}', all.length - 12))}</div>`
+        : '';
+      const body = I18N.t('Aşağıdaki danışmanların takımı Zoho\'daki (en son deal) takıma göre güncellenecek. Takım bilgisi bu kişilerin ve takım liderlerinin hangi veriyi görebileceğini de belirler.')
+        + `<div style="margin-top:10px;text-align:left;font-size:11.5px;max-height:190px;overflow-y:auto">${list}${more}</div>`;
+      showSiteConfirm('Takımları Eşitle', body,
+        I18N.t('{n} kişiyi güncelle').replace('{n}', all.length), '#0d9488', () => _amTmRunSync(null));
+    }
+
+    function _amTmSourceLabel(d) {
+      return I18N.t('Zoho kaynağı: {n} deal, en son {d}')
+        .replace('{n}', d.dealCount)
+        .replace('{d}', d.lastDealDate ? String(d.lastDealDate).slice(0, 10) : '—');
+    }
+
+    // usernames=null → tümü
+    async function _amTmRunSync(usernames) {
+      if (_amTmSyncBusy) return;
+      _amTmSyncBusy = true;
       try {
         const token = (currentUser && currentUser.token) || '';
-        const r = await fetch('/api/admin-users', {
-          method: 'PATCH',
+        const r = await fetch('/api/sync-user-teams', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-          body: JSON.stringify({ username: m.username, payload: { 'Takim Adi': d.to } }),
+          body: JSON.stringify(usernames ? { usernames } : {}),
         });
         const data = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
-        addLog('USER_TEAM_SYNC', `Takım güncellendi: ${m.fullName} — ${d.from || '—'} → ${d.to} (son ${_TM_DRIFT_WINDOW_DAYS} gündeki ${d.dealCount} deal'e göre)`);
-        showSiteNotice('Takım güncellendi.', 'success');
+        for (const c of (data.applied || [])) {
+          addLog('USER_TEAM_SYNC', `Takım güncellendi: ${c.fullName} — ${c.from || '—'} → ${c.to} (${_amTmSourceLabel(c)})`);
+        }
+        const n = data.appliedCount || 0;
+        const f = data.failedCount || 0;
+        showSiteNotice(
+          f ? I18N.t('{n} takım güncellendi, {f} başarısız.').replace('{n}', n).replace('{f}', f)
+            : I18N.t('{n} takım güncellendi.').replace('{n}', n),
+          f ? 'warn' : 'success'
+        );
         // Günlük Ekip Girişi üye cache'i artık bayat — sıfırla.
         _adeMembersCache = null;
         loadAdminTeamMembers();
-      } catch(e) { showSiteNotice('Takım güncellenemedi: ' + e.message, 'error'); }
+      } catch(e) {
+        showSiteNotice('Takım güncellenemedi: ' + e.message, 'error');
+      } finally { _amTmSyncBusy = false; }
     }
 
     function _amTmPopulateTeamFilter() {
@@ -4281,13 +4287,13 @@
       sel.value = teams.includes(cur) ? cur : '';
     }
 
-    // Takım kayması varsa takım hücresinin altında uyarı + tek tıkla düzeltme.
+    // Takım uyuşmazlığı varsa takım hücresinin altında uyarı + tek tıkla düzeltme.
     function _amTmDriftBadge(m, i) {
       const d = _amTmDrift.get(String(m.fullName || '').trim().toLowerCase());
       if (!d) return '';
       return `<div style="margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         <span style="padding:2px 7px;border-radius:6px;background:#78350f;border:1px solid #b45309;color:#fbbf24;font-size:9px;font-weight:800;white-space:nowrap"
-              title="${I18N.t('Zoho deal verisi bu danışmanı farklı bir takımda gösteriyor')} — ${_escHtml(d.dealCount + " deal / " + _TM_DRIFT_WINDOW_DAYS + " gün")}">
+              title="${_escHtml(I18N.t('Zoho deal verisi bu danışmanı farklı bir takımda gösteriyor') + ' — ' + _amTmSourceLabel(d))}">
           ${I18N.t("Zoho'da")}: ${_escHtml(d.to)}
         </span>
         <button onclick="amTmApplyDrift(${i})" style="padding:2px 8px;background:#042f2e;border:1px solid #0d9488;border-radius:6px;color:#2dd4bf;font-size:9px;font-weight:800;cursor:pointer;white-space:nowrap">${I18N.t('Güncelle')}</button>

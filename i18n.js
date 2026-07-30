@@ -445,10 +445,20 @@
     'Zoho deal verisi bu danışmanı farklı bir takımda gösteriyor': 'Zoho deal data shows this consultant in a different team',
     'Bu danışmanın takımı Users tablosunda güncellenecek. Takım bilgisi hangi verileri görebileceğini de belirler — takım lideri panelleri ve günlük ekip girişi buna göre kapsanır.':
       "This consultant's team will be updated in the Users table. Team membership also determines what data they can see — team leader panels and daily team entry are scoped by it.",
-    // Şablonlu: kısa/genel kelimeleri ('deal', 'gündeki') ayrı anahtar yapmak
+    // Şablonlu: kısa/genel kelimeleri ('deal', 'gün') ayrı anahtar yapmak
     // riskli — translateDOM tüm metin düğümlerini eşleştirdiği için başka
     // yerlerdeki aynı kelimeler de çevrilirdi.
-    'Kaynak: son {d} gündeki {n} deal': 'Source: last {d} days, {n} deals',
+    'Zoho kaynağı: {n} deal, en son {d}': 'Zoho source: {n} deals, latest {d}',
+    'Takımları Eşitle': 'Sync Teams',
+    "Tümünü Zoho'ya Göre Eşitle": 'Sync All From Zoho',
+    "Kaynak: her danışmanın en son deal'indeki takım.": "Source: the team on each consultant's most recent deal.",
+    'Aşağıdaki danışmanların takımı Zoho\'daki (en son deal) takıma göre güncellenecek. Takım bilgisi bu kişilerin ve takım liderlerinin hangi veriyi görebileceğini de belirler.':
+      "The following consultants' teams will be updated to match Zoho (most recent deal). Team membership also determines what data they and their team leaders can see.",
+    '{n} kişiyi güncelle': 'Update {n} consultants',
+    '+{n} kişi daha': '+{n} more',
+    '{n} takım güncellendi.': '{n} teams updated.',
+    '{n} takım güncellendi, {f} başarısız.': '{n} teams updated, {f} failed.',
+    '{n} danışmanın takımı Zoho ile uyuşmuyor.': "{n} consultants' teams do not match Zoho.",
     'Takım güncellendi.': 'Team updated.',
     'Takım güncellenemedi: ': 'Team update failed: ',
     'Hasta, Deal ID veya danışman ara...': 'Search patient, Deal ID or consultant...',
