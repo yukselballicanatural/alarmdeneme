@@ -1616,6 +1616,13 @@
         <svg style="width:15px;height:15px" fill="currentColor" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.8 14.14c-.24.68-1.42 1.3-1.96 1.34-.5.04-1.02.06-1.65-.1-.38-.1-.87-.28-1.5-.55-2.63-1.14-4.35-3.8-4.48-3.98-.13-.18-1.07-1.42-1.07-2.7 0-1.29.68-1.92.92-2.18.24-.26.53-.33.71-.33.18 0 .35 0 .5.01.16.01.38-.06.6.45.24.55.8 1.9.87 2.04.07.14.11.3.02.48-.09.18-.13.29-.26.45-.13.16-.27.35-.39.47-.13.13-.26.27-.11.53.15.26.68 1.12 1.46 1.82 1 .89 1.85 1.17 2.11 1.3.26.13.41.11.56-.06.16-.18.65-.76.83-1.02.18-.26.35-.21.6-.13.24.09 1.54.73 1.8.86.26.13.44.2.5.31.06.13.06.7-.18 1.38z"/></svg>
         WhatsApp'tan Agent'a Bildirim Gönder
       </button>
+      <!-- Alarmı hiç işlem yapılmamış hâline döndür — yalnızca üzerinde bir
+           aksiyon varsa görünür (bkz. openAdminAlarmModal). Test amaçlı girilen
+           sonuç kodu / notu geri almanın tek yolu buydu. -->
+      <button onclick="adminResetAlarm(currentAdminAlarm && currentAdminAlarm.id)" id="aamBtnReset" style="display:none;width:100%;padding:11px;margin-bottom:10px;background:#450a0a;border:1px solid #7f1d1d;border-radius:10px;color:#f87171;font-size:12px;font-weight:700;cursor:pointer;align-items:center;justify-content:center;gap:8px">
+        <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L4 10m0 0l5-5m-5 5h11a4 4 0 010 8h-1"/></svg>
+        Alarmı Sıfırla (Hiç İşlem Yapılmamış Hâline Döndür)
+      </button>
       <div style="display:flex;gap:10px">
         <button onclick="closeAdminAlarmModal()" style="flex:1;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:10px;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer">İptal</button>
         <button onclick="saveAdminAlarmAction()" id="aamBtnSave" style="flex:2;padding:11px;background:#0d9488;border:none;border-radius:10px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Kaydet</button>
@@ -2363,7 +2370,9 @@
         // Sonuç girilmiş alarmlarda tek "Geri Al", girilmemişlerde 4 sonuç butonu
         // (TL panelindeki Bugün Gelecekler kartlarıyla aynı akış).
         const nm = _escHtml(a.deal_name || '');
-        const outcomeBtns = ['arrived','examined','processing','no_show','closed'].includes(a.status)
+        // 'cancelled' de listeye dahil: "İptal / Geçersiz" olarak kapatılan
+        // alarmlarda eskiden Geri Al hiç çıkmıyordu, yani geri dönüşü yoktu.
+        const outcomeBtns = ['arrived','examined','processing','no_show','closed','cancelled'].includes(a.status)
           ? `<button onclick="event.stopPropagation();adminUndoQuickAction('${a.id}')" style="padding:3px 10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:9px;font-weight:700;cursor:pointer">${I18N.t('Geri Al')}</button>`
           : `<div style="display:flex;gap:4px;flex-wrap:wrap">
               <button onclick="event.stopPropagation();promptAdminOutcome('${a.id}','arrived','${nm}')" style="padding:3px 8px;background:#052e16;border:1px solid #166534;border-radius:6px;color:#4ade80;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap">${I18N.t('Hasta Geldi')}</button>
@@ -2495,17 +2504,59 @@
       } catch(e) { showSiteNotice('Hata: ' + e.message, 'error'); }
     }
 
-    async function adminUndoQuickAction(alarmId) {
+    // ── Alarmı "hiç işlem yapılmamış" hâline döndür ────────────────────
+    // Bir alarm test amaçlı (ya da yanlışlıkla) sonuç kodu + not girilerek
+    // kapatıldığında, eski "Geri Al" yalnızca status/closed_* alanlarını
+    // sıfırlıyordu: alarms.result_code ve follow_up_date satırda KALIYORDU,
+    // yani alarm açığa dönse bile üzerinde işlem izi kalmış oluyordu. Ayrıca
+    // buton "İptal / Geçersiz" (cancelled) statüsünde hiç görünmüyordu ve
+    // alarmı asıl kapattığın yer olan detay modalında yoktu.
+    //
+    // Bu fonksiyon alarm satırının TÜM aksiyon alanlarını tek seferde temizler
+    // — alarm motorunun yeni ürettiği bir alarmdan ayırt edilemez hâle gelir.
+    // deals tablosuna KASITLI olarak dokunulmuyor: oradaki result_code/agent_note
+    // agent'ın kendi paneline girdiği iş çıktısı, alarmın aksiyonu değil.
+    const _ALARM_RESET_FIELDS = {
+      status: 'open',
+      seen_at: null,
+      actioned_at: null,
+      closed_at: null,
+      closed_by: null,
+      close_reason: null,
+      note: null,
+      result_code: null,
+      follow_up_date: null,
+    };
+
+    function adminResetAlarm(alarmId) {
+      const a = adminAllAlarms.find(x => x.id === alarmId);
+      if (!a) return;
+      // Statik cümleyi ayrıca I18N.t'den geçiriyoruz — showSiteConfirm tüm
+      // metni tek parça çevirmeye çalışsa deal adı yüzünden sözlükte eşleşmezdi.
+      const body = I18N.t('Bu alarmdaki tüm aksiyonlar silinecek: durum Açık\'a döner; sonuç kodu, not, takip tarihi ve kapatma bilgisi temizlenir. Alarm hiç işlem yapılmamış hâline döner. Bu işlem geri alınamaz.')
+        + `<br><br><b>${_escHtml(a.deal_name || a.deal_id || '')}</b>`;
+      showSiteConfirm('Alarmı Sıfırla', body, 'Sıfırla', '#dc2626', () => _doAdminResetAlarm(alarmId));
+    }
+
+    async function _doAdminResetAlarm(alarmId) {
       const a = adminAllAlarms.find(x => x.id === alarmId);
       if (!a) return;
       const prevStatus = a.status;
       const who = (currentUser && (currentUser.fullName || currentUser.username)) || 'Admin';
       const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
       try {
-        const statusUpdates = { status: 'open', actioned_at: null, closed_at: null, closed_by: null, close_reason: null };
-        const r = await fetch(`${SUPABASE_URL}/rest/v1/alarms?id=eq.${alarmId}`, { method: 'PATCH', headers: H, body: JSON.stringify(statusUpdates) });
+        let applied = { ..._ALARM_RESET_FIELDS };
+        let r = await fetch(`${SUPABASE_URL}/rest/v1/alarms?id=eq.${alarmId}`, { method: 'PATCH', headers: H, body: JSON.stringify(applied) });
+        // alarms.result_code / follow_up_date kolonları henüz eklenmediyse
+        // (alarm_result_code_columns.sql çalıştırılmadan önce) PostgREST 400
+        // döner — bu iki alanı çıkarıp tekrar dene, sıfırlama bloklanmasın.
+        if (!r.ok) {
+          const { result_code, follow_up_date, ...fallback } = applied;
+          const r2 = await fetch(`${SUPABASE_URL}/rest/v1/alarms?id=eq.${alarmId}`, { method: 'PATCH', headers: H, body: JSON.stringify(fallback) });
+          if (r2.ok) { applied = fallback; r = r2; }
+        }
         if (!r.ok) throw new Error('HTTP ' + r.status);
-        // Notu ayrı PATCH ile sil — bazı PostgREST sürümlerinde birleşik
+        // Notu ayrı PATCH ile de sil — bazı PostgREST sürümlerinde birleşik
         // PATCH'te null değer atlanabiliyor (bkz. team-leader.html aynı düzeltme).
         await fetch(`${SUPABASE_URL}/rest/v1/alarms?id=eq.${alarmId}`, { method: 'PATCH', headers: H, body: JSON.stringify({ note: null }) }).catch(() => {});
         fetch(`${SUPABASE_URL}/rest/v1/alarm_logs`, {
@@ -2516,15 +2567,26 @@
             note: null, action_by: who, action_role: currentUser.role,
           }),
         }).catch(() => {});
-        addLog('ALARM_REOPEN', `Alarm yeniden açıldı (${prevStatus} → open)`, a.deal_id, a.deal_name);
-        _amPatchLocalAlarm(alarmId, { ...statusUpdates, note: null });
+        addLog('ALARM_RESET', `Alarm sıfırlandı — hiç işlem yapılmamış hâline döndürüldü (${prevStatus} → open)`, a.deal_id, a.deal_name);
+        _amPatchLocalAlarm(alarmId, applied);
         updateAdminAlarmKPIs();
         renderRegionPanels();
         renderAdminToday();
         renderAdminAlarmTable();
-        showSiteNotice('Aksiyon geri alındı.', 'success');
-      } catch(e) { showSiteNotice('Hata: ' + e.message, 'error'); }
+        // Alarm "İptal / Geçersiz" ile kapatılmışsa İptal Alarmları listesi onu
+        // alarms.status='cancelled' üzerinden buluyordu — sıfırlanınca oradan
+        // düşmesi için listeyi/rozeti tazele.
+        if (prevStatus === 'cancelled') loadAdminCancelledDeals();
+        // Modal açıksa (sıfırlama modaldan tetiklendiyse) kapat — içindeki
+        // alanlar artık silinmiş veriyi gösteriyor olurdu.
+        if (currentAdminAlarm && currentAdminAlarm.id === alarmId) closeAdminAlarmModal();
+        showSiteNotice('Alarm sıfırlandı — hiç işlem yapılmamış hâline döndü.', 'success');
+      } catch(e) { showSiteNotice('Sıfırlanamadı: ' + e.message, 'error'); }
     }
+
+    // Tablodaki "Geri Al" butonu de aynı tam sıfırlamayı kullanıyor — eskiden
+    // result_code/follow_up_date'i geride bırakıyordu.
+    function adminUndoQuickAction(alarmId) { adminResetAlarm(alarmId); }
 
     // ── Kapatılan Alarmlar (G — "Kapatıldı" statüsü aldıktan sonra alarm
     // sekmelerinden kaybolan kayıtların "nereye gittiğini" gösteren rapor) ──
@@ -3864,6 +3926,14 @@
       document.getElementById('aamNoteInput').value = '';
       const aamNC = document.getElementById('aamNoteCount'); if (aamNC) aamNC.textContent = '0 / 300';
       document.getElementById('aamCloseReasonWrap').style.display = 'none';
+      // "Alarmı Sıfırla" yalnızca üzerinde gerçekten bir aksiyon varsa anlamlı —
+      // hiç dokunulmamış (open + not/sonuç kodu/damga yok) bir alarmda gizle.
+      const resetBtn = document.getElementById('aamBtnReset');
+      if (resetBtn) {
+        const touched = (a.status && a.status !== 'open') || !!a.note || !!a.result_code ||
+                        !!a.follow_up_date || !!a.seen_at || !!a.actioned_at || !!a.closed_at;
+        resetBtn.style.display = touched ? 'flex' : 'none';
+      }
       populateAamResultCodeSelect(a);
       document.getElementById('adminAlarmModal').classList.add('open');
       document.body.style.overflow = 'hidden';

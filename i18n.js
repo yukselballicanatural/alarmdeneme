@@ -433,6 +433,13 @@
     'Kaydedilemedi: ': 'Save failed: ',
     'Yükleme hatası: ': 'Load error: ',
     'yeni deal takımınıza düştü': 'new deal(s) assigned to your team',
+    'Alarmı Sıfırla': 'Reset Alarm',
+    'Sıfırla': 'Reset',
+    'Alarmı Sıfırla (Hiç İşlem Yapılmamış Hâline Döndür)': 'Reset Alarm (Restore To Untouched State)',
+    'Bu alarmdaki tüm aksiyonlar silinecek: durum Açık\'a döner; sonuç kodu, not, takip tarihi ve kapatma bilgisi temizlenir. Alarm hiç işlem yapılmamış hâline döner. Bu işlem geri alınamaz.':
+      'All actions on this alarm will be deleted: status returns to Open; result code, note, follow-up date and closing details are cleared. The alarm returns to its untouched state. This cannot be undone.',
+    'Alarm sıfırlandı — hiç işlem yapılmamış hâline döndü.': 'Alarm reset — restored to its untouched state.',
+    'Sıfırlanamadı: ': 'Reset failed: ',
     'Hasta, Deal ID veya danışman ara...': 'Search patient, Deal ID or consultant...',
     'Takımımdaki Kişiler': 'My Team Members',
     "Takımındaki danışmanların WhatsApp numaraları — bir numara girip kaydettikten sonra \"WhatsApp'tan Yaz\" ile o kişiyle sohbet doğrudan açılır.":
