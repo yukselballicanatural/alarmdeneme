@@ -72,10 +72,8 @@ window.TeamMap = (function () {
     // panelinde (Dealler, İptal, Won, KPI'lar — hepsi team=in.(...) ile
     // filtreli) bu takımın dealleri TAMAMEN görünmüyordu; normalize() de null
     // döndüğü için takım adı ham hâliyle kalıyordu.
-    // leader: Users tablosundan doğrulanamadı (bu ad yalnızca ekran etiketinde
-    // kullanılıyor, boşsa gösterilmiyor) — takım lideri adı netleşince doldur.
     'Moutaharrik Team - Morocco': {
-      label: 'Moutaharrik Team', leader: '', region: 'Morocco',
+      label: 'Moutaharrik Team', leader: 'Marco Rahimi', region: 'Morocco',
       aliases: ['Moutaharrik Team - Morocco', 'Team Leader - Moutaharrik Marco'],
     },
   };

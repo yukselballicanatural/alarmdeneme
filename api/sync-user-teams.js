@@ -61,6 +61,18 @@ function normalizeTeam(t) { return ALIAS_INDEX[tkey(t)] || null; }
 
 function nameKey(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
 
+// Takım lideri / bölge yöneticisi / admin rollerinin takımı, sahip oldukları
+// deallerden TÜRETİLEMEZ — göreve göre atanır ve elle yönetilir.
+//
+// Somut vaka: Marco Rahimi, Farah Team'de danışmanken Moutaharrik Team'in
+// lideri oldu. En son deal'i (May 2026) hâlâ "Farah Team - Morocco" diyor;
+// "en son deal kazanır" kuralı onu Moutaharrik liderliğinden alıp Farah'a
+// geri atardı ve kendi takımının verisini göremez, Farah'ın verisini görürdü.
+// Bu yüzden yönetici rolleri senkronun DIŞINDA.
+// (Regex, admin.html / team-leader.html'deki _isBoss ile aynı.)
+const BOSS_ROLE_RE = /leader|lider|manager|müdür|mudur|admin|yönetici|yonetici|\btl\b|\brm\b/i;
+function isBossRole(role) { return BOSS_ROLE_RE.test(String(role || '')); }
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
@@ -125,7 +137,10 @@ export default async function handler(req, res) {
     const users = await uR.json();
 
     const changes = [];
+    let skippedBoss = 0;
     for (const u of users) {
+      // Yönetici rolleri asla otomatik taşınmaz (bkz. isBossRole notu).
+      if (isBossRole(u['Role'])) { skippedBoss++; continue; }
       const ownerName = u['Deal Owner Name'] || u['Username'] || '';
       const info = latest.get(nameKey(ownerName));
       if (!info) continue;                                   // hiç tanınan deal'i yok
@@ -145,7 +160,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'GET') {
-      res.status(200).json({ scanned: users.length, owners: latest.size, changes });
+      res.status(200).json({ scanned: users.length, owners: latest.size, skippedBoss, changes });
       return;
     }
 
