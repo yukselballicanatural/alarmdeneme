@@ -106,20 +106,23 @@ export default async function handler(req, res) {
     // görmez, ayrılanları anlamaz). Tablo henüz kurulmadıysa (404) sessizce
     // eski vekil kurala düşülür.
     const zoho = new Map();      // nameKey → { team, status, id, email }
-    let zohoAvailable = false;
     {
       const zr = await fetch(
         `${SUPABASE_URL}/rest/v1/zoho_users?select=id,full_name,email,team,status&limit=5000`,
         { headers: H }
       );
       if (zr.ok) {
-        zohoAvailable = true;
         for (const z of await zr.json()) {
           const k = nameKey(z.full_name);
           if (k) zoho.set(k, z);
         }
       }
     }
+    // DİKKAT: "ayna kullanılabilir" ölçütü tablonun VARLIĞI değil, DOLU olması.
+    // Tablo oluşturulup dış senkron henüz yazmamışsa (boş tablo) sorgu 200
+    // dönüyor; yalnızca varlığa bakılsaydı deal taraması atlanır ve takım
+    // eşitlemesi sessizce hiçbir şey önermez hâle gelirdi.
+    const zohoAvailable = zoho.size > 0;
 
     // ── 1. Vekil kural: her deal sahibinin EN SON deal'indeki takım ──────
     // Yalnızca zoho_users YOKSA gerekli — ayna varsa takımı doğrudan biliyoruz,
