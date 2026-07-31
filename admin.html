@@ -4372,19 +4372,16 @@
       const dash = '<span style="color:#334155">—</span>';
       const phoneDisplay = m.phone || dash;
       const emailDisplay = m.email || dash;
-      // Zoho'da kadroda ama sistemde giriş kaydı yok — bu kişi panele giremez ve
-      // Günlük Ekip Girişi'ne satır olarak eklenemez (upsert username'e bağlı).
-      const noLogin = m.hasLogin === false
-        ? `<span style="margin-left:6px;padding:1px 6px;border-radius:5px;background:#450a0a;border:1px solid #7f1d1d;color:#f87171;font-size:9px;font-weight:800;white-space:nowrap"
-                 title="${_escHtml(I18N.t('Zoho kadrosunda var ama sistemde giriş kaydı yok'))}">${I18N.t('giriş yok')}</span>`
-        : '';
+      // NOT: hasLogin=false burada bir SORUN değil — danışmanlar panele
+      // girmiyor, onlara login açılmıyor. Bu yüzden rozet gösterilmiyor;
+      // yalnızca Düzelt'e basıldığında (Users satırı gerektiği için) uyarılıyor.
       // Kıdem/rol: Zoho'daki role (takım) ile kıdem seviyesi birlikte anlamlı.
       const seniority = m.seniority
         ? `<span style="padding:1px 6px;border-radius:5px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:9.5px;font-weight:700">${_escHtml(m.seniority)}</span>`
         : dash;
       return `<tr id="tmRow-${i}" style="${rowBg};border-bottom:1px solid #1e293b">
         <td style="padding:8px 12px;color:#475569;font-size:11px;white-space:nowrap">${i + 1}</td>
-        <td style="padding:8px 12px;color:#f1f5f9;font-weight:600;white-space:nowrap">${_escHtml(m.fullName)}${noLogin}</td>
+        <td style="padding:8px 12px;color:#f1f5f9;font-weight:600;white-space:nowrap">${_escHtml(m.fullName)}</td>
         <td style="padding:8px 12px;color:#94a3b8;font-size:11.5px;white-space:nowrap">${m.realName ? _escHtml(m.realName) : dash}</td>
         <td style="padding:8px 12px;color:#64748b;font-size:11px;white-space:nowrap">${_escHtml(m.team)}${_amTmDriftBadge(m, i)}</td>
         <td style="padding:8px 12px;white-space:nowrap">${seniority}</td>
@@ -4461,13 +4458,14 @@
           const data = await r.json().catch(() => ({}));
           if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
           const _isBoss = role => /leader|lider|manager|müdür|mudur|admin|yönetici|yonetici/i.test(String(role || ''));
-          // m.username ZORUNLU: kadro artık zoho_users'tan geliyor ve Zoho'da
-          // olup sistemde giriş kaydı olmayan kişiler de listede dönüyor.
-          // daily_performance upsert'i (entry_date, username) benzersiz
-          // kısıtına dayandığı için username'i olmayan satır kaydedilemez.
-          // Rol bilgisi de Users'tan geldiği için girişi olmayanda boş kalır —
-          // _isBoss kontrolü ancak username varsa anlamlı.
-          members = (data.members || []).filter(m => m.username && !_isBoss(m.role));
+          // Danışmanlar panele girmiyor, onlara login açılmıyor — bu yüzden
+          // "Users kaydı olmayanı atla" YAPILMIYOR. api/team-members.js her üye
+          // için kararlı bir username döndürüyor (Users varsa gerçek Username,
+          // yoksa Zoho adından türetilmiş).
+          // Yönetici kontrolü hem Users rolüne hem Zoho rolüne bakıyor: girişi
+          // olmayan birinin m.role'ü boş gelir, takım lideri ise zohoRole'de
+          // "Team Leader - X" yazar.
+          members = (data.members || []).filter(m => !_isBoss(m.role) && !_isBoss(m.zohoRole));
           _adeMembersCache = members;
         }
 
@@ -4744,9 +4742,9 @@
       // Telefon/e-posta Users tablosuna yazılıyor ve hedef Username ile
       // bulunuyor. Kadro artık zoho_users'tan geldiği için giriş kaydı olmayan
       // kişiler de listede görünüyor — onlarda yazacak satır yok.
-      if (!m.username) {
+      if (!m.hasLogin) {
         showSiteNotice(
-          `${m.fullName} ${I18N.t('için sistemde giriş kaydı yok — önce Users sayfasından kullanıcı oluştur.')}`,
+          `${m.fullName} — ${I18N.t('telefon/e-posta Zoho kullanıcı kaydından geliyor; buradan düzenlemek için Users tablosunda bir kaydı olması gerekir. Kalıcı düzeltme için Zoho\'daki bilgiyi güncelle.')}`,
           'warn'
         );
         return;
@@ -7810,8 +7808,8 @@
             if (!r.ok) return;
             const data = await r.json().catch(() => ({}));
             const _isBoss = role => /leader|lider|manager|müdür|mudur|admin|yönetici|yonetici/i.test(String(role || ''));
-            // username zorunlu — bkz. adeLoad()'daki aynı filtre notu.
-            _adeMembersCache = (data.members || []).filter(m => m.username && !_isBoss(m.role));
+            // bkz. adeLoad()'daki aynı filtre notu (Users rolü + Zoho rolü).
+            _adeMembersCache = (data.members || []).filter(m => !_isBoss(m.role) && !_isBoss(m.zohoRole));
           } catch(_e) {}
         })();
         adminRunEngine(false);

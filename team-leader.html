@@ -4467,17 +4467,14 @@
     const dash = '<span style="color:#334155">—</span>';
     const phoneDisplay = m.phone || dash;
     const emailDisplay = m.email || dash;
-    // Zoho kadrosunda var ama sistemde giriş kaydı yok — telefon/e-posta
-    // düzenlenemez (Users satırı yok) ve Günlük Ekip Girişi'ne eklenemez.
-    const noLogin = m.hasLogin === false
-      ? `<span style="margin-left:6px;padding:1px 6px;border-radius:5px;background:#450a0a;border:1px solid #7f1d1d;color:#f87171;font-size:9px;font-weight:800;white-space:nowrap">${I18N.t('giriş yok')}</span>`
-      : '';
+    // NOT: hasLogin=false bir SORUN değil — danışmanlar panele girmiyor. Rozet
+    // gösterilmiyor; telefon/e-posta zaten Zoho'dan geliyor.
     const seniority = m.seniority
       ? `<span style="padding:1px 6px;border-radius:5px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:9.5px;font-weight:700">${fmt(m.seniority)}</span>`
       : dash;
     return `<tr id="tmRow-${i}" style="${rowBg};border-bottom:1px solid #1e293b">
       <td style="padding:8px 12px;color:#475569;font-size:11px;white-space:nowrap">${i + 1}</td>
-      <td style="padding:8px 12px;color:#f1f5f9;font-weight:600;white-space:nowrap">${fmt(m.fullName)}${noLogin}</td>
+      <td style="padding:8px 12px;color:#f1f5f9;font-weight:600;white-space:nowrap">${fmt(m.fullName)}</td>
       <td style="padding:8px 12px;color:#94a3b8;font-size:11.5px;white-space:nowrap">${m.realName ? fmt(m.realName) : dash}</td>
       <td style="padding:8px 12px;white-space:nowrap">${seniority}</td>
       <td id="tmPhoneCell-${i}" style="padding:8px 12px;color:#cbd5e1;white-space:nowrap;min-width:170px">${phoneDisplay}</td>
@@ -4506,8 +4503,8 @@
     if (!m) return;
     // Telefon/e-posta Users tablosuna Username ile yazılıyor; kadro artık
     // zoho_users'tan geldiği için giriş kaydı olmayan kişiler de listede var.
-    if (!m.username) {
-      showNotice(`${m.fullName} için sistemde giriş kaydı yok — yöneticinin kullanıcı oluşturması gerekiyor.`, 'error');
+    if (!m.hasLogin) {
+      showNotice(`${m.fullName} — telefon/e-posta Zoho'dan geliyor, buradan düzenlenemiyor. Düzeltme için Zoho'daki bilgiyi güncellemek gerekiyor.`, 'error');
       return;
     }
     if (_tmEditingIndex !== -1 && _tmEditingIndex !== i) cancelMember(_tmEditingIndex);
@@ -4683,11 +4680,13 @@
         const _seenUsers = new Set();
         members = (data.members || []).filter(m => {
           const u = (m.username || '').toLowerCase();
-          // username ZORUNLU: kadro artık zoho_users'tan geliyor ve Zoho'da olup
-          // sistemde giriş kaydı olmayan kişiler de dönüyor. daily_performance
-          // upsert'i (entry_date, username) benzersiz kısıtına dayandığı için
-          // username'i olmayan satır kaydedilemez.
-          if (!u || u === _me || _isBoss(m.role) || _seenUsers.has(u)) return false;
+          // Danışmanlar panele girmiyor, login açılmıyor — "Users kaydı olmayanı
+          // atla" YAPILMIYOR. api/team-members.js her üye için kararlı bir
+          // username döndürüyor (Users varsa gerçek Username, yoksa Zoho
+          // adından türetilmiş) — daily_performance anahtarı bu.
+          // Yönetici kontrolü hem Users rolüne hem Zoho rolüne bakıyor: girişi
+          // olmayanda m.role boş gelir, lider ise zohoRole'de "Team Leader - X".
+          if (!u || u === _me || _isBoss(m.role) || _isBoss(m.zohoRole) || _seenUsers.has(u)) return false;
           _seenUsers.add(u);
           return true;
         });
@@ -5704,9 +5703,10 @@
           const data = await r.json().catch(() => ({}));
           const _me = (currentUser.username || '').toLowerCase();
           const _isBoss = role => /leader|lider|manager|müdür|mudur|admin|yönetici|yonetici/i.test(String(role || ''));
-          // username zorunlu — bkz. loadDailyEntry'deki aynı filtre notu.
+          // bkz. loadDailyEntry'deki aynı filtre notu (Users rolü + Zoho rolü).
           _depMembersCache = (data.members || []).filter(m =>
-            m.username && (m.username || '').toLowerCase() !== _me && !_isBoss(m.role));
+            m.username && (m.username || '').toLowerCase() !== _me &&
+            !_isBoss(m.role) && !_isBoss(m.zohoRole));
         } catch(_e) {}
       })();
 

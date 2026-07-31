@@ -94,6 +94,23 @@ function isLeaver(z) {
   return false;
 }
 
+// Danışmanlar panele GİRMİYOR — onlara login açılmıyor. Ama Günlük Ekip Girişi
+// kayıtları daily_performance'ta (entry_date, username) benzersiz kısıtıyla
+// tutuluyor, yani her kişi için kararlı bir anahtar şart.
+//
+// Users satırı varsa onun Username'i kullanılır (geçmiş kayıtlar bağlı kalsın).
+// Yoksa Zoho görünen adından türetilir: mevcut Users kayıtları da tam olarak bu
+// düzende ("Adam Naciri" → "Adam.Naciri", "Marco Rahimi" → "Marco.Rahimi"),
+// dolayısıyla biri sonradan Users'a eklenirse anahtar değişmez ve geçmiş bölünmez.
+function derivedUsername(fullName) {
+  return String(fullName || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .join('.');
+}
+
 // admin.html'deki _rmGetRegion ile aynı mantık: bazı RM hesapları adına göre
 // sabitlenmiş, diğerleri kendi "Takim Adi" alanından türetilir.
 function regionForRm(me) {
@@ -217,7 +234,10 @@ export default async function handler(req, res) {
             // girilmiş olabilir), yoksa Zoho phone, yoksa Zoho mobile.
             const phone = (u && u['Phone']) || z.phone || z.mobile || '';
             return {
-              username:   u ? (u['Username'] || '') : '',
+              // Users satırı varsa gerçek Username, yoksa Zoho adından türetilmiş
+              // kararlı anahtar (bkz. derivedUsername notu). Günlük Ekip Girişi
+              // bu alanı kullanıyor; hasLogin ise gerçekten hesabı var mı der.
+              username:   (u && u['Username']) || derivedUsername(z.full_name),
               fullName:   z.full_name || '',
               realName:   z.original_agent_name || '',
               role:       u ? (u['Role'] || '') : '',
