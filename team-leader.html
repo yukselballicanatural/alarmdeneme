@@ -5555,10 +5555,20 @@
   // ── Gün sonu raporu: PDF indir + mesajı panoya kopyala + WhatsApp aç ──
   // WhatsApp tarayıcıdan otomatik dosya ekleyip otomatik gönderemez; mesaj
   // önceden yazılı gelir, kullanıcı indirilen PDF'i ekleyip Gönder'e basar.
-  const DEP_WA_NUMBER = '905380531093';     // yöneticinin (Benmamar) WhatsApp no
-  const DEP_WA_DESTINATION = 'Benmamar';
+  //
+  // Bölgeye göre hedef: önceden TÜM takım liderleri (Istanbul + Morocco) aynı
+  // numaraya (Benmamar) yönlendiriliyordu. Morocco bölgesindeki takım liderleri
+  // artık kendi bölge numarasına gönderiyor. getRegion(currentUser) hem RM adı
+  // eşleşmelerini (yassin/benmamar) hem TeamMap.regionForTeam üzerinden takım
+  // adını kontrol ediyor — Moutaharrik dahil tüm Morocco takımlarını doğru
+  // tanıyor (bkz. team-map.js).
+  function _depWaDestination() {
+    return getRegion(currentUser) === 'Morocco'
+      ? { number: '905444295827', label: 'Morocco Bölge' }
+      : { number: '905380531093', label: 'Benmamar' };
+  }
 
-  function _depBuildReportMessage() {
+  function _depBuildReportMessage(destination) {
     const data = depRows || [];
     const total = data.length;
     const offDay = data.filter(r => r.attendance === 'off').length;
@@ -5574,7 +5584,7 @@
       `*Team:* ${currentUser.team || '—'}`,
       `*Date:* ${dateStr}`,
       `*Reported by:* ${currentUser.fullName || currentUser.username || '—'}`,
-      `*Destination:* ${DEP_WA_DESTINATION}`,
+      `*Destination:* ${destination.label}`,
       '',
       `*Completion:* ${completed}/${active}`,
       `*Off Day:* ${offDay}`,
@@ -5592,13 +5602,14 @@
 
   async function depSendWhatsApp() {
     if (!depRows.length) { showNotice('Rapor için veri yok.', 'error'); return; }
-    const msg = _depBuildReportMessage();
+    const destination = _depWaDestination();
+    const msg = _depBuildReportMessage(destination);
     // 1) PDF'i indir
     _depExportPdf();
     // 2) Mesajı panoya kopyala (yedek — WhatsApp'ta metin zaten önceden gelir)
     try { await navigator.clipboard.writeText(msg); } catch(_e) {}
     // 3) WhatsApp sohbetini mesaj önceden yazılı olarak aç
-    window.open(`https://wa.me/${DEP_WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+    window.open(`https://wa.me/${destination.number}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
     showNotice('PDF indirildi, mesaj panoya kopyalandı. WhatsApp\'ta PDF\'i ekleyip Gönder\'e bas.', 'success');
   }
 
