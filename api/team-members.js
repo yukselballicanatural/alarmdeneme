@@ -44,6 +44,56 @@ function regionForTeam(team) {
   return t.toLowerCase().includes('morocco') ? 'Morocco' : 'Istanbul';
 }
 
+// ── zoho_users desteği ────────────────────────────────────────────────
+// Kadro artık Zoho'nun Users modülünden geliyor. Orada takım bilgisi `role`
+// alanında duruyor ve deals.team ile AYNI yazım uzayında: üyelerde kanonik ad
+// ("Farah Team - Morocco"), takım liderlerinde alias ("Team Leader - Farah").
+// İkisi de aşağıdaki harita ile aynı kanonik ada indiriliyor.
+const TEAM_ALIASES = {
+  'Arij  Team': ['Arij  Team', 'Arij Team', 'Team Leader-Arij Mahjoubi'],
+  'Askif Team': ['Askif Team', 'Team Leader - Abdulrahman Ziad Askif'],
+  'Touma Team': ['Touma Team', 'Team Leader- Abdulkader Touma', 'Toumi Team'],
+  'Mihoubi Team': ['Mihoubi Team', 'Team Leader - Mihoubi'],
+  'Ahmed Anwar Team': ['Ahmed Anwar Team', 'Team Leader-Ahmed Anwar'],
+  'Ghazal Team': ['Ghazal Team', 'Team Leader - Ahmad Ghazal'],
+  'Ali Omer Team': ['Ali Omer Team', 'Team Leader - Ali Omer'],
+  'Aamir Ali Team': ['Aamir Ali Team', 'Team Leader - Aamir Ali'],
+  'Joel Team': ['Joel Team', 'Team Leader - Joel'],
+  'SM- Mert Team': ['SM- Mert Team', 'Mert Jospeh - Sales Master'],
+  'Sales Master - Amin Connor West': ['Sales Master - Amin Connor West', 'SM Amin Connor - Team'],
+  'Farah Team - Morocco': ['Farah Team - Morocco', 'Team Leader - Farah'],
+  'Sara Team - Morocco': ['Sara Team - Morocco', 'Team Leader - Sara'],
+  'Selma Team - Morocco': ['Selma Team - Morocco', 'Team Leader - Selma'],
+  'Ramadan Team - Morocco': ['Ramadan Team - Morocco', 'Team Leader - Abdelatif Ramadan'],
+  'Moutaharrik Team - Morocco': ['Moutaharrik Team - Morocco', 'Team Leader - Moutaharrik Marco'],
+};
+
+// Karşılaştırma anahtarı — team-map.js'deki key() ile AYNI olmalı
+// ("Arij  Team" gibi çift boşluklu varyantlar eşleşsin).
+function nameKey(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+
+const ALIAS_INDEX = {};
+for (const [canonical, aliases] of Object.entries(TEAM_ALIASES)) {
+  for (const a of aliases) ALIAS_INDEX[nameKey(a)] = canonical;
+}
+
+// Tanınan satış takımına indir; satış dışı birim / bilinmeyen ad → null.
+function normalizeTeam(t) { return ALIAS_INDEX[nameKey(t)] || null; }
+
+// İşten ayrılmış mı?
+// DİKKAT: `status` tek başına yetmiyor — canlı veride exit_date'i geçmişte olan
+// 5 kişi hâlâ status='active' görünüyor (Max Halit 30.07, Tyler Karim 24.07,
+// Amury Blanchet 30.07, Zoe Lane 01.06, Nicholas Parker 06.05). Bu yüzden
+// exit_date asıl ölçüt, status ikincil.
+function isLeaver(z) {
+  if (String(z.status || '').toLowerCase() !== 'active') return true;
+  if (z.exit_date) {
+    const d = new Date(z.exit_date);
+    if (!isNaN(d) && d <= new Date()) return true;
+  }
+  return false;
+}
+
 // admin.html'deki _rmGetRegion ile aynı mantık: bazı RM hesapları adına göre
 // sabitlenmiş, diğerleri kendi "Takim Adi" alanından türetilir.
 function regionForRm(me) {
@@ -98,29 +148,112 @@ export default async function handler(req, res) {
       return { rows, scopeLabel: 'Tümü' };
     }
 
+    // zoho_users satırları için aynı rol bazlı kapsam. Takım, `role` alanından
+    // kanonikleştirilerek belirlenir (üyede kanonik ad, liderde alias).
+    // GÜVENLİK: kapsam yine İSTEMCİDEN GELEN parametreye değil, token'daki
+    // kullanıcı adıyla Users'ta tekrar sorgulanan güncel role/takıma göre.
+    function scopeZoho(rows) {
+      if (claims.r === 'team-leader') {
+        return {
+          rows: rows.filter(z => normalizeTeam(z.role) === (normalizeTeam(myTeam) || myTeam)),
+          scopeLabel: myTeam,
+        };
+      }
+      if (claims.r === 'regional-manager') {
+        const region = regionForRm(me);
+        return {
+          rows: rows.filter(z => {
+            const t = normalizeTeam(z.role);
+            // Satış takımı olmayan birimler (Finance, Profclinic, Executive
+            // Board...) bölge listesine girmesin — RM yalnızca kendi satış
+            // takımlarını yönetiyor.
+            if (!t) return false;
+            return regionForTeam(t) === region;
+          }),
+          scopeLabel: region,
+        };
+      }
+      // admin / super-admin — tüm kadro (satış dışı birimler dahil)
+      return { rows, scopeLabel: 'Tümü' };
+    }
+
     if (req.method === 'GET') {
       if (claims.r === 'team-leader' && !myTeam) { res.status(200).json({ team: '', members: [] }); return; }
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/Users?select=*&order=id.asc&limit=2000`, { headers: H });
-      if (!r.ok) { res.status(502).json({ error: 'Veritabanı hatası.' }); return; }
-      const allRows = await r.json();
-      // İşten ayrılanlar (is_active=false) listelerde görünmez — bu uç hem
-      // "Takımımdaki Kişiler" hem "Günlük Ekip Girişi" üye listesini besliyor,
-      // takım lideri her gün ayrılmış kişi için satır görmesin.
-      // is_active kolonu zoho_users_sync.sql ile eklenir ve varsayılanı true;
-      // kolon yokken `undefined !== false` olduğu için hiçbir şey filtrelenmez.
-      const rows = allRows.filter(u => u['is_active'] !== false);
-      const { rows: scoped, scopeLabel } = scopeRows(rows);
-      const members = scoped
-        .map(u => ({
+
+      const [uR, zR] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/Users?select=*&order=id.asc&limit=2000`, { headers: H }),
+        // zoho_users: Zoho org kullanıcılarının aynası. Tablo yoksa (404) eski
+        // davranışa (yalnız Users) düşülür.
+        fetch(`${SUPABASE_URL}/rest/v1/zoho_users?select=*&limit=2000`, { headers: H }),
+      ]);
+      if (!uR.ok) { res.status(502).json({ error: 'Veritabanı hatası.' }); return; }
+      const userRows = await uR.json();
+      const zohoRows = zR.ok ? await zR.json() : [];
+
+      // Users tarafını isimle indeksle — Users."Deal Owner Name" ile
+      // zoho_users.full_name aynı değer uzayında (Zoho görünen adı).
+      const usersByName = new Map();
+      for (const u of userRows) {
+        const k = nameKey(u['Deal Owner Name'] || u['Username']);
+        if (k && !usersByName.has(k)) usersByName.set(k, u);
+      }
+
+      // ── Kadro kaynağı: zoho_users (varsa) ─────────────────────────────
+      // Önceden liste Users tablosundan geliyordu; Users yalnızca GİRİŞİ OLAN
+      // kişileri tutuyor, dolayısıyla Zoho'da takımda olup henüz hesabı
+      // açılmamış kişiler hiç görünmüyordu (Moutaharrik: Zoho'da 10 kişi,
+      // Users'ta 1). Artık kadro Zoho'dan, giriş bilgisi Users'tan geliyor.
+      let members;
+      let scopeLabel;
+      if (zohoRows.length) {
+        const scoped = scopeZoho(zohoRows);
+        scopeLabel = scoped.scopeLabel;
+        members = scoped.rows
+          .filter(z => !isLeaver(z))
+          .map(z => {
+            const u = usersByName.get(nameKey(z.full_name)) || null;
+            const team = normalizeTeam(z.role) || String(z.role || '').trim();
+            // Telefon: elle girilen Users.Phone ÖNCELİKLİ (düzeltme amaçlı
+            // girilmiş olabilir), yoksa Zoho phone, yoksa Zoho mobile.
+            const phone = (u && u['Phone']) || z.phone || z.mobile || '';
+            return {
+              username:   u ? (u['Username'] || '') : '',
+              fullName:   z.full_name || '',
+              realName:   z.original_agent_name || '',
+              role:       u ? (u['Role'] || '') : '',
+              zohoRole:   z.role || '',
+              team,
+              region:     z.region || regionForTeam(team),
+              phone,
+              email:      z.email || (u && u['Email']) || '',
+              seniority:  z.seniority_level || '',
+              hasLogin:   !!(u && u['Username']),
+              zohoUserId: z.id || '',
+            };
+          });
+      } else {
+        // zoho_users yok — eski davranış (yalnız Users tablosu)
+        const scoped = scopeRows(userRows.filter(u => u['is_active'] !== false));
+        scopeLabel = scoped.scopeLabel;
+        members = scoped.rows.map(u => ({
           username: u['Username'] || '',
           fullName: u['Deal Owner Name'] || u['Username'] || '',
-          role: u['Role'] || '',
-          team: String(u['Takim Adi'] || '').trim(),
-          phone: u['Phone'] || '',
-          email: u['Email'] || '',
-        }))
-        .sort((a, b) => (a.team || '').localeCompare(b.team || '') || a.fullName.localeCompare(b.fullName));
-      res.status(200).json({ team: scopeLabel, members });
+          realName: '',
+          role:     u['Role'] || '',
+          zohoRole: '',
+          team:     String(u['Takim Adi'] || '').trim(),
+          region:   regionForTeam(String(u['Takim Adi'] || '')),
+          phone:    u['Phone'] || '',
+          email:    u['Email'] || '',
+          seniority: '',
+          hasLogin: true,
+          zohoUserId: '',
+        }));
+      }
+
+      members.sort((a, b) =>
+        (a.team || '').localeCompare(b.team || '') || a.fullName.localeCompare(b.fullName));
+      res.status(200).json({ team: scopeLabel, members, source: zohoRows.length ? 'zoho_users' : 'Users' });
       return;
     }
 

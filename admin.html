@@ -748,9 +748,10 @@
           <thead>
             <tr class="text-slate-400">
               <th style="width:36px">#</th>
-              <th>Ad Soyad</th>
+              <th>Zoho Adı</th>
+              <th>Gerçek Ad</th>
               <th>Takım</th>
-              <th>Rol</th>
+              <th>Kıdem</th>
               <th>Telefon</th>
               <th>E-posta</th>
               <th style="width:110px">İşlem</th>
@@ -4296,8 +4297,11 @@
     }
 
     function _amTmSourceLabel(d) {
+      // Kaynak zoho_users ise deal sayısı/tarihi yok — takım doğrudan Zoho'nun
+      // kullanıcı kaydındaki `role` alanından geliyor.
+      if (d.source === 'zoho_users') return I18N.t('Kaynak: Zoho kullanıcı kaydı');
       return I18N.t('Zoho kaynağı: {n} deal, en son {d}')
-        .replace('{n}', d.dealCount)
+        .replace('{n}', d.dealCount == null ? '—' : d.dealCount)
         .replace('{d}', d.lastDealDate ? String(d.lastDealDate).slice(0, 10) : '—');
     }
 
@@ -4365,13 +4369,25 @@
 
     function _amTmRowHtml(m, i) {
       const rowBg = i % 2 === 0 ? '' : 'background:#0a1120';
-      const phoneDisplay = m.phone || '<span style="color:#334155">—</span>';
-      const emailDisplay = m.email || '<span style="color:#334155">—</span>';
+      const dash = '<span style="color:#334155">—</span>';
+      const phoneDisplay = m.phone || dash;
+      const emailDisplay = m.email || dash;
+      // Zoho'da kadroda ama sistemde giriş kaydı yok — bu kişi panele giremez ve
+      // Günlük Ekip Girişi'ne satır olarak eklenemez (upsert username'e bağlı).
+      const noLogin = m.hasLogin === false
+        ? `<span style="margin-left:6px;padding:1px 6px;border-radius:5px;background:#450a0a;border:1px solid #7f1d1d;color:#f87171;font-size:9px;font-weight:800;white-space:nowrap"
+                 title="${_escHtml(I18N.t('Zoho kadrosunda var ama sistemde giriş kaydı yok'))}">${I18N.t('giriş yok')}</span>`
+        : '';
+      // Kıdem/rol: Zoho'daki role (takım) ile kıdem seviyesi birlikte anlamlı.
+      const seniority = m.seniority
+        ? `<span style="padding:1px 6px;border-radius:5px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:9.5px;font-weight:700">${_escHtml(m.seniority)}</span>`
+        : dash;
       return `<tr id="tmRow-${i}" style="${rowBg};border-bottom:1px solid #1e293b">
         <td style="padding:8px 12px;color:#475569;font-size:11px;white-space:nowrap">${i + 1}</td>
-        <td style="padding:8px 12px;color:#f1f5f9;font-weight:600;white-space:nowrap">${_escHtml(m.fullName)}</td>
+        <td style="padding:8px 12px;color:#f1f5f9;font-weight:600;white-space:nowrap">${_escHtml(m.fullName)}${noLogin}</td>
+        <td style="padding:8px 12px;color:#94a3b8;font-size:11.5px;white-space:nowrap">${m.realName ? _escHtml(m.realName) : dash}</td>
         <td style="padding:8px 12px;color:#64748b;font-size:11px;white-space:nowrap">${_escHtml(m.team)}${_amTmDriftBadge(m, i)}</td>
-        <td style="padding:8px 12px;color:#64748b;white-space:nowrap">${_escHtml(m.role)}</td>
+        <td style="padding:8px 12px;white-space:nowrap">${seniority}</td>
         <td id="tmPhoneCell-${i}" style="padding:8px 12px;color:#cbd5e1;white-space:nowrap;min-width:170px">${phoneDisplay}</td>
         <td id="tmEmailCell-${i}" style="padding:8px 12px;color:#cbd5e1;min-width:200px">${emailDisplay}</td>
         <td style="padding:8px 12px;white-space:nowrap;text-align:right">
@@ -4390,7 +4406,8 @@
       const teamF  = document.getElementById('tmTeamFilter').value;
       _amTmFiltered = (_amTeamMembers || []).filter(m => {
         if (teamF && m.team !== teamF) return false;
-        if (search && ![m.fullName, m.team, m.role, m.username].join(' ').toLowerCase().includes(search)) return false;
+        if (search && ![m.fullName, m.realName, m.team, m.role, m.zohoRole, m.username, m.email]
+              .join(' ').toLowerCase().includes(search)) return false;
         return true;
       });
       if (!_amTmFiltered.length) { wrap.classList.add('hidden'); empty.classList.remove('hidden'); return; }
@@ -4444,7 +4461,13 @@
           const data = await r.json().catch(() => ({}));
           if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
           const _isBoss = role => /leader|lider|manager|müdür|mudur|admin|yönetici|yonetici/i.test(String(role || ''));
-          members = (data.members || []).filter(m => !_isBoss(m.role));
+          // m.username ZORUNLU: kadro artık zoho_users'tan geliyor ve Zoho'da
+          // olup sistemde giriş kaydı olmayan kişiler de listede dönüyor.
+          // daily_performance upsert'i (entry_date, username) benzersiz
+          // kısıtına dayandığı için username'i olmayan satır kaydedilemez.
+          // Rol bilgisi de Users'tan geldiği için girişi olmayanda boş kalır —
+          // _isBoss kontrolü ancak username varsa anlamlı.
+          members = (data.members || []).filter(m => m.username && !_isBoss(m.role));
           _adeMembersCache = members;
         }
 
@@ -4718,6 +4741,16 @@
     function editAdminMember(i) {
       const m = _amTmFiltered[i];
       if (!m) return;
+      // Telefon/e-posta Users tablosuna yazılıyor ve hedef Username ile
+      // bulunuyor. Kadro artık zoho_users'tan geldiği için giriş kaydı olmayan
+      // kişiler de listede görünüyor — onlarda yazacak satır yok.
+      if (!m.username) {
+        showSiteNotice(
+          `${m.fullName} ${I18N.t('için sistemde giriş kaydı yok — önce Users sayfasından kullanıcı oluştur.')}`,
+          'warn'
+        );
+        return;
+      }
       const phoneCell = document.getElementById('tmPhoneCell-' + i);
       const emailCell = document.getElementById('tmEmailCell-' + i);
       const editBtn   = document.getElementById('tmEditBtn-' + i);
@@ -7777,7 +7810,8 @@
             if (!r.ok) return;
             const data = await r.json().catch(() => ({}));
             const _isBoss = role => /leader|lider|manager|müdür|mudur|admin|yönetici|yonetici/i.test(String(role || ''));
-            _adeMembersCache = (data.members || []).filter(m => !_isBoss(m.role));
+            // username zorunlu — bkz. adeLoad()'daki aynı filtre notu.
+            _adeMembersCache = (data.members || []).filter(m => m.username && !_isBoss(m.role));
           } catch(_e) {}
         })();
         adminRunEngine(false);

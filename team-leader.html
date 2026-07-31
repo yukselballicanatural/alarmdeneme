@@ -968,8 +968,9 @@
         <thead>
           <tr style="border-bottom:1px solid #1e293b">
             <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">#</th>
-            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Ad Soyad</th>
-            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Rol</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Zoho Adı</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Gerçek Ad</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Kıdem</th>
             <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">Telefon</th>
             <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap">E-posta</th>
             <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap"></th>
@@ -4463,12 +4464,22 @@
 
   function _tmRowHtml(m, i) {
     const rowBg = i % 2 === 0 ? '' : 'background:#0a1120';
-    const phoneDisplay = m.phone || '<span style="color:#334155">—</span>';
-    const emailDisplay = m.email || '<span style="color:#334155">—</span>';
+    const dash = '<span style="color:#334155">—</span>';
+    const phoneDisplay = m.phone || dash;
+    const emailDisplay = m.email || dash;
+    // Zoho kadrosunda var ama sistemde giriş kaydı yok — telefon/e-posta
+    // düzenlenemez (Users satırı yok) ve Günlük Ekip Girişi'ne eklenemez.
+    const noLogin = m.hasLogin === false
+      ? `<span style="margin-left:6px;padding:1px 6px;border-radius:5px;background:#450a0a;border:1px solid #7f1d1d;color:#f87171;font-size:9px;font-weight:800;white-space:nowrap">${I18N.t('giriş yok')}</span>`
+      : '';
+    const seniority = m.seniority
+      ? `<span style="padding:1px 6px;border-radius:5px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:9.5px;font-weight:700">${fmt(m.seniority)}</span>`
+      : dash;
     return `<tr id="tmRow-${i}" style="${rowBg};border-bottom:1px solid #1e293b">
       <td style="padding:8px 12px;color:#475569;font-size:11px;white-space:nowrap">${i + 1}</td>
-      <td style="padding:8px 12px;color:#f1f5f9;font-weight:600;white-space:nowrap">${fmt(m.fullName)}</td>
-      <td style="padding:8px 12px;color:#64748b;white-space:nowrap">${fmt(m.role)}</td>
+      <td style="padding:8px 12px;color:#f1f5f9;font-weight:600;white-space:nowrap">${fmt(m.fullName)}${noLogin}</td>
+      <td style="padding:8px 12px;color:#94a3b8;font-size:11.5px;white-space:nowrap">${m.realName ? fmt(m.realName) : dash}</td>
+      <td style="padding:8px 12px;white-space:nowrap">${seniority}</td>
       <td id="tmPhoneCell-${i}" style="padding:8px 12px;color:#cbd5e1;white-space:nowrap;min-width:170px">${phoneDisplay}</td>
       <td id="tmEmailCell-${i}" style="padding:8px 12px;color:#cbd5e1;min-width:200px">${emailDisplay}</td>
       <td style="padding:8px 12px;white-space:nowrap;text-align:right">
@@ -4493,6 +4504,12 @@
   function editMember(i) {
     const m = _teamMembers[i];
     if (!m) return;
+    // Telefon/e-posta Users tablosuna Username ile yazılıyor; kadro artık
+    // zoho_users'tan geldiği için giriş kaydı olmayan kişiler de listede var.
+    if (!m.username) {
+      showNotice(`${m.fullName} için sistemde giriş kaydı yok — yöneticinin kullanıcı oluşturması gerekiyor.`, 'error');
+      return;
+    }
     if (_tmEditingIndex !== -1 && _tmEditingIndex !== i) cancelMember(_tmEditingIndex);
     _tmEditingIndex = i;
     const phoneCell = document.getElementById('tmPhoneCell-' + i);
@@ -4666,7 +4683,11 @@
         const _seenUsers = new Set();
         members = (data.members || []).filter(m => {
           const u = (m.username || '').toLowerCase();
-          if (u === _me || _isBoss(m.role) || _seenUsers.has(u)) return false;
+          // username ZORUNLU: kadro artık zoho_users'tan geliyor ve Zoho'da olup
+          // sistemde giriş kaydı olmayan kişiler de dönüyor. daily_performance
+          // upsert'i (entry_date, username) benzersiz kısıtına dayandığı için
+          // username'i olmayan satır kaydedilemez.
+          if (!u || u === _me || _isBoss(m.role) || _seenUsers.has(u)) return false;
           _seenUsers.add(u);
           return true;
         });
@@ -5683,8 +5704,9 @@
           const data = await r.json().catch(() => ({}));
           const _me = (currentUser.username || '').toLowerCase();
           const _isBoss = role => /leader|lider|manager|müdür|mudur|admin|yönetici|yonetici/i.test(String(role || ''));
+          // username zorunlu — bkz. loadDailyEntry'deki aynı filtre notu.
           _depMembersCache = (data.members || []).filter(m =>
-            (m.username || '').toLowerCase() !== _me && !_isBoss(m.role));
+            m.username && (m.username || '').toLowerCase() !== _me && !_isBoss(m.role));
         } catch(_e) {}
       })();
 

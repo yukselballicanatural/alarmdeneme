@@ -73,6 +73,20 @@ function nameKey(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').
 const BOSS_ROLE_RE = /leader|lider|manager|müdür|mudur|admin|yönetici|yonetici|\btl\b|\brm\b/i;
 function isBossRole(role) { return BOSS_ROLE_RE.test(String(role || '')); }
 
+// Zoho'ya göre işten ayrılmış mı?
+// DİKKAT: `status` tek başına YETMİYOR — canlı veride exit_date'i geçmişte olan
+// 5 kişi hâlâ status='active' görünüyor (Max Halit 30.07, Tyler Karim 24.07,
+// Amury Blanchet 30.07, Zoe Lane 01.06, Nicholas Parker 06.05). Bu yüzden
+// exit_date asıl ölçüt, status ikincil.
+function isLeaver(z) {
+  if (String(z.status || '').toLowerCase() !== 'active') return true;
+  if (z.exit_date) {
+    const d = new Date(z.exit_date);
+    if (!isNaN(d) && d <= new Date()) return true;
+  }
+  return false;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
@@ -105,10 +119,16 @@ export default async function handler(req, res) {
     // takımı" ise yalnızca bir VEKİL göstergeydi (deal sahibi olmayanları hiç
     // görmez, ayrılanları anlamaz). Tablo henüz kurulmadıysa (404) sessizce
     // eski vekil kurala düşülür.
-    const zoho = new Map();      // nameKey → { team, status, id, email }
+    // NOT: takım bilgisi `role` alanında — Zoho'da ayrı bir "team" alanı yok.
+    // Üyelerde kanonik ad ("Farah Team - Morocco"), takım liderlerinde alias
+    // ("Team Leader - Farah") geliyor; ikisi de normalizeTeam ile aynı kanonik
+    // ada iniyor. Bu sayede liderin takımı da doğru çıkıyor ve deals tabanlı
+    // vekil kuralda gereken "yönetici rolünü atla" istisnası burada GEREKMİYOR.
+    const zoho = new Map();      // nameKey → zoho_users satırı
     {
       const zr = await fetch(
-        `${SUPABASE_URL}/rest/v1/zoho_users?select=id,full_name,email,team,status&limit=5000`,
+        `${SUPABASE_URL}/rest/v1/zoho_users` +
+        `?select=id,full_name,original_agent_name,email,role,region,status,exit_date,phone,mobile&limit=5000`,
         { headers: H }
       );
       if (zr.ok) {
@@ -175,32 +195,36 @@ export default async function handler(req, res) {
       const z = zoho.get(nameKey(ownerName));
 
       // ── Ayrılanlar ──
-      // Zoho'da status<>'active' ise girişi kapatılmalı. Yönetici rolleri de
-      // dahil: ayrılan bir takım lideri de sisteme girmemeli. Kayıt silinmiyor,
-      // yalnızca is_active=false (geçmiş veriye bağlı).
-      if (z && String(z.status || '').toLowerCase() !== 'active' && u['is_active'] !== false) {
+      // Kayıt silinmiyor, yalnızca is_active=false (geçmiş veriye bağlı).
+      // Yönetici rolleri de dahil: ayrılan bir takım lideri de girmemeli.
+      if (z && isLeaver(z) && u['is_active'] !== false) {
         leavers.push({
           username: u['Username'] || '',
           fullName: ownerName,
           role: u['Role'] || '',
           team: String(u['Takim Adi'] || '').trim(),
-          zohoStatus: z.status || '(bilinmiyor)',
+          zohoStatus: z.exit_date
+            ? `exit_date ${String(z.exit_date).slice(0, 10)}`
+            : (z.status || '(bilinmiyor)'),
         });
         continue;   // ayrılan biri için takım güncellemesi anlamsız
       }
 
       // ── Takım ──
-      // Yönetici rollerinin takımı görevle atanır, veriden türetilemez
-      // (bkz. isBossRole notu).
-      if (isBossRole(u['Role'])) { skippedBoss++; continue; }
-
-      // Kaynak tercihi: zoho_users.team (doğrudan bilgi) > en son deal (vekil).
+      // Kaynak tercihi: zoho_users.role (doğrudan bilgi) > en son deal (vekil).
       let target = null, source = null, dealCount = null, lastDealDate = null;
-      const zTeam = z && normalizeTeam(z.team);
+      const zTeam = z && normalizeTeam(z.role);
       if (zTeam) {
+        // Zoho doğrudan söylüyor — yönetici rolü istisnasına GEREK YOK, çünkü
+        // liderin role'ü de ("Team Leader - X") kendi takımına iniyor.
         target = zTeam;
         source = 'zoho_users';
       } else {
+        // Vekil kural: burada yönetici rolleri ATLANIR. Somut vaka — Marco
+        // Rahimi Farah Team'de danışmanken Moutaharrik lideri oldu; en son
+        // deal'i hâlâ "Farah Team" diyor, bu koruma olmasa liderliğinden
+        // alınıp Farah'a geri atılırdı.
+        if (isBossRole(u['Role'])) { skippedBoss++; continue; }
         const info = latest.get(nameKey(ownerName));
         if (!info) continue;                                 // hiç sinyal yok
         target = info.team;
