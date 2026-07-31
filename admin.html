@@ -720,7 +720,7 @@
         </div>
         <div class="flex gap-2 flex-wrap items-center">
           <span id="teamMembersExportMount"></span>
-          <button onclick="loadAdminTeamMembers()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-slate-300 text-xs rounded-lg font-semibold border border-gray-700">↻ Yenile</button>
+          <button onclick="loadAdminTeamMembers(true)" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-slate-300 text-xs rounded-lg font-semibold border border-gray-700">↻ Yenile</button>
         </div>
       </div>
       <div class="mb-4 flex flex-wrap gap-2">
@@ -4148,7 +4148,9 @@
     // gösterim. _amTeamMembers dizisi WhatsApp telefon aramasıyla PAYLAŞILIR
     // — burada girilen numara aynı anda WA gönderiminde de kullanılabilir hale gelir.
     let _amTmTeamsPopulated = false;
-    async function loadAdminTeamMembers() {
+    // force=true (↻ Yenile / senkron sonrası): takım uyuşmazlığı taraması da
+    // throttle'a bakmadan yeniden çalışır.
+    async function loadAdminTeamMembers(force) {
       const loading = document.getElementById('tmLoading');
       const empty   = document.getElementById('tmEmpty');
       const wrap    = document.getElementById('tmTableWrap');
@@ -4171,7 +4173,7 @@
         loading.classList.add('hidden');
         renderAdminTeamMembers();
         // Takım uyuşmazlığı taramasını arka planda yap — tablo beklemesin.
-        _amTmFetchDrift().then(() => renderAdminTeamMembers()).catch(() => {});
+        _amTmFetchDrift(force).then(() => renderAdminTeamMembers()).catch(() => {});
       } catch(e) {
         loading.classList.add('hidden');
         empty.textContent = I18N.t('Yükleme hatası: ') + e.message;
@@ -4197,7 +4199,18 @@
     let _amTmLeavers = [];        // Zoho'da artık aktif olmayanlar
     let _amTmZohoAvailable = false;
 
-    async function _amTmFetchDrift() {
+    // Sayfa her açılışta /api/sync-user-teams'i çağırmasın: uç Users'ı ve
+    // (ayna yoksa) deal tablosunu tarıyor. Sekmeler arası gidiş-gelişte
+    // tekrar tetiklenmemesi için kısa süreli throttle; force=true (↻ Yenile)
+    // bunu atlar.
+    const _AM_TM_DRIFT_TTL = 5 * 60 * 1000;
+    let _amTmDriftAt = 0;
+
+    async function _amTmFetchDrift(force) {
+      if (!force && _amTmDriftAt && Date.now() - _amTmDriftAt < _AM_TM_DRIFT_TTL) {
+        _amTmRenderSyncBar();
+        return;
+      }
       _amTmDrift = new Map();
       _amTmLeavers = [];
       const token = (currentUser && currentUser.token) || '';
@@ -4209,6 +4222,7 @@
       }
       _amTmLeavers = data.leavers || [];
       _amTmZohoAvailable = !!data.zohoAvailable;
+      _amTmDriftAt = Date.now();
       _amTmRenderSyncBar();
     }
 
@@ -4318,9 +4332,10 @@
             : I18N.t('{n} takım güncellendi.').replace('{n}', n),
           f ? 'warn' : 'success'
         );
-        // Günlük Ekip Girişi üye cache'i artık bayat — sıfırla.
+        // Günlük Ekip Girişi üye cache'i ve uyuşmazlık taraması artık bayat.
         _adeMembersCache = null;
-        loadAdminTeamMembers();
+        _amTmDriftAt = 0;
+        loadAdminTeamMembers(true);
       } catch(e) {
         showSiteNotice('Takım güncellenemedi: ' + e.message, 'error');
       } finally { _amTmSyncBusy = false; }

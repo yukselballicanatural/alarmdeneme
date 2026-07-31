@@ -121,36 +121,42 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── 1. Her deal sahibinin EN SON (tanınan takımdaki) deal'ini bul ──
-    // created_time'a göre ARTAN gidiyoruz; aynı sahip için sonraki kayıt
-    // öncekini eziyor, böylece döngü sonunda elimizde en son takım kalıyor.
+    // ── 1. Vekil kural: her deal sahibinin EN SON deal'indeki takım ──────
+    // Yalnızca zoho_users YOKSA gerekli — ayna varsa takımı doğrudan biliyoruz,
+    // 50 bin satırı taramanın anlamı yok (Vercel fonksiyon süresini yakardı).
+    //
+    // AZALAN sırada gidip her sahibi İLK görüldüğünde kaydediyoruz: azalan
+    // sırada bir sahibin ilk kaydı = en son deal'i. Böylece tüm tabloyu
+    // taramaya gerek kalmıyor, sayfa sayısı üstten sınırlı.
     const latest = new Map();   // nameKey → { team, date, count }
-    let offset = 0;
-    const PAGE = 1000;
-    while (true) {
-      const r = await fetch(
-        `${SUPABASE_URL}/rest/v1/deals?select=deal_owner,team,created_time` +
-        `&order=created_time.asc&limit=${PAGE}&offset=${offset}`,
-        { headers: H }
-      );
-      if (!r.ok) { res.status(502).json({ error: 'Veritabanı hatası (deals).' }); return; }
-      const batch = await r.json();
-      if (!Array.isArray(batch) || !batch.length) break;
-      for (const row of batch) {
-        const k = nameKey(row.deal_owner);
-        if (!k) continue;
-        const canonical = normalizeTeam(row.team);
-        if (!canonical) continue;          // satış dışı birim / tanınmayan ad → yok say
-        const prev = latest.get(k);
-        latest.set(k, {
-          team: canonical,
-          date: row.created_time || (prev && prev.date) || null,
-          count: (prev ? prev.count : 0) + 1,
-        });
+    let scannedDeals = 0, scanTruncated = false;
+    if (!zohoAvailable) {
+      const PAGE = 1000;
+      const MAX_PAGES = 12;          // ~12k deal — pratikte son ~1.5 yılı kapsıyor
+      const DEADLINE = Date.now() + 8000;   // sn cinsinden bütçe: fonksiyon zaman aşımına düşmesin
+      for (let page = 0; page < MAX_PAGES; page++) {
+        if (Date.now() > DEADLINE) { scanTruncated = true; break; }
+        const r = await fetch(
+          `${SUPABASE_URL}/rest/v1/deals?select=deal_owner,team,created_time` +
+          `&order=created_time.desc.nullslast&limit=${PAGE}&offset=${page * PAGE}`,
+          { headers: H }
+        );
+        if (!r.ok) { res.status(502).json({ error: 'Veritabanı hatası (deals).' }); return; }
+        const batch = await r.json();
+        if (!Array.isArray(batch) || !batch.length) break;
+        scannedDeals += batch.length;
+        for (const row of batch) {
+          const k = nameKey(row.deal_owner);
+          if (!k) continue;
+          const canonical = normalizeTeam(row.team);
+          if (!canonical) continue;        // satış dışı birim / tanınmayan ad → yok say
+          const prev = latest.get(k);
+          if (prev) { prev.count++; continue; }   // ilk görülen (= en son) kalır
+          latest.set(k, { team: canonical, date: row.created_time || null, count: 1 });
+        }
+        if (batch.length < PAGE) break;
+        if (page === MAX_PAGES - 1) scanTruncated = true;
       }
-      if (batch.length < PAGE) break;
-      offset += PAGE;
-      if (offset > 200000) break;          // emniyet supabı
     }
 
     // ── 2. Users ile karşılaştır ──
@@ -222,6 +228,10 @@ export default async function handler(req, res) {
         owners: latest.size,
         zohoAvailable,          // false → zoho_users kurulmamış, vekil kural kullanılıyor
         zohoUsers: zoho.size,
+        scannedDeals,
+        // true → deal taraması sınıra/süreye takıldı; uzun süre deal'i olmayan
+        // kişiler için sinyal alınamamış olabilir (yanlış öneri DEĞİL, eksik öneri).
+        scanTruncated,
         skippedBoss,
         changes,
         leavers,
