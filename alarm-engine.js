@@ -284,19 +284,46 @@ window.AlarmEngine = (function () {
   async function closeDuplicateAlarms(BASE, KEY) {
     const H = { apikey: KEY, Authorization: 'Bearer ' + KEY };
     const ACTIVE = 'in.(open,seen,in_progress,escalated,arrived,examined,processing)';
-    let rows = [], offset = 0;
-    while (true) {
-      const url = `${BASE}/rest/v1/alarms?status=${ACTIVE}&reference_date=not.is.null` +
-        `&select=id,deal_id,reference_field,reference_date,dedup_key,created_at&limit=1000&offset=${offset}`;
-      const r = await fetch(url, { headers: H });
-      if (!r.ok) break;
-      const batch = await r.json();
-      if (!Array.isArray(batch) || !batch.length) break;
-      rows.push(...batch);
-      if (batch.length < 1000) break;
-      offset += 1000;
+
+    async function fetchActive(extraFilter, select) {
+      const out = [];
+      let offset = 0;
+      while (true) {
+        const url = `${BASE}/rest/v1/alarms?status=${ACTIVE}${extraFilter}` +
+          `&select=${select}&limit=1000&offset=${offset}`;
+        const r = await fetch(url, { headers: H });
+        if (!r.ok) break;
+        const batch = await r.json();
+        if (!Array.isArray(batch) || !batch.length) break;
+        out.push(...batch);
+        if (batch.length < 1000) break;
+        offset += 1000;
+      }
+      return out;
     }
-    if (!rows.length) return 0;
+
+    const rows = await fetchActive('&reference_date=not.is.null',
+      'id,deal_id,reference_field,reference_date,dedup_key,created_at');
+
+    // ── arrival_missing (reference_date NULL) ──────────────────────────
+    // Bu tip, arrival_date girilene kadar MISSING_REPEAT_DAYS'de bir yeniden
+    // hatırlatmak için her periyotta YENİ bir dedup_key üretiyor
+    // (`${deal.id}_arrival_missing_${threeDayBucket()}`). Amaç hatırlatmaydı ama
+    // önceki periyodun satırı kapatılmadığı için alarmlar ÜST ÜSTE BİRİKİYORDU:
+    // tarihi aylarca eksik kalan bir deal 9-10 özdeş kart gösteriyor, takım
+    // liderinin alarm sayısı gerçek problem sayısının kat kat üstüne çıkıyordu.
+    //
+    // Yukarıdaki sorgu `reference_date=not.is.null` filtresi kullandığı için bu
+    // tip dedup'un TAMAMEN DIŞINDA kalıyordu (arrival_missing'in reference_date'i
+    // null). alarm_dedup_cleanup_v2.sql de aynı nedenle bunlara dokunmuyordu.
+    //
+    // Çözüm: deal başına yalnızca EN GÜNCEL periyodun satırı aktif kalır,
+    // eskiler 'duplicate' olarak kapatılır. Periyot mekanizması korunuyor —
+    // lider alarmı kapatıp tarih hâlâ eksikse 3 gün sonra yeni satır yine açılır.
+    const missingRows = await fetchActive('&reference_date=is.null&alarm_type=eq.arrival_missing',
+      'id,deal_id,alarm_type,dedup_key,created_at');
+
+    if (!rows.length && !missingRows.length) return 0;
 
     // Eski format anahtar: "..._today_..." veya eşik içeren "..._15_2026-…"
     const isLegacyKey = (k) => !k || k.includes('_today_') || /_\d+_\d{4}-\d{2}-\d{2}$/.test(k);
@@ -319,18 +346,39 @@ window.AlarmEngine = (function () {
       const keepId = pool[0].id;
       for (const a of list) if (a.id !== keepId) toClose.push(a.id);
     }
+
+    // arrival_missing: deal başına en güncel periyot kalır (bkz. yukarıdaki not).
+    const missingGroups = new Map();
+    for (const a of missingRows) {
+      if (!missingGroups.has(a.deal_id)) missingGroups.set(a.deal_id, []);
+      missingGroups.get(a.deal_id).push(a);
+    }
+    for (const list of missingGroups.values()) {
+      if (list.length < 2) continue;
+      list.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+      for (let i = 1; i < list.length; i++) toClose.push(list[i].id);
+    }
+
     if (!toClose.length) return 0;
+
+    // Tek motor çalışmasında yapılacak kapatma sayısı sınırlı: geçmişte
+    // birikmiş büyük bir yığın (ölçüm sırasında 14.030 satır) tek seferde
+    // 140+ ardışık PATCH demek olurdu ve tarayıcıda arka planda çalışan motoru
+    // dakikalarca meşgul ederdi. Kalanı bir sonraki çalışmada temizlenir.
+    // Toplu geçmiş temizliği için alarm_dedup_cleanup_v3_arrival_missing.sql.
+    const MAX_CLOSE_PER_RUN = 2000;
+    const batchIds = toClose.slice(0, MAX_CLOSE_PER_RUN);
 
     const now = new Date().toISOString();
     const PH = { ...H, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
     let closed = 0;
-    for (let i = 0; i < toClose.length; i += 100) {
-      const idList = toClose.slice(i, i + 100).join(',');
-      const pr = await fetch(`${BASE}/rest/v1/alarms?id=in.(${idList})`, {
+    for (let i = 0; i < batchIds.length; i += 100) {
+      const slice = batchIds.slice(i, i + 100);
+      const pr = await fetch(`${BASE}/rest/v1/alarms?id=in.(${slice.join(',')})`, {
         method: 'PATCH', headers: PH,
         body: JSON.stringify({ status: 'closed', close_reason: 'duplicate', closed_at: now, closed_by: 'system' }),
       });
-      if (pr.ok) closed += Math.min(100, toClose.length - i);
+      if (pr.ok) closed += slice.length;
     }
     return closed;
   }
