@@ -125,9 +125,21 @@ window.AlarmEngine = (function () {
     // ── Arrival + Visit tarihleri ────────────────────────────────────
     const dateFields = [];
 
+    // Hasta ZATEN GELMİŞ mi? Vizit tarihlerinden biri geçmişteyse gelmiş sayılır.
+    // Böyle bir hastada arrival_date boş olsa bile "varış tarihi eksik" alarmı
+    // anlamsız: ayarlanacak bir uçuş/karşılama kalmadı. Ölçümde 11 deal tam
+    // bunu yaşıyordu — geri gelen hasta için hem arrival_missing hem vizit
+    // alarmı açıktı, yani aynı hasta iki kart olarak görünüyordu.
+    const alreadyArrived = [v1, v2, v3].some(v => {
+      const d = daysUntil(v);
+      return d !== null && d < 0;
+    });
+
     if (!isPayment) {
       if (arrivalDate) {
         dateFields.push({ field: 'arrival_date', date: arrivalDate });
+      } else if (alreadyArrived) {
+        // gelmiş hasta — arrival_missing üretilmez
       } else {
         // Arrival date eksik → 3 günde bir tekrar alarm
         alarms.push({
@@ -146,9 +158,25 @@ window.AlarmEngine = (function () {
     if (v2) dateFields.push({ field: 'visit_date_2', date: v2 });
     if (v3) dateFields.push({ field: 'visit_date_3', date: v3 });
 
+    // ── BİR HASTA = BİR KART ─────────────────────────────────────────
+    // Önceden her tarih alanı (arrival + 3 vizit) için AYRI alarm üretiliyordu.
+    // Sonuç: aynı hasta alarm listesinde 2-3 kez görünüyordu — ölçüm sırasında
+    // 58 deal'de böyleydi ve 7'sinde tip bile aynıydı (today_patient hem
+    // arrival_date hem visit_date_1 için, yani aynı gün iki özdeş kart).
+    // Takım liderinin ihtiyacı olan şey "şu hastayla ilgilen" — tek kart.
+    // Bu yüzden EN ACİL tarih seçilip yalnızca onun için alarm üretiliyor;
+    // diğer tarihler deal detayında zaten görünüyor.
+    // Eşitlikte arrival_date öne geçer (dateFields sırası: arrival, v1, v2, v3
+    // ve karşılaştırma kesin `<` olduğu için ilk gelen kalır).
+    let mostUrgent = null;
     for (const { field, date } of dateFields) {
-      const days    = daysUntil(date);
-      if (days === null) continue;
+      const days = daysUntil(date);
+      if (days === null || days < 0) continue;   // geçmiş tarih alarm üretmez
+      if (!mostUrgent || days < mostUrgent.days) mostUrgent = { field, date, days };
+    }
+
+    if (mostUrgent) {
+      const { field, date, days } = mostUrgent;
       const dateStr = String(date).split('T')[0];
       const aType   = field === 'arrival_date' ? 'arrival_approaching' : 'visit_approaching';
 
@@ -237,12 +265,21 @@ window.AlarmEngine = (function () {
 
   // Arrival Date girilmiş deallerin açık arrival_missing alarmlarını kapat
   async function closeStaleArrivalMissing(BASE, KEY, deals) {
-    // Arrival Date artık dolu olan deal ID'lerini topla
+    // Arrival Date artık dolu OLAN, ya da hasta ZATEN GELMİŞ olan deal ID'leri.
+    // İkinci durum: vizit tarihlerinden biri geçmişteyse hasta gelmiş demektir;
+    // arrival_date boş kalsa bile "varış tarihi eksik" alarmının açık durması
+    // anlamsız (ayarlanacak uçuş/karşılama kalmadı) ve aynı hastayı vizit
+    // alarmının yanında ikinci bir kart olarak gösteriyordu.
     const filledIds = [];
     for (const d of deals) {
       const raw = getRaw(d);
       const arrivalDate = raw.Arrival_Date || raw.arrival_date || null;
-      if (arrivalDate) filledIds.push(String(d.id));
+      const alreadyArrived = [
+        raw.Visit_Date  || raw.Visit_Date_1 || null,
+        raw.Visit_Date1 || raw.Visit_Date_2 || null,
+        raw.Visit_Date2 || raw.Visit_Date_3 || null,
+      ].some(v => { const n = daysUntil(v); return n !== null && n < 0; });
+      if (arrivalDate || alreadyArrived) filledIds.push(String(d.id));
     }
     if (!filledIds.length) return 0;
 
@@ -302,8 +339,9 @@ window.AlarmEngine = (function () {
       return out;
     }
 
+    // alarm_type DAHİL: aşağıdaki "bir hasta = bir kart" adımı tipe göre süzüyor.
     const rows = await fetchActive('&reference_date=not.is.null',
-      'id,deal_id,reference_field,reference_date,dedup_key,created_at');
+      'id,deal_id,alarm_type,reference_field,reference_date,dedup_key,created_at');
 
     // ── arrival_missing (reference_date NULL) ──────────────────────────
     // Bu tip, arrival_date girilene kadar MISSING_REPEAT_DAYS'de bir yeniden
@@ -359,7 +397,35 @@ window.AlarmEngine = (function () {
       for (let i = 1; i < list.length; i++) toClose.push(list[i].id);
     }
 
-    if (!toClose.length) return 0;
+    // ── BİR HASTA = BİR KART (tarih bazlı tipler) ─────────────────────
+    // computeAlarms artık deal başına yalnızca EN ACİL tarih için alarm üretiyor,
+    // ama geçmişte her tarih alanı (arrival + 3 vizit) için ayrı alarm üretilmişti:
+    // ölçümde 58 deal'de aynı hasta 2-3 kart olarak görünüyordu. Yukarıdaki
+    // (deal, alan, tarih) grubu bunları YAKALAMIYOR çünkü alanları farklı.
+    // Burada deal başına tek aktif kart bırakılıyor: en YAKIN tarihli olan.
+    const DATE_TYPES = new Set(['arrival_approaching', 'visit_approaching', 'today_patient']);
+    const perDeal = new Map();
+    for (const a of rows) {
+      if (!DATE_TYPES.has(a.alarm_type)) continue;
+      if (!a.reference_date) continue;
+      if (!perDeal.has(a.deal_id)) perDeal.set(a.deal_id, []);
+      perDeal.get(a.deal_id).push(a);
+    }
+    for (const list of perDeal.values()) {
+      if (list.length < 2) continue;
+      // En yakın tarih (bugün/en acil) kalır; eşitlikte en son oluşturulan.
+      list.sort((a, b) =>
+        String(a.reference_date).localeCompare(String(b.reference_date)) ||
+        String(b.created_at).localeCompare(String(a.created_at)));
+      const keepId = list[0].id;
+      for (const a of list) if (a.id !== keepId) toClose.push(a.id);
+    }
+
+    // Aynı id birden fazla kuraldan işaretlenebilir ((deal,alan,tarih) grubu ve
+    // "bir hasta = bir kart" adımı) — tekilleştir, aksi halde aynı satır için
+    // gereksiz PATCH atılır ve sayaç şişer.
+    const uniqueToClose = [...new Set(toClose)];
+    if (!uniqueToClose.length) return 0;
 
     // Tek motor çalışmasında yapılacak kapatma sayısı sınırlı: geçmişte
     // birikmiş büyük bir yığın (ölçüm sırasında 14.030 satır) tek seferde
@@ -367,7 +433,7 @@ window.AlarmEngine = (function () {
     // dakikalarca meşgul ederdi. Kalanı bir sonraki çalışmada temizlenir.
     // Toplu geçmiş temizliği için alarm_dedup_cleanup_v3_arrival_missing.sql.
     const MAX_CLOSE_PER_RUN = 2000;
-    const batchIds = toClose.slice(0, MAX_CLOSE_PER_RUN);
+    const batchIds = uniqueToClose.slice(0, MAX_CLOSE_PER_RUN);
 
     const now = new Date().toISOString();
     const PH = { ...H, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
@@ -379,6 +445,76 @@ window.AlarmEngine = (function () {
         body: JSON.stringify({ status: 'closed', close_reason: 'duplicate', closed_at: now, closed_by: 'system' }),
       });
       if (pr.ok) closed += slice.length;
+    }
+    return closed;
+  }
+
+  // ── Motorun KAPSAMI DIŞINDAKİ deallerin açık alarmlarını kapat ─────────
+  // fetchActiveDeals iki filtre uyguluyor: created_time >= 2026-01-01 ve
+  // stage ∈ ACTIVE_STAGES. Bu filtrelerin dışına düşen bir deal'in alarmları
+  // motor tarafından bir daha ASLA görülmüyor — ne güncellenebiliyor ne
+  // kapatılabiliyor. Ölçümde 802 alarm bu durumdaydı (745'i arrival_missing),
+  // yani panelde görünen alarmların ~%33'ü hiç temizlenemeyen bayat kayıttı.
+  // Örnek: 2025'te açılmış, hastası çoktan gelmiş dealler aylardır "varış
+  // tarihi eksik" kartı gösteriyordu.
+  async function closeOutOfScopeAlarms(BASE, KEY, deals) {
+    // GÜVENLİK: deal listesi boş/eksik geldiyse hiçbir şey kapatma — aksi halde
+    // geçici bir sorgu hatası tüm alarmları süpürebilirdi.
+    if (!deals || !deals.length) return 0;
+    const inScope = new Set(deals.map(d => String(d.id)));
+    const H = { apikey: KEY, Authorization: 'Bearer ' + KEY };
+
+    let rows = [], offset = 0;
+    while (true) {
+      const r = await fetch(
+        `${BASE}/rest/v1/alarms?status=in.(open,seen,in_progress,escalated)` +
+        `&select=id,deal_id&limit=1000&offset=${offset}`, { headers: H });
+      if (!r.ok) return 0;
+      const b = await r.json();
+      if (!Array.isArray(b) || !b.length) break;
+      rows.push(...b);
+      if (b.length < 1000) break;
+      offset += 1000;
+    }
+    const suspect = rows.filter(a => !inScope.has(String(a.deal_id)));
+    if (!suspect.length) return 0;
+
+    // Şüpheliyi DOĞRULA: deal'e bakıp gerçekten kapsam dışı mı diye teyit et.
+    // (Sadece "listede yoktu" demek yetmez — sayfalama kaçırmış olabilir.)
+    const ids = [...new Set(suspect.map(a => String(a.deal_id)))];
+    const outOfScope = new Set();
+    for (let i = 0; i < ids.length; i += 200) {
+      const chunk = ids.slice(i, i + 200);
+      const r = await fetch(
+        `${BASE}/rest/v1/deals?id=in.(${chunk.join(',')})&select=id,stage,created_time`,
+        { headers: H });
+      if (!r.ok) continue;   // teyit edilemedi → dokunma
+      const found = await r.json();
+      const byId = new Map((found || []).map(d => [String(d.id), d]));
+      for (const id of chunk) {
+        const d = byId.get(id);
+        if (!d) { outOfScope.add(id); continue; }          // deal silinmiş
+        const tooOld   = !d.created_time || String(d.created_time) < '2026-01-01';
+        const badStage = !ACTIVE_SET_LOWER.has(String(d.stage || '').toLowerCase().trim());
+        if (tooOld || badStage) outOfScope.add(id);
+      }
+    }
+    const toClose = suspect.filter(a => outOfScope.has(String(a.deal_id))).map(a => a.id);
+    if (!toClose.length) return 0;
+
+    const now = new Date().toISOString();
+    const PH = { ...H, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
+    let closed = 0;
+    for (let i = 0; i < toClose.length; i += 100) {
+      const slice = toClose.slice(i, i + 100);
+      const r = await fetch(`${BASE}/rest/v1/alarms?id=in.(${slice.join(',')})`, {
+        method: 'PATCH', headers: PH,
+        body: JSON.stringify({
+          status: 'closed', close_reason: 'out_of_scope',
+          closed_at: now, closed_by: 'system',
+        }),
+      });
+      if (r.ok) closed += slice.length;
     }
     return closed;
   }
@@ -579,8 +715,12 @@ window.AlarmEngine = (function () {
     // Won + ödemesi %100 tamamlanmış deallerin açık kalan alarmlarını kapat
     if (onProgress) onProgress(_t('Won ve ödemesi tamamlanan dealler için alarmlar kapatılıyor...'));
     const wonPaidCount = await closeAlarmsForWonPaidDeals(BASE, KEY);
-    return { deals: deals.length, generated: newAlarms.length, closed: closedCount, cancelled: cancelledCount, deduped: dedupCount, wonPaid: wonPaidCount, staleDateClosed: staleDateCount, ...result };
+    // Motorun kapsamı dışına düşmüş deallerin (2026 öncesi / aktif olmayan
+    // stage / silinmiş) açık alarmlarını kapat — bkz. closeOutOfScopeAlarms.
+    if (onProgress) onProgress(_t('Kapsam dışı dealler için alarmlar kapatılıyor...'));
+    const outOfScopeCount = await closeOutOfScopeAlarms(BASE, KEY, deals);
+    return { deals: deals.length, generated: newAlarms.length, closed: closedCount, cancelled: cancelledCount, deduped: dedupCount, wonPaid: wonPaidCount, staleDateClosed: staleDateCount, outOfScope: outOfScopeCount, ...result };
   }
 
-  return { run, computeAlarms, daysUntil, getRegion, ACTIVE_STAGES, closeStaleArrivalMissing, closeAlarmsForCancelledDeals, closeDuplicateAlarms, closeAlarmsForWonPaidDeals, closeStaleDateAlarms };
+  return { run, computeAlarms, daysUntil, getRegion, ACTIVE_STAGES, closeStaleArrivalMissing, closeAlarmsForCancelledDeals, closeDuplicateAlarms, closeAlarmsForWonPaidDeals, closeStaleDateAlarms, closeOutOfScopeAlarms };
 })();

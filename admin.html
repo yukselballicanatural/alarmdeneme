@@ -5277,6 +5277,19 @@
       const nums = thresholds.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
       if (!nums.length) { alert(I18N.t('Geçerli eşik listesi girin (örn: 45,30,15,7,3)')); return; }
       if (!parseInt(repeatDays) || parseInt(repeatDays) < 1) { alert(I18N.t('Geçerli tekrar periyodu girin (gün)')); return; }
+
+      // En büyük eşik = erken uyarı penceresinin TAMAMI. Buraya tek küçük bir
+      // sayı yazmak (gerçekte olan: "1") alarm sistemini sessizce kapatıyor —
+      // yalnızca varıştan 1 gün önce alarm çıkar, 2+ gün kalan hiçbir hasta
+      // görünmez. 9 Temmuz'da bu şekilde ayarlanmış ve 201 hasta alarmsız
+      // kalmıştı. Kaydetmeyi engellemiyoruz (bilinçli bir tercih olabilir) ama
+      // sonucu açıkça söyleyip onay istiyoruz.
+      const maxT = Math.max(...nums);
+      if (maxT < 7) {
+        const msg = I18N.t('En geniş eşik {d} gün. Bu, varışına {d} günden fazla kalan hiçbir hastanın alarm listesinde GÖRÜNMEMESİ demek. Önerilen: 45,30,15,7,3. Yine de kaydedilsin mi?')
+          .replace(/\{d\}/g, maxT);
+        if (!confirm(msg)) return;
+      }
       const adminName = (currentUser && (currentUser.fullName || currentUser.username)) || 'Admin';
       try {
         const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' };

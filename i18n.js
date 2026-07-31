@@ -454,6 +454,8 @@
     "Kaynak: her danışmanın en son deal'indeki takım.": "Source: the team on each consultant's most recent deal.",
     'Kaynak: Zoho kullanıcı kayıtları.': 'Source: Zoho user records.',
     'Kaynak: Zoho kullanıcı kaydı': 'Source: Zoho user record',
+    'En geniş eşik {d} gün. Bu, varışına {d} günden fazla kalan hiçbir hastanın alarm listesinde GÖRÜNMEMESİ demek. Önerilen: 45,30,15,7,3. Yine de kaydedilsin mi?':
+      'The widest threshold is {d} days. That means NO patient arriving more than {d} days from now will appear in the alarm list. Recommended: 45,30,15,7,3. Save anyway?',
     'Zoho Adı': 'Zoho Name',
     'Gerçek Ad': 'Real Name',
     'Kıdem': 'Seniority',
