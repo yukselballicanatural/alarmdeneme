@@ -4501,12 +4501,8 @@
   function editMember(i) {
     const m = _teamMembers[i];
     if (!m) return;
-    // Telefon/e-posta Users tablosuna Username ile yazılıyor; kadro artık
-    // zoho_users'tan geldiği için giriş kaydı olmayan kişiler de listede var.
-    if (!m.hasLogin) {
-      showNotice(`${m.fullName} — telefon/e-posta Zoho'dan geliyor, buradan düzenlenemiyor. Düzeltme için Zoho'daki bilgiyi güncellemek gerekiyor.`, 'error');
-      return;
-    }
+    // NOT: giriş kaydı olmayanlar da düzenlenebilir — api/team-members.js
+    // Users satırını yazma anında oluşturuyor (giriş açmadan, Password boş).
     if (_tmEditingIndex !== -1 && _tmEditingIndex !== i) cancelMember(_tmEditingIndex);
     _tmEditingIndex = i;
     const phoneCell = document.getElementById('tmPhoneCell-' + i);

@@ -457,8 +457,6 @@
     'Zoho Adı': 'Zoho Name',
     'Gerçek Ad': 'Real Name',
     'Kıdem': 'Seniority',
-    'telefon/e-posta Zoho kullanıcı kaydından geliyor; buradan düzenlemek için Users tablosunda bir kaydı olması gerekir. Kalıcı düzeltme için Zoho\'daki bilgiyi güncelle.':
-      'phone/email come from the Zoho user record; editing here requires a row in the Users table. For a permanent fix, update the information in Zoho.',
     "{n} kişi Zoho'da artık aktif değil.": '{n} people are no longer active in Zoho.',
     '{n} ayrılan kişinin girişini kapat': 'Disable {n} departed users',
     'Girişleri Kapat': 'Disable Logins',

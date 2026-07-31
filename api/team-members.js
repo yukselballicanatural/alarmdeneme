@@ -290,15 +290,62 @@ export default async function handler(req, res) {
       if (!targetR.ok) { res.status(502).json({ error: 'Veritabanı hatası.' }); return; }
       const targetRows = await targetR.json();
       const target = targetRows[0];
-      if (!target) { res.status(404).json({ error: 'Kullanıcı bulunamadı.' }); return; }
 
-      const targetTeam = String(target['Takim Adi'] || '').trim();
+      // Kadro artık zoho_users'tan geliyor ve danışmanlara login açılmıyor, yani
+      // listedeki çoğu kişinin Users satırı YOK. Eskiden burada 404 dönüyordu ve
+      // telefon/e-posta düzenlenemiyordu. Artık satır yazma anında oluşturuluyor:
+      // Users bu sistemde hem kadro hem (varsa) giriş tablosu.
+      //
+      // GİRİŞ AÇILMIYOR: Password boş bırakılıyor. api/login.js şifre alanı boş
+      // gelen isteği 400 ile reddediyor ve hash'siz karşılaştırmada
+      // stored.trim() === password.trim() olduğu için boş şifreyle giriş
+      // mümkün değil. Role de boş → normalizeRole 'agent' döner ve agent'a
+      // token verilmiyor.
+      let targetTeam;
+      let pendingCreate = null;   // Users satırı yoksa, izin verildikten SONRA oluşturulacak kayıt
+      if (target) {
+        targetTeam = String(target['Takim Adi'] || '').trim();
+      } else {
+        // Users'ta yok — Zoho kadrosunda gerçekten var mı ve hangi takımda?
+        const zAllR = await fetch(`${SUPABASE_URL}/rest/v1/zoho_users?select=id,full_name,role,email&limit=2000`, { headers: H });
+        if (!zAllR.ok) { res.status(404).json({ error: 'Kullanıcı bulunamadı.' }); return; }
+        const zAll = await zAllR.json();
+        // Eşleştirme, GET'te üretilen anahtarın aynısıyla: gerçek Username yoksa
+        // Zoho adından türetilen değer kullanılıyor.
+        const z = zAll.find(x => derivedUsername(x.full_name) === targetUsername);
+        if (!z) { res.status(404).json({ error: 'Kullanıcı bulunamadı.' }); return; }
+        targetTeam = normalizeTeam(z.role) || String(z.role || '').trim();
+        // Kapsam kontrolü aşağıda targetTeam ile yapılıyor; oluşturma ancak
+        // izin verildikten sonra (allowed) gerçekleşiyor.
+        pendingCreate = { username: targetUsername, fullName: z.full_name || '', team: targetTeam, email: z.email || '' };
+      }
+
       let allowed = false;
       if (claims.r === 'team-leader') allowed = targetTeam === myTeam;
       else if (claims.r === 'regional-manager') allowed = regionForTeam(targetTeam) === regionForRm(me);
       else allowed = true; // admin / super-admin
 
       if (!allowed) { res.status(403).json({ error: 'Bu kullanıcı senin yetki alanında değil.' }); return; }
+
+      if (pendingCreate) {
+        const c = pendingCreate;
+        const insR = await fetch(`${SUPABASE_URL}/rest/v1/Users`, {
+          method: 'POST',
+          headers: { ...HJ, Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            Username: c.username,
+            'Deal Owner Name': c.fullName,
+            'Takim Adi': c.team,
+            Role: '',                       // agent — token verilmez
+            Password: null,                 // giriş mümkün değil
+            Phone: phone || null,
+            Email: email || c.email || null,
+          }),
+        });
+        if (!insR.ok) { res.status(502).json({ error: 'Kayıt oluşturulamadı: ' + (await insR.text()) }); return; }
+        res.status(200).json({ ok: true, created: true });
+        return;
+      }
 
       // Users.id bigint JS safe-integer sınırını aşabiliyor — id yerine
       // Username (text) ile hedefle (bkz. proje hafızası: users_table_security_gap).

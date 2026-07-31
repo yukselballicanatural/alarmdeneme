@@ -4739,16 +4739,8 @@
     function editAdminMember(i) {
       const m = _amTmFiltered[i];
       if (!m) return;
-      // Telefon/e-posta Users tablosuna yazılıyor ve hedef Username ile
-      // bulunuyor. Kadro artık zoho_users'tan geldiği için giriş kaydı olmayan
-      // kişiler de listede görünüyor — onlarda yazacak satır yok.
-      if (!m.hasLogin) {
-        showSiteNotice(
-          `${m.fullName} — ${I18N.t('telefon/e-posta Zoho kullanıcı kaydından geliyor; buradan düzenlemek için Users tablosunda bir kaydı olması gerekir. Kalıcı düzeltme için Zoho\'daki bilgiyi güncelle.')}`,
-          'warn'
-        );
-        return;
-      }
+      // NOT: hasLogin=false olanlar da düzenlenebilir. api/team-members.js
+      // kaydı yazma anında oluşturuyor (giriş açmadan — Password boş).
       const phoneCell = document.getElementById('tmPhoneCell-' + i);
       const emailCell = document.getElementById('tmEmailCell-' + i);
       const editBtn   = document.getElementById('tmEditBtn-' + i);
