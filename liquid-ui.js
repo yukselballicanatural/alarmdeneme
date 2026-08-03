@@ -228,7 +228,17 @@
   };
 
   function closeAll() { if (openInstance) openInstance.close(); }
-  document.addEventListener('click', closeAll);
+
+  // Açık listeyi kapatmak için CAPTURE fazında 'mousedown' dinlenir.
+  // Neden: takvim tetikleyicisi gibi bazı kontroller kendi handler'ında
+  // event'i durduruyor; bubble fazındaki bir 'click' dinleyicisine hiç
+  // ulaşmıyor ve açılır liste ekranda takılı kalıyordu. Takvim de aynı
+  // mekanizmayı (mousedown + capture) kullandığı için ikisi artık tutarlı:
+  // hangisi açılırsa diğeri kapanır.
+  document.addEventListener('mousedown', function (e) {
+    if (e.target.closest && (e.target.closest('.lq-sel') || e.target.closest('.lq-panel'))) return;
+    closeAll();
+  }, true);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
   window.addEventListener('resize', function () { if (openInstance) openInstance.position(); });
   window.addEventListener('scroll', function () { if (openInstance) openInstance.position(); }, true);
