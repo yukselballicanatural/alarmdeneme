@@ -210,10 +210,44 @@
     #engineSettingsModal.open { display:flex; }
     #tlDetailModal { display:none; position:fixed; inset:0; z-index:9999; align-items:center; justify-content:center; padding:16px; }
     #tlDetailModal.open { display:flex; }
-    /* Lider Takibi — günlük aktivite şeridi */
-    .tl-spark { display:flex; gap:2px; align-items:flex-end; height:34px; }
-    .tl-spark span { flex:1 1 0; min-width:2px; background:#1e293b; border-radius:1px; }
+    /* Modal açıkken arka sayfanın kaymasını engelle. overscroll-behavior
+       ise panelin sonuna gelindiğinde kaydırmanın arkadaki sayfaya
+       "zincirlenmesini" (scroll chaining) durdurur — ikisi birlikte gerekli. */
+    body.nc-scroll-lock { overflow: hidden; }
+    #tlDetailModal .modal-panel { overscroll-behavior: contain; }
     .tl-pill { display:inline-block; padding:2px 8px; border-radius:9999px; font-size:10px; font-weight:800; white-space:nowrap; }
+
+    /* ── Lider Takibi detay popup'ı ─────────────────────────────────── */
+    .tl-avatar { width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center;
+      font-weight:800; font-size:15px; color:#0b1220; flex:none; letter-spacing:.02em; }
+    .tl-live { display:inline-flex; align-items:center; gap:5px; font-size:9px; font-weight:800;
+      color:#34d399; text-transform:uppercase; letter-spacing:.06em; }
+    .tl-live i { width:6px; height:6px; border-radius:50%; background:#34d399; animation:tlPulse 1.8s ease-in-out infinite; }
+    @keyframes tlPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(1.6)} }
+    /* Skor halkası */
+    .tl-ring { transform:rotate(-90deg); }
+    .tl-ring .tl-ring-val { transition:stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1); }
+    /* Skor bileşen çubukları */
+    .tl-bar { height:6px; background:#1e293b; border-radius:999px; overflow:hidden; }
+    .tl-bar > i { display:block; height:100%; width:0; border-radius:999px; transition:width 1s cubic-bezier(.22,1,.36,1); }
+    /* Günlük aktivite grafiği */
+    .tl-chart { display:flex; gap:2px; align-items:stretch; height:96px; position:relative; }
+    .tl-col { flex:1 1 0; min-width:3px; display:flex; flex-direction:column; justify-content:flex-end;
+      border-radius:3px; position:relative; transition:background .12s; }
+    .tl-col:hover { background:rgba(148,163,184,.10); }
+    .tl-col.tl-wknd { background:rgba(255,255,255,.025); }
+    .tl-col.tl-wknd:hover { background:rgba(148,163,184,.10); }
+    .tl-col > b { display:block; width:100%; border-radius:3px 3px 0 0; transform:scaleY(0); transform-origin:bottom;
+      transition:transform .75s cubic-bezier(.22,1,.36,1); }
+    .tl-chart.on .tl-col > b { transform:scaleY(1); }
+    .tl-tip { position:absolute; pointer-events:none; opacity:0; transform:translate(-50%,-100%);
+      background:#0b1220; border:1px solid #334155; border-radius:9px; padding:6px 10px; font-size:10px;
+      color:#e2e8f0; white-space:nowrap; z-index:6; box-shadow:0 10px 30px rgba(0,0,0,.6); transition:opacity .12s; }
+    .tl-tip.on { opacity:1; }
+    /* Aksiyon dağılımı yatay çubukları */
+    .tl-hbar { height:5px; background:#1e293b; border-radius:999px; overflow:hidden; margin-top:3px; }
+    .tl-hbar > i { display:block; height:100%; width:0; border-radius:999px; background:#2dd4bf;
+      transition:width .9s cubic-bezier(.22,1,.36,1); }
     .am-icon-btn { width:34px; height:34px; border-radius:11px; display:inline-flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04); color:#94a3b8; transition:all .15s; cursor:pointer; font-size:15px; }
     .am-icon-btn:hover { background:rgba(255,255,255,.09); color:#fff; border-color:rgba(255,255,255,.16); }
     .kpi-loading { opacity:.35; animation: nc-kpi-pulse 1.1s ease-in-out infinite; pointer-events:none; }
@@ -1619,15 +1653,24 @@
   <!-- Lider Takibi detay modalı — diğer modaller gibi <main> DIŞINDA:
        position:fixed bir öğe, transform/overflow'lu bir atanın içinde
        kırpılabilir. -->
-  <div id="tlDetailModal">
+  <!-- Boşluğa tıklayınca kapanır: hem backdrop'ta hem kapsayıcıda kontrol var
+       (kapsayıcının padding alanına tıklama backdrop'a denk gelmeyebilir). -->
+  <div id="tlDetailModal" onclick="if(event.target===this)closeTlDetail()">
     <div class="modal-backdrop" onclick="closeTlDetail()"></div>
-    <div class="modal-panel" style="max-width:760px">
-      <div class="flex items-start justify-between mb-3">
-        <div>
-          <h3 class="text-lg font-bold text-white" id="tlDetailName">—</h3>
-          <p class="text-xs text-slate-400" id="tlDetailSub">—</p>
+    <div class="modal-panel" style="max-width:880px">
+      <div class="flex items-start gap-3 mb-4">
+        <div class="tl-avatar" id="tlDetailAvatar">—</div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 class="text-lg font-bold text-white leading-tight" id="tlDetailName">—</h3>
+            <span id="tlDetailPill"></span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5" id="tlDetailSub">—</p>
         </div>
-        <button onclick="closeTlDetail()" class="text-slate-500 hover:text-white text-xl leading-none">&times;</button>
+        <div class="flex flex-col items-end gap-1.5 flex-none">
+          <span class="tl-live" id="tlDetailLive" title="Bu ekran açıkken veriler kendiliğinden tazelenir"><i></i>canlı</span>
+          <button onclick="closeTlDetail()" class="text-slate-500 hover:text-white text-2xl leading-none px-1">&times;</button>
+        </div>
       </div>
       <div id="tlDetailBody"></div>
     </div>
@@ -2985,11 +3028,13 @@
       return out;
     }
 
-    async function loadTlUsage(force) {
+    // silent=true: detay popup'ının canlı tazelemesi — arkadaki tabloda
+    // "Yükleniyor" parlaması olmasın diye gösterge hiç açılmaz.
+    async function loadTlUsage(force, silent) {
       const loading = document.getElementById('tlUsageLoading');
       const empty = document.getElementById('tlUsageEmpty');
       if (!loading) return;
-      if (!_tlRows || force) { loading.style.display = 'block'; empty.style.display = 'none'; }
+      if ((!_tlRows || force) && !silent) { loading.style.display = 'block'; empty.style.display = 'none'; }
       try {
         // 1) Kadro: kimin girişi var, yani kimin bu sistemi kullanması bekleniyor.
         //    Users tablosu tarayıcıya kapalı (RLS) — service_role ile sunucudan.
@@ -3043,6 +3088,9 @@
         renderTlUsage();
       } catch (e) {
         loading.style.display = 'none';
+        // Sessiz (canlı) tazelemede geçici bir ağ hatası yüzünden ELDEKİ
+        // tabloyu silmiyoruz — eski veri hatalı mesajdan iyidir.
+        if (silent) throw e;
         document.getElementById('tlUsageBody').innerHTML = '';
         empty.textContent = I18N.t('Yükleme hatası: ') + e.message;
         empty.style.display = 'block';
@@ -3287,92 +3335,238 @@
       I18N.translateDOM(tbody);
     }
 
-    function openTlDetail(key) {
-      const r = (_tlRows || []).find(x => x.key === key);
-      if (!r) return;
-      const m = _tlStatusMeta(r.status);
-      document.getElementById('tlDetailName').textContent = r.name;
-      document.getElementById('tlDetailSub').innerHTML =
-        `${_escHtml(r.teamLabel)} · ${_escHtml(r.region || '—')} · <span class="tl-pill" style="background:${m.bg};color:${m.color}">${m.label}</span>`;
+    const _TL_TYPE_LABELS = {
+      ALARM_UPDATE: 'Alarm güncelleme', ALARM_CLOSE: 'Alarm kapatma',
+      ALARM_REOPEN: 'Yeniden açma', ALARM_QUICK_ACTION: 'Hızlı aksiyon',
+      SAVE_RESULT: 'Sonuç kaydı', ALARM_RESET: 'Alarm sıfırlama',
+      VIEW_DEAL: 'Deal görüntüleme', LEAD_TRANSFER: 'Lead transferi',
+      LOGIN: 'Giriş', LOGOUT: 'Çıkış', DATA_VIEW: 'Sayfa görüntüleme',
+    };
+    let _tlDetailKey = null;      // açık olan liderin anahtarı
+    let _tlDetailTimer = null;    // canlı tazeleme zamanlayıcısı
 
-      // Günlük aktivite şeridi — dönem boyunca hangi günler iş yapılmış
+    // Ada göre sabit renk — aynı kişi her açılışta aynı rengi alsın.
+    function _tlAvatarColor(name) {
+      let h = 0;
+      for (let i = 0; i < String(name).length; i++) h = (h * 31 + String(name).charCodeAt(i)) % 360;
+      return `hsl(${h},62%,64%)`;
+    }
+    function _tlInitials(name) {
+      const p = String(name || '').trim().split(/\s+/).filter(Boolean);
+      return ((p[0] || '')[0] || '?').toUpperCase() + ((p[1] || '')[0] || '').toUpperCase();
+    }
+
+    function openTlDetail(key) {
+      _tlDetailKey = key;
+      if (!_tlRenderDetail(true)) return;
+      document.getElementById('tlDetailModal').classList.add('open');
+      _tlLockScroll(true);
+      // Canlı: ekran açık kaldığı sürece veriyi arka planda tazele. Sekme
+      // gizliyse boşa istek atmıyoruz (bkz. deals-live.js'teki aynı yaklaşım).
+      clearInterval(_tlDetailTimer);
+      _tlDetailTimer = setInterval(async () => {
+        if (document.visibilityState === 'hidden') return;
+        try { await loadTlUsage(true, true); } catch (e) { return; }
+        if (_tlDetailKey) _tlRenderDetail(false);
+      }, 60000);
+    }
+
+    function closeTlDetail() {
+      document.getElementById('tlDetailModal').classList.remove('open');
+      clearInterval(_tlDetailTimer); _tlDetailTimer = null;
+      _tlDetailKey = null;
+      _tlLockScroll(false);
+    }
+
+    // Arka sayfanın kaymasını engelle. Kaydırma çubuğu kaybolunca oluşan
+    // yatay sıçramayı telafi etmek için body'ye o genişlik kadar boşluk verilir.
+    function _tlLockScroll(on) {
+      const b = document.body;
+      if (on) {
+        const sw = window.innerWidth - document.documentElement.clientWidth;
+        if (sw > 0) b.style.paddingRight = sw + 'px';
+        b.classList.add('nc-scroll-lock');
+      } else {
+        b.classList.remove('nc-scroll-lock');
+        b.style.paddingRight = '';
+      }
+    }
+
+    // firstPaint=false → canlı tazeleme: kaydırma konumu korunur, çubuklar
+    // baştan büyüme animasyonu oynatmaz (her dakika zıplaması rahatsız eder).
+    function _tlRenderDetail(firstPaint) {
+      const r = (_tlRows || []).find(x => x.key === _tlDetailKey);
+      if (!r) return false;
+      const m = _tlStatusMeta(r.status);
+      const panel = document.querySelector('#tlDetailModal .modal-panel');
+      const keepScroll = firstPaint ? 0 : (panel ? panel.scrollTop : 0);
+
+      document.getElementById('tlDetailName').textContent = r.name;
+      const av = document.getElementById('tlDetailAvatar');
+      av.textContent = _tlInitials(r.name);
+      av.style.background = _tlAvatarColor(r.name);
+      document.getElementById('tlDetailPill').innerHTML =
+        `<span class="tl-pill" style="background:${m.bg};color:${m.color}">${_escHtml(m.label)}</span>`;
+      document.getElementById('tlDetailSub').innerHTML =
+        `${_escHtml(r.teamLabel)} · ${_escHtml(r.region || '—')}${r.username ? ' · <span style="color:#475569;font-family:monospace">' + _escHtml(r.username) + '</span>' : ''}`;
+
       const days = r.periodDays;
-      const perDay = {};
+      // Gün bazında aksiyon / giriş
+      const perDay = {}, loginDay = {};
       r.winLogs.forEach(l => {
-        if (_TL_NON_ACTION.has(l.action_type)) return;
         const d = _tlDayStr(l.created_at);
-        perDay[d] = (perDay[d] || 0) + 1;
+        if (l.action_type === 'LOGIN') loginDay[d] = true;
+        if (!_TL_NON_ACTION.has(l.action_type)) perDay[d] = (perDay[d] || 0) + 1;
       });
-      const loginDay = {};
-      r.winLogs.forEach(l => { if (l.action_type === 'LOGIN') loginDay[_tlDayStr(l.created_at)] = true; });
       const maxDay = Math.max(1, ...Object.values(perDay));
-      let spark = '';
+
+      // ── Grafik ────────────────────────────────────────────────────
+      const WD = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
+      let cols = '', labels = '';
+      const step = days <= 7 ? 1 : days <= 30 ? 5 : 15;
       for (let i = days - 1; i >= 0; i--) {
-        const d = _tlDayStr(Date.now() - i * 86400000);
+        const dt = new Date(Date.now() - i * 86400000);
+        const d = _tlDayStr(dt);
         const n = perDay[d] || 0;
-        const h = n ? Math.max(12, Math.round(n / maxDay * 100)) : 6;
-        const col = n ? '#34d399' : (loginDay[d] ? '#fb923c' : '#1e293b');
-        spark += `<span title="${d}: ${n} aksiyon${loginDay[d] ? ' · giriş var' : ''}" style="height:${h}%;background:${col}"></span>`;
+        const wknd = dt.getDay() === 0 || dt.getDay() === 6;
+        const h = n ? Math.max(8, Math.round(n / maxDay * 100)) : (loginDay[d] ? 4 : 2);
+        const col = n ? (n >= maxDay * 0.66 ? '#34d399' : '#22a06b') : (loginDay[d] ? '#fb923c' : '#1e293b');
+        cols += `<div class="tl-col${wknd ? ' tl-wknd' : ''}" data-d="${d}" data-n="${n}" data-w="${WD[dt.getDay()]}" data-l="${loginDay[d] ? 1 : 0}">
+          <b style="height:${h}%;background:${col}"></b></div>`;
+        const idx = days - 1 - i;
+        labels += `<div style="flex:1 1 0;min-width:3px;text-align:center">${(idx % step === 0 || i === 0) ? (dt.getDate() + '') : ''}</div>`;
       }
 
-      const typeLabels = {
-        ALARM_UPDATE: 'Alarm güncelleme', ALARM_CLOSE: 'Alarm kapatma',
-        ALARM_REOPEN: 'Yeniden açma', ALARM_QUICK_ACTION: 'Hızlı aksiyon',
-        SAVE_RESULT: 'Sonuç kaydı', ALARM_RESET: 'Alarm sıfırlama',
-        VIEW_DEAL: 'Deal görüntüleme', LEAD_TRANSFER: 'Lead transferi',
-      };
-      const typeRows = Object.entries(r.byType).sort((a, b) => b[1] - a[1])
-        .map(([k, v]) => `<div class="flex justify-between text-[11px] py-0.5"><span class="text-slate-400">${_escHtml(I18N.t(typeLabels[k] || k))}</span><span class="text-white font-bold">${v}</span></div>`).join('')
-        || `<div class="text-[11px] text-red-400">${I18N.t('Bu dönemde hiç aksiyon yok.')}</div>`;
-
-      const box = (label, val, sub) => `<div class="bg-gray-800/40 rounded-lg p-2">
-        <div class="text-[9px] text-slate-500 uppercase font-bold">${label}</div>
-        <div class="text-base font-bold text-white mt-0.5">${val}</div>
-        ${sub ? `<div class="text-[9px] text-slate-500">${sub}</div>` : ''}</div>`;
-
-      const recent = r.winLogs.slice(0, 40).map(l => `<tr class="border-b border-gray-800/40">
-        <td class="py-1 text-slate-400 text-[10px] whitespace-nowrap">${_amFmtDateTime(l.created_at)}</td>
-        <td class="py-1 text-[10px]"><span style="color:${_TL_NON_ACTION.has(l.action_type) ? '#64748b' : '#2dd4bf'};font-weight:700">${_escHtml(I18N.t(typeLabels[l.action_type] || l.action_type))}</span></td>
-        <td class="py-1 text-slate-300 text-[10px]">${l.deal_name ? _escHtml(l.deal_name) : '—'}</td>
-      </tr>`).join('');
-
+      // ── Skor halkası ──────────────────────────────────────────────
       const sp = r.scoreParts;
-      const scoreSub = I18N.t('tazelik {a} + süreklilik {b}').replace('{a}', sp.fresh).replace('{b}', sp.cons) +
-        (sp.cov === null ? I18N.t(' (yük yok)') : I18N.t(' + kapsam {c}').replace('{c}', sp.cov));
+      const C = 2 * Math.PI * 26;
+      const sCol = r.score >= 70 ? '#34d399' : r.score >= 40 ? '#fbbf24' : '#ef4444';
+      const ring = `<svg class="tl-ring" width="68" height="68" viewBox="0 0 68 68">
+        <circle cx="34" cy="34" r="26" fill="none" stroke="#1e293b" stroke-width="7"/>
+        <circle class="tl-ring-val" cx="34" cy="34" r="26" fill="none" stroke="${sCol}" stroke-width="7"
+          stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}"
+          stroke-dashoffset="${firstPaint ? C.toFixed(1) : (C * (1 - r.score / 100)).toFixed(1)}"/></svg>`;
+
+      const part = (label, val, max, col) => `<div class="mb-1.5">
+        <div class="flex justify-between text-[9px] mb-0.5"><span class="text-slate-400">${label}</span>
+          <span class="text-slate-300 font-bold">${val === null ? '—' : val + '/' + max}</span></div>
+        <div class="tl-bar"><i data-w="${val === null ? 0 : Math.round(val / max * 100)}" style="background:${col}"></i></div></div>`;
+
+      // ── Aksiyon dağılımı ──────────────────────────────────────────
+      const maxType = Math.max(1, ...Object.values(r.byType));
+      const typeRows = Object.entries(r.byType).sort((a, b) => b[1] - a[1])
+        .map(([k, v]) => `<div class="mb-1.5">
+          <div class="flex justify-between text-[10px]"><span class="text-slate-300">${_escHtml(I18N.t(_TL_TYPE_LABELS[k] || k))}</span>
+            <span class="text-white font-bold">${v}</span></div>
+          <div class="tl-hbar"><i data-w="${Math.round(v / maxType * 100)}"></i></div></div>`).join('')
+        || `<div class="text-[11px] text-red-400 py-1">${I18N.t('Bu dönemde hiç aksiyon yok.')}</div>`;
+
+      const stat = (label, val, sub) => `<div class="bg-gray-800/40 rounded-xl p-2.5">
+        <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wide">${label}</div>
+        <div class="text-sm font-bold text-white mt-1">${val}</div>
+        ${sub ? `<div class="text-[9px] text-slate-500 mt-0.5">${sub}</div>` : ''}</div>`;
+
+      const recent = r.winLogs.slice(0, 50).map(l => {
+        const isAct = !_TL_NON_ACTION.has(l.action_type);
+        return `<tr class="border-b border-gray-800/40">
+          <td class="py-1 pr-2 text-slate-500 text-[10px] whitespace-nowrap">${_amFmtDateTime(l.created_at)}</td>
+          <td class="py-1 pr-2 text-[10px] whitespace-nowrap"><span style="color:${isAct ? '#2dd4bf' : '#64748b'};font-weight:700">${isAct ? '●' : '○'} ${_escHtml(I18N.t(_TL_TYPE_LABELS[l.action_type] || l.action_type))}</span></td>
+          <td class="py-1 text-slate-400 text-[10px]" style="max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.deal_name ? _escHtml(l.deal_name) : '—'}</td>
+        </tr>`;
+      }).join('');
+
       document.getElementById('tlDetailBody').innerHTML = `
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-          ${box(I18N.t('Skor'), r.score, _escHtml(scoreSub))}
-          ${box(I18N.t('Son Giriş'), _tlAgoLabel(r.lastLoginAll), r.lastLoginAll ? _amFmtDateTime(r.lastLoginAll) : '')}
-          ${box(I18N.t('Son Aksiyon'), _tlAgoLabel(r.lastAction), r.lastAction ? _amFmtDateTime(r.lastAction) : I18N.t('kayıt yok'))}
-          ${box(I18N.t('Alarm Yükü'), r.workload, r.coverage === null ? I18N.t('aktif alarmı yok') : _escHtml(I18N.t('dokunulan {n}').replace('{n}', r.touched)))}
+        <div class="grid md:grid-cols-5 gap-3 mb-3">
+          <div class="bg-gray-800/30 rounded-xl p-3 flex items-center gap-3 md:col-span-2">
+            <div style="position:relative;flex:none">
+              ${ring}
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column">
+                <span style="font-size:17px;font-weight:800;color:${sCol};line-height:1">${r.score}</span>
+                <span style="font-size:7px;color:#64748b;font-weight:700;letter-spacing:.05em">/100</span>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              ${part(I18N.t('Tazelik'), sp.fresh, 40, '#34d399')}
+              ${part(I18N.t('Süreklilik'), sp.cons, 30, '#60a5fa')}
+              ${part(I18N.t('Kapsam'), sp.cov, 30, '#c084fc')}
+            </div>
+          </div>
+          ${stat(I18N.t('Son Giriş'), _tlAgoLabel(r.lastLoginAll), r.lastLoginAll ? _amFmtDateTime(r.lastLoginAll) : '')}
+          ${stat(I18N.t('Son Aksiyon'), _tlAgoLabel(r.lastAction), r.lastAction ? _amFmtDateTime(r.lastAction) : I18N.t('kayıt yok'))}
+          ${stat(I18N.t('Alarm Yükü'), r.workload, r.coverage === null ? I18N.t('aktif alarmı yok') : _escHtml(I18N.t('dokunulan {n}').replace('{n}', r.touched)))}
         </div>
-        <div class="bg-gray-800/30 rounded-lg p-3 mb-3">
-          <div class="text-[10px] text-slate-400 font-bold uppercase mb-1.5">${_escHtml(I18N.t('Günlük aktivite — son {d} gün').replace('{d}', days))}</div>
-          <div class="tl-spark">${spark}</div>
+
+        <div class="bg-gray-800/30 rounded-xl p-3 mb-3">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">${_escHtml(I18N.t('Günlük aktivite — son {d} gün').replace('{d}', days))}</div>
+            <div class="text-[9px] text-slate-500">${_escHtml(I18N.t('en yoğun gün: {n} aksiyon').replace('{n}', maxDay))}</div>
+          </div>
+          <div class="tl-chart" id="tlChart">${cols}<div class="tl-tip" id="tlTip"></div></div>
+          <div class="flex text-[8px] text-slate-600 mt-1" style="gap:2px">${labels}</div>
           <div class="text-[9px] text-slate-500 mt-1.5">
             <span style="color:#34d399">■</span> ${I18N.t('aksiyon alınan gün')} ·
             <span style="color:#fb923c">■</span> ${I18N.t('sadece giriş yapılan gün')} ·
             <span style="color:#334155">■</span> ${I18N.t('hiç yok')}
           </div>
         </div>
+
         <div class="grid md:grid-cols-2 gap-3">
-          <div class="bg-gray-800/30 rounded-lg p-3">
-            <div class="text-[10px] text-slate-400 font-bold uppercase mb-1.5">${_escHtml(I18N.t('Aksiyon dağılımı ({d} gün)').replace('{d}', days))}</div>
+          <div class="bg-gray-800/30 rounded-xl p-3">
+            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wide mb-2">${_escHtml(I18N.t('Aksiyon dağılımı ({d} gün)').replace('{d}', days))}</div>
             ${typeRows}
-            <div class="mt-2 pt-2 border-t border-gray-700/50 flex justify-between text-[11px]">
-              <span class="text-slate-500">${I18N.t('Giriş sayısı')}</span><span class="text-slate-300 font-bold">${r.logins} (${r.loginDays})</span>
+            <div class="mt-2 pt-2 border-t border-gray-700/50 flex justify-between text-[10px]">
+              <span class="text-slate-500">${I18N.t('Giriş sayısı')}</span>
+              <span class="text-slate-300 font-bold">${r.logins} · ${_escHtml(I18N.t('{n} farklı gün').replace('{n}', r.loginDays))}</span>
             </div>
           </div>
-          <div class="bg-gray-800/30 rounded-lg p-3">
-            <div class="text-[10px] text-slate-400 font-bold uppercase mb-1.5">${I18N.t('Son hareketler')}</div>
-            <div style="max-height:220px;overflow-y:auto">
+          <div class="bg-gray-800/30 rounded-xl p-3">
+            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wide mb-2">${I18N.t('Son hareketler')}</div>
+            <div style="max-height:250px;overflow-y:auto;overscroll-behavior:contain">
               ${recent ? `<table class="w-full">${recent}</table>` : `<div class="text-[11px] text-slate-500">${I18N.t('Kayıt yok.')}</div>`}
             </div>
           </div>
         </div>`;
-      document.getElementById('tlDetailModal').classList.add('open');
+
+      _tlWireChart();
+      if (panel) panel.scrollTop = keepScroll;
+      // Animasyonlar: ilk açılışta bir kare sonra tetiklenir (transition'ın
+      // başlangıç değerini görmesi için); tazelemede anında son hâle geçer.
+      const go = () => {
+        const ch = document.getElementById('tlChart'); if (ch) ch.classList.add('on');
+        document.querySelectorAll('#tlDetailBody .tl-bar > i, #tlDetailBody .tl-hbar > i')
+          .forEach(el => { el.style.width = (el.dataset.w || 0) + '%'; });
+        const rv = document.querySelector('#tlDetailBody .tl-ring-val');
+        if (rv) rv.style.strokeDashoffset = (C * (1 - r.score / 100)).toFixed(1);
+      };
+      if (firstPaint) requestAnimationFrame(() => requestAnimationFrame(go));
+      else go();
+      return true;
     }
-    function closeTlDetail() { document.getElementById('tlDetailModal').classList.remove('open'); }
+
+    // Grafik üzerinde gezinirken gün detayını gösteren ipucu
+    function _tlWireChart() {
+      const chart = document.getElementById('tlChart');
+      const tip = document.getElementById('tlTip');
+      if (!chart || !tip) return;
+      chart.querySelectorAll('.tl-col').forEach(col => {
+        col.addEventListener('mouseenter', () => {
+          const n = Number(col.dataset.n || 0);
+          const parts = [`<strong>${col.dataset.w} ${col.dataset.d.slice(8)}.${col.dataset.d.slice(5, 7)}</strong>`,
+            I18N.t('{n} aksiyon').replace('{n}', n)];
+          if (col.dataset.l === '1') parts.push(`<span style="color:#fb923c">${I18N.t('giriş var')}</span>`);
+          tip.innerHTML = parts.join(' · ');
+          tip.style.left = (col.offsetLeft + col.offsetWidth / 2) + 'px';
+          tip.style.top = '-6px';
+          tip.classList.add('on');
+        });
+        col.addEventListener('mouseleave', () => tip.classList.remove('on'));
+      });
+    }
+
+    // Esc ile kapat — modal açıkken.
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && document.getElementById('tlDetailModal')?.classList.contains('open')) closeTlDetail();
+    });
 
     function _tlExportCsv() {
       if (!_tlRows || !_tlRows.length) return;
