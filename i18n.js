@@ -826,6 +826,16 @@
     'Dışa aktarılacak veri yok.': 'No data to export.',
     '{n} veri sayfası yüklenemedi — liste eksik olabilir. ↻ Yenile ile tekrar deneyin.':
       '{n} data page(s) could not be loaded — the list may be incomplete. Try ↻ Refresh.',
+    // Alarm notuna görsel eki (bkz. attach-util.js / api/alarm-files.js)
+    'Görsel Ekle': 'Add Image',
+    'JPG/PNG/GIF/WebP, en fazla 3 MB': 'JPG/PNG/GIF/WebP, up to 3 MB',
+    'Ekler yükleniyor...': 'Loading attachments...',
+    'Ekler yüklenemedi.': 'Could not load attachments.',
+    'En fazla {n} görsel eklenebilir.': 'You can add up to {n} images.',
+    'Yalnızca görsel dosyaları eklenebilir.': 'Only image files can be added.',
+    '{name} çok büyük (en fazla 3 MB).': '{name} is too large (max 3 MB).',
+    'Yükleme başarısız: ': 'Upload failed: ',
+    // 'Silme başarısız: ' zaten sözlükte var (satır 650), tekrar eklenmedi.
     // Yeni export edilen sayfaların başlık/kolon adları (Loglar, Kullanıcılar,
     // Aktivite, Lider Takibi, Özet tabloları, TL/Bölge performans, RM özeti).
     // Zaten sözlükte olanlar tekrar eklenmedi.

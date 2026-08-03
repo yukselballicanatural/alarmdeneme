@@ -11,6 +11,7 @@
   <script src="team-map.js"></script>
   <script src="alarm-engine.js"></script>
   <script src="export-util.js"></script>
+  <script src="attach-util.js"></script>
   <script src="deals-live.js"></script>
   <!-- PDF export için (xlsx zaten yukarıda cdn.sheetjs.com'dan yükleniyor) -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -1785,6 +1786,7 @@
           <span id="aamNoteCount" style="color:#475569;font-weight:400;font-size:10px">0 / 300</span>
         </label>
         <textarea id="aamNoteInput" class="aam-note" maxlength="300" placeholder="Hasta durumu, arama sonucu, notlar... (en fazla 300 karakter)" oninput="document.getElementById('aamNoteCount').textContent=this.value.length+' / 300'"></textarea>
+        <div id="aamAttachWidget"></div>
       </div>
 
       <div id="aamHistoryWrap" style="display:none;margin-bottom:18px">
@@ -4829,6 +4831,10 @@
       document.body.style.overflow = 'hidden';
       loadAdminAlarmHistory(a.id);
       loadAdminAlarmDealDetails(a.deal_id);
+      // Not alanına görsel eki widget'ı — bkz. attach-util.js / api/alarm-files.js.
+      document.getElementById('aamAttachWidget').innerHTML =
+        NCAttach.renderWidget(`'${_jsStrAttr(String(a.id))}'`, 'aamAttachInput', 'aamAttachMount');
+      NCAttach.load(a.id, 'aamAttachMount');
     }
 
     // Alarm modalı açılınca deal'in TÜM bilgilerini (All Deals sayfasındaki gibi)
@@ -8958,6 +8964,13 @@
     // Eksik veri sayfası uyarısını net-util.js buradan geçirir — o dosya
     // hangi panelde olduğunu bilmesin diye bildirim fonksiyonu enjekte ediliyor.
     if (window.NCNet) NCNet.setNotifier(m => showSiteNotice(m, 'warn'));
+    // Görsel eki widget'ı da aynı sebeple token/bildirim/çeviri fonksiyonlarını
+    // dışarıdan alıyor — attach-util.js hangi panelde olduğunu bilmiyor.
+    if (window.NCAttach) NCAttach.init({
+      getToken: () => (currentUser && currentUser.token) || '',
+      notify: m => showSiteNotice(m, 'warn'),
+      t: s => I18N.t(s),
+    });
 
     function showSiteNotice(msg, type, duration) {
       const el = document.getElementById('siteNotice');

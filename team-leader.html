@@ -1173,6 +1173,7 @@
         <span id="noteCount" style="color:#475569;font-weight:400;font-size:10px">0 / 300</span>
       </label>
       <textarea id="noteInput" class="modal-note" maxlength="300" placeholder="Hasta durumu, arama sonucu, notlar... (en fazla 300 karakter)" oninput="document.getElementById('noteCount').textContent=this.value.length+' / 300'"></textarea>
+      <div id="alarmAttachWidget"></div>
     </div>
 
     <!-- Aksiyon Geçmişi -->
@@ -1384,6 +1385,7 @@
 <script src="team-map.js"></script>
 <script src="alarm-engine.js"></script>
 <script src="export-util.js"></script>
+<script src="attach-util.js"></script>
 <script src="deals-live.js"></script>
 <script>
   let SUPABASE_URL = '';
@@ -1870,6 +1872,12 @@
 
   // Eksik veri sayfası uyarısını net-util.js buradan geçirir (bkz. admin.html'deki aynı not).
   if (window.NCNet) NCNet.setNotifier(m => showNotice(m, 'error'));
+  // Görsel eki widget'ı için de ayni sebeple token/bildirim/çeviri enjekte ediliyor.
+  if (window.NCAttach) NCAttach.init({
+    getToken: () => (currentUser && currentUser.token) || '',
+    notify: m => showNotice(m, 'error'),
+    t: s => I18N.t(s),
+  });
 
   function showNotice(msg, type) {
     const el = document.getElementById('siteNotice');
@@ -2761,6 +2769,10 @@
     document.getElementById('alarmModal').classList.add('open');
     document.body.style.overflow = 'hidden';
     loadAlarmHistory(a.id);
+    // Not alanına görsel eki widget'ı — bkz. attach-util.js / api/alarm-files.js.
+    document.getElementById('alarmAttachWidget').innerHTML =
+      NCAttach.renderWidget(`'${_jsStrAttr(String(a.id))}'`, 'alarmAttachInput', 'alarmAttachMount');
+    NCAttach.load(a.id, 'alarmAttachMount');
   }
 
   // alarm_logs tablosundan aksiyon geçmişini yükle (tablo yoksa bölüm gizli kalır)
