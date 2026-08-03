@@ -824,6 +824,8 @@
     'Geçmiş tarih düzenlenemez. Düzeltme yetkisi admindedir.': 'Past dates cannot be edited. Corrections are admin-only.',
     'Kaydedilecek yeni giriş yok (mevcut kayıtlar kilitli).': 'No new entries to save (existing records are locked).',
     'Dışa aktarılacak veri yok.': 'No data to export.',
+    '{n} veri sayfası yüklenemedi — liste eksik olabilir. ↻ Yenile ile tekrar deneyin.':
+      '{n} data page(s) could not be loaded — the list may be incomplete. Try ↻ Refresh.',
     // Yeni export edilen sayfaların başlık/kolon adları (Loglar, Kullanıcılar,
     // Aktivite, Lider Takibi, Özet tabloları, TL/Bölge performans, RM özeti).
     // Zaten sözlükte olanlar tekrar eklenmedi.

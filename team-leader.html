@@ -1379,6 +1379,7 @@
   });
 </script>
 
+<script src="net-util.js"></script>
 <script src="i18n.js"></script>
 <script src="team-map.js"></script>
 <script src="alarm-engine.js"></script>
@@ -1866,6 +1867,9 @@
     if (days <= 45) return 45;
     return null;
   }
+
+  // Eksik veri sayfası uyarısını net-util.js buradan geçirir (bkz. admin.html'deki aynı not).
+  if (window.NCNet) NCNet.setNotifier(m => showNotice(m, 'error'));
 
   function showNotice(msg, type) {
     const el = document.getElementById('siteNotice');
@@ -2540,7 +2544,7 @@
         const offsets = [];
         for (let off = PAGE; off < total; off += PAGE) offsets.push(off);
         const pages = await Promise.all(offsets.map(off =>
-          fetch(buildAlarmsUrl(off), { headers: H }).then(r => r.ok ? r.json() : [])
+          NCNet.page(buildAlarmsUrl(off), H)
         ));
         pages.forEach(p => { if (Array.isArray(p)) all.push(...p); });
       }
@@ -3475,7 +3479,7 @@
         const offsets = [];
         for (let off = PAGE; off < grandTotal && off < 200000; off += PAGE) offsets.push(off);
         const pages = await Promise.all(offsets.map(off =>
-          fetch(`${base}&limit=${PAGE}&offset=${off}`, { headers: H }).then(r => r.ok ? r.json() : [])
+          NCNet.page(`${base}&limit=${PAGE}&offset=${off}`, H)
         ));
         pages.forEach(p => { if (Array.isArray(p)) accumulate(p); });
       }
@@ -3555,7 +3559,7 @@
         const offsets = [];
         for (let off = PAGE; off < total; off += PAGE) offsets.push(off);
         const rest = await Promise.all(offsets.map(off =>
-          fetch(`${baseUrl}&limit=${PAGE}&offset=${off}`, { headers: H }).then(r => r.ok ? r.json() : [])
+          NCNet.page(`${baseUrl}&limit=${PAGE}&offset=${off}`, H)
         ));
         rest.forEach(p => { if (Array.isArray(p)) all.push(...p); });
       }
@@ -3803,7 +3807,7 @@
         const H2 = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
         const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, i) => {
           const offset = (i + 1) * PAGE;
-          return fetch(`${baseUrl}&offset=${offset}`, { headers: H2 }).then(r => r.ok ? r.json() : []);
+          return NCNet.page(`${baseUrl}&offset=${offset}`, H2);
         }));
         rest.forEach(batch => { if (Array.isArray(batch)) all.push(...batch); });
       }
@@ -4238,7 +4242,7 @@
         const H2 = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
         const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, i) => {
           const offset = (i + 1) * PAGE;
-          return fetch(`${baseUrl}&offset=${offset}`, { headers: H2 }).then(r => r.ok ? r.json() : []);
+          return NCNet.page(`${baseUrl}&offset=${offset}`, H2);
         }));
         rest.forEach(batch => { if (Array.isArray(batch)) all.push(...batch); });
       }
@@ -5065,7 +5069,7 @@
         const offsets = [];
         for (let off = PAGE; off < grandTotal && off < 100000; off += PAGE) offsets.push(off);
         const pages = await Promise.all(offsets.map(off =>
-          fetch(buildUrl(off), { headers: H }).then(r => r.ok ? r.json() : [])
+          NCNet.page(buildUrl(off), H)
         ));
         pages.forEach(p => { if (Array.isArray(p)) all.push(...p); });
       }
@@ -5662,25 +5666,25 @@
 
   // Sayfa başlıklarındaki "Export" butonları — tek noktadan
   // (bkz. export-util.js: NCExport.renderButton) mount edilir.
+  // size: export butonu komşularıyla aynı boyda görünsün. Bu panelde başlık
+  // butonları satır içi stille 8px/14px · 11px · r10 ('lg'); filtre kutularının
+  // (.filter-sel/.filter-inp) yanındaki mount'lar ise 6px/12px · 12px · r8
+  // ('sm') olmalı, yoksa kutulardan bir tık iri durup hizayı bozuyor.
   function mountExportButtons() {
-    const map = {
-      alarmsExportMount:       'exportAlarms',
-      todayExportMount:        'exportToday',
-      dealsExportMount:        'exportDeals',
-      closedAlarmsExportMount: 'exportClosedAlarms',
-      cancelledExportMount:    'exportCancelled',
-      wonExportMount:          'exportWonAlarms',
-      teamMembersExportMount:  'exportTeamMembers',
-      depExportMount:          'exportDailyEntry',
+    NCExport.mount({
+      alarmsExportMount:       { fn: 'exportAlarms', size: 'lg' },
+      todayExportMount:        { fn: 'exportToday', size: 'sm' },
+      dealsExportMount:        { fn: 'exportDeals', size: 'lg' },
+      closedAlarmsExportMount: { fn: 'exportClosedAlarms', size: 'sm' },
+      cancelledExportMount:    { fn: 'exportCancelled', size: 'lg' },
+      wonExportMount:          { fn: 'exportWonAlarms', size: 'sm' },
+      teamMembersExportMount:  { fn: 'exportTeamMembers', size: 'lg' },
+      depExportMount:          { fn: 'exportDailyEntry', size: 'lg' },
       // Sonradan eklendi: Aktivite'de hiç export yoktu, Yönetim Özeti'nde
       // (RM) yalnızca sabit "Export CSV" butonu vardı.
-      tlActivityExportMount:   'exportTlActivity',
-      rmExportMount:           'exportRmCsv',
-    };
-    for (const [mountId, fnName] of Object.entries(map)) {
-      const el = document.getElementById(mountId);
-      if (el) el.innerHTML = NCExport.renderButton(mountId + 'Menu', fnName);
-    }
+      tlActivityExportMount:   { fn: 'exportTlActivity', size: 'sm' },
+      rmExportMount:           { fn: 'exportRmCsv', size: 'lg' },
+    });
   }
 
   // ── Init ─────────────────────────────────────────────────────────

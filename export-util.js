@@ -175,13 +175,38 @@ window.NCExport = (function () {
   // align: menü varsayılan olarak butonun SAĞINA hizalı açılır; sol kenara yakın
   // butonlarda (tablo başlığındaki gibi) bu menüyü kartın dışına taşırabiliyor,
   // 'left' ile sola hizalanır.
-  function renderButton(menuId, fnName, label, align) {
-    const side = align === 'left' ? 'left:0' : 'right:0';
-    return `<div class="nc-export-wrap" style="position:relative;display:inline-block">
-      <button onclick="NCExport.toggleMenu('${menuId}')" style="padding:8px 14px;background:#1e293b;border:1px solid #334155;border-radius:10px;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s" onmouseover="this.style.background='#1e3a5f';this.style.borderColor='#1e40af';this.style.color='#60a5fa'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155';this.style.color='#94a3b8'">
-        <svg style="width:13px;height:13px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+  //
+  // size: butonun yanındaki diğer butonlarla AYNI boyda görünmesi için.
+  // Panellerde iki hakim ölçü var ve export bunların hiçbiriyle birebir
+  // örtüşmüyordu (8px/14px, 11px, r10 idi):
+  //   'sm' → 6px 12px · 12px · r8  — Tailwind "px-3 py-1.5 text-xs rounded-lg"
+  //          butonları ve .filter-select/.filter-sel/.filter-inp kutuları
+  //   'lg' → 8px 14px · 11px · r10 — takım lideri panelindeki satır içi
+  //          stillenmiş başlık butonları (eski davranış, varsayılan)
+  // Ayrıca 'am' Alarm İzleme'deki .am-btn sınıfını aynen kullanır — orada
+  // ölçüyü kopyalamak yerine sınıfı paylaşmak, ileride am-btn değişirse
+  // export'un geride kalmasını önler.
+  const SIZES = {
+    sm: { pad: '6px 12px', font: '12px', radius: '8px', icon: '13px' },
+    lg: { pad: '8px 14px', font: '11px', radius: '10px', icon: '13px' },
+  };
+
+  // opts: string verilirse eski (label) imzası; nesne verilirse {label, align, size}
+  function renderButton(menuId, fnName, opts, alignLegacy) {
+    const o = (opts && typeof opts === 'object') ? opts : { label: opts, align: alignLegacy };
+    const label = o.label;
+    const side = o.align === 'left' ? 'left:0' : 'right:0';
+    const am = o.size === 'am';
+    const s = SIZES[o.size] || SIZES.lg;
+    // am modunda ölçü/renk .am-btn'den gelir; diğerlerinde satır içi stil.
+    const btnAttr = am
+      ? `class="am-btn"`
+      : `style="padding:${s.pad};background:#1e293b;border:1px solid #334155;border-radius:${s.radius};color:#94a3b8;font-size:${s.font};font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.25;white-space:nowrap;transition:all 0.15s" onmouseover="this.style.background='#1e3a5f';this.style.borderColor='#1e40af';this.style.color='#60a5fa'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155';this.style.color='#94a3b8'"`;
+    return `<div class="nc-export-wrap" style="position:relative;display:inline-flex;align-items:center;vertical-align:middle">
+      <button onclick="NCExport.toggleMenu('${menuId}')" ${btnAttr}>
+        <svg style="width:${s.icon};height:${s.icon};flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
         ${_escHtml(label ? _t(label) : _t('Export'))}
-        <svg style="width:10px;height:10px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        <svg style="width:10px;height:10px;flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
       </button>
       <div id="${menuId}" class="nc-export-menu" style="display:none;position:absolute;top:calc(100% + 4px);${side};z-index:500;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:6px;min-width:120px;box-shadow:0 12px 30px rgba(0,0,0,0.5)">
         <button onclick="NCExport.closeAllMenus();${fnName}('csv')" style="width:100%;text-align:left;padding:8px 10px;background:none;border:none;border-radius:7px;color:#cbd5e1;font-size:11.5px;font-weight:600;cursor:pointer" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='none'">CSV</button>
@@ -192,5 +217,23 @@ window.NCExport = (function () {
     </div>`;
   }
 
-  return { download, toggleMenu, closeAllMenus, renderButton };
+  // Mount noktalarını tek yerden doldurur.
+  // map: { mountId: 'fnAdi' } veya { mountId: { fn, label, align, size } }
+  //
+  // Mount span'ine inline-flex + align-items:center veriliyor: bu span'ler
+  // esnek (flex) satırların çocuğu ve varsayılan "stretch" davranışında
+  // satırın tüm yüksekliğine yayılıyor, buton da üste yapışıp komşularıyla
+  // aynı hizada durmuyordu.
+  function mount(map) {
+    for (const [mountId, cfg] of Object.entries(map)) {
+      const el = document.getElementById(mountId);
+      if (!el) continue;
+      const o = (cfg && typeof cfg === 'object') ? cfg : { fn: cfg };
+      el.style.display = 'inline-flex';
+      el.style.alignItems = 'center';
+      el.innerHTML = renderButton(mountId + 'Menu', o.fn, { label: o.label, align: o.align, size: o.size });
+    }
+  }
+
+  return { download, toggleMenu, closeAllMenus, renderButton, mount };
 })();

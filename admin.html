@@ -6,6 +6,7 @@
   <title>Natural Clinic CRM - Admin Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="net-util.js"></script>
   <script src="i18n.js"></script>
   <script src="team-map.js"></script>
   <script src="alarm-engine.js"></script>
@@ -2380,8 +2381,11 @@
         if (total > all.length) {
           const offsets = [];
           for (let off = PAGE; off < total; off += PAGE) offsets.push(off);
+          // Bir sayfa (yeniden denemelere rağmen) gelmezse eskiden sessizce []
+          // dönüyordu: panel eksik veriyi TAM sanıyordu. NCNet.page eksik
+          // sayfayı sayıp kullanıcıya söylüyor (bkz. net-util.js).
           const rest = await Promise.all(offsets.map(off =>
-            fetch(`${baseUrl}&offset=${off}`, { headers: H }).then(r => r.ok ? r.json() : [])
+            NCNet.page(`${baseUrl}&offset=${off}`, H)
           ));
           rest.forEach(p => { if (Array.isArray(p)) all.push(...p); });
         }
@@ -2833,8 +2837,9 @@
           if (total > all.length) {
             const offsets = [];
             for (let off = PAGE; off < total; off += PAGE) offsets.push(off);
+            // Eksik sayfa sessizce yutulmuyor (bkz. loadAdminAlarms'taki aynı not).
             const rest = await Promise.all(offsets.map(off =>
-              fetch(`${baseUrl}&offset=${off}`, { headers: H }).then(r => r.ok ? r.json() : [])
+              NCNet.page(`${baseUrl}&offset=${off}`, H)
             ));
             rest.forEach(p => { if (Array.isArray(p)) all.push(...p); });
           }
@@ -3660,7 +3665,7 @@
           const H2 = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
           const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, i) => {
             const offset = (i + 1) * PAGE;
-            return fetch(`${baseUrl}&offset=${offset}`, { headers: H2 }).then(r => r.ok ? r.json() : []);
+            return NCNet.page(`${baseUrl}&offset=${offset}`, H2);
           }));
           rest.forEach(batch => { if (Array.isArray(batch)) all.push(...batch); });
         }
@@ -4035,7 +4040,7 @@
           const H2 = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
           const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, i) => {
             const offset = (i + 1) * PAGE;
-            return fetch(`${baseUrl}&offset=${offset}`, { headers: H2 }).then(r => r.ok ? r.json() : []);
+            return NCNet.page(`${baseUrl}&offset=${offset}`, H2);
           }));
           rest.forEach(batch => { if (Array.isArray(batch)) all.push(...batch); });
         }
@@ -6055,41 +6060,38 @@
     }
 
     // Sayfa başlıklarındaki "Export" butonları — bkz. export-util.js
+    //
+    // size neden her mount için ayrı yazılı: export butonu komşularıyla aynı
+    // boyda görünmeli. Bu panelde hakim ölçü Tailwind'in
+    // "px-3 py-1.5 text-xs rounded-lg" butonları ve .filter-select kutuları,
+    // ikisi de 6px/12px · 12px · r8 → 'sm'. İstisnalar:
+    //   • Alarm İzleme başlığı .am-btn kullanıyor → 'am' (sınıfı paylaşıyor)
+    //   • Günlük Ekip Girişi'ndeki kaydet butonu daha iri (9px/18px) → 'lg'
     function mountAdminExportButtons() {
-      const map = {
-        alarmsExportMount:       'exportAdminAlarms',
-        todayExportMount:        'exportAdminToday',
-        dealsExportMount:        'exportDealsAdmin',
-        closedAlarmsExportMount: 'exportAdminClosedAlarms',
-        cancelledExportMount:    'exportAdminCancelled',
-        wonExportMount:          'exportAdminWon',
-        teamMembersExportMount: 'exportTeamMembersAdmin',
-        depExportMount:         'exportDailyEntryAdmin',
+      NCExport.mount({
+        alarmsExportMount:       { fn: 'exportAdminAlarms', size: 'am' },
+        todayExportMount:        { fn: 'exportAdminToday', size: 'sm' },
+        dealsExportMount:        { fn: 'exportDealsAdmin', size: 'sm' },
+        closedAlarmsExportMount: { fn: 'exportAdminClosedAlarms', size: 'sm' },
+        cancelledExportMount:    { fn: 'exportAdminCancelled', size: 'sm' },
+        wonExportMount:          { fn: 'exportAdminWon', size: 'sm' },
+        teamMembersExportMount:  { fn: 'exportTeamMembersAdmin', size: 'sm' },
+        depExportMount:          { fn: 'exportDailyEntryAdmin', size: 'lg' },
         // Aşağıdakiler sonradan eklendi — bu sayfalarda ya hiç export yoktu ya
         // da tek biçimlik (yalnızca CSV/XLSX) bir buton vardı. Artık hepsi aynı
         // CSV/XLSX/PDF/HTML menüsünü kullanıyor.
-        logsExportMount:        'exportLogsAdmin',
-        usersExportMount:       'exportUsersAdmin',
-        activityExportMount:    'exportActivityAdmin',
-        tlUsageExportMount:     'exportTlUsage',
-        resultCodeExportMount:  'exportResultCodes',
-        teamSummaryExportMount: 'exportTeamSummary',
-        agentSummaryExportMount: 'exportAgentSummary',
-      };
-      for (const [mountId, fnName] of Object.entries(map)) {
-        const el = document.getElementById(mountId);
-        if (el) el.innerHTML = NCExport.renderButton(mountId + 'Menu', fnName);
-      }
-      // Alarm İzleme'de iki ayrı rapor yan yana — ikisi de "Export" yazarsa
-      // hangisinin ne indirdiği anlaşılmıyor, bu yüzden etiketli.
-      const labeled = {
-        tlPerfExportMount:     ['exportAlarmPerformance', 'TL Performans'],
-        regionPerfExportMount: ['exportRegionPerformance', 'Bölge Performans'],
-      };
-      for (const [mountId, [fnName, label]] of Object.entries(labeled)) {
-        const el = document.getElementById(mountId);
-        if (el) el.innerHTML = NCExport.renderButton(mountId + 'Menu', fnName, label);
-      }
+        logsExportMount:         { fn: 'exportLogsAdmin', size: 'sm' },
+        usersExportMount:        { fn: 'exportUsersAdmin', size: 'sm' },
+        activityExportMount:     { fn: 'exportActivityAdmin', size: 'sm' },
+        tlUsageExportMount:      { fn: 'exportTlUsage', size: 'sm' },
+        resultCodeExportMount:   { fn: 'exportResultCodes', size: 'sm' },
+        teamSummaryExportMount:  { fn: 'exportTeamSummary', size: 'sm' },
+        agentSummaryExportMount: { fn: 'exportAgentSummary', size: 'sm' },
+        // Alarm İzleme'de iki ayrı rapor yan yana — ikisi de "Export" yazarsa
+        // hangisinin ne indirdiği anlaşılmıyor, bu yüzden etiketli.
+        tlPerfExportMount:       { fn: 'exportAlarmPerformance', label: 'TL Performans', size: 'am' },
+        regionPerfExportMount:   { fn: 'exportRegionPerformance', label: 'Bölge Performans', size: 'am' },
+      });
     }
 
     // TL / Bölge bazlı alarm performans raporu (PDF Bölüm 14)
@@ -8567,22 +8569,21 @@
     // inmeden önce, ilk 100 satırla hemen dolmaya başlar.
     async function _fetchAllRaw(onBatch) {
       const h = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
-      const sleep = ms => new Promise(res => setTimeout(res, ms));
       // RM ise tüm deal sorguları sunucu tarafında bölgenin takımlarına kısıtlanır
       const teamQ = window.rmTeams ? `&team=${TeamMap.inFilter(window.rmTeams)}` : '';
 
       // 500'ler çoğunlukla Postgres statement_timeout (57014) altında, yoğun
-      // eşzamanlı sayfa isteklerinden kaynaklanıyor — geçici. Önceden 3
-      // denemeden sonra pes edip TÜM yüklemeyi (o ana kadar akıtılan satırlar
-      // dahil) "Veri yükleme hatası: HTTP 500" ile kesiyordu. Artık daha fazla
-      // ve daha uzun aralıklı deneme yapılıyor; bir sayfa gerçekten tükenirse
-      // (5 deneme sonrası) o sayfa boş döner, tüm yükleme iptal edilmez.
-      async function fetchRange(offset, limit, attempt) {
+      // eşzamanlı sayfa isteklerinden kaynaklanıyor — geçici.
+      //
+      // Buradaki elle yazılmış yeniden deneme döngüsü KALDIRILDI: aynı işi artık
+      // net-util.js tüm okumalar için tek noktadan yapıyor. İkisi üst üste
+      // kalsaydı denemeler çarpılır (4 × 5 = 20) ve gerçekten bozuk bir sayfa
+      // dakikalarca panelin yüklenmesini bekletirdi.
+      // Bir sayfa yine de tükenirse çağıran taraf onu boş bırakıp devam ediyor;
+      // tek sayfa yüzünden tüm yükleme iptal edilmiyor.
+      async function fetchRange(offset, limit) {
         const r = await fetch(`${SUPABASE_URL}/rest/v1/deals?select=${_DEALS_SELECT}${teamQ}${DEALS_2026_Q}&limit=${limit}&offset=${offset}`, { headers: h });
-        if (!r.ok) {
-          if (r.status >= 500 && attempt < 5) { await sleep(600 * attempt); return fetchRange(offset, limit, attempt + 1); }
-          throw new Error('HTTP ' + r.status);
-        }
+        if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       }
 
@@ -8596,7 +8597,7 @@
 
       // 2. İlk 100 satırı hemen çek ve göster
       const FIRST = 100;
-      const firstRows = await fetchRange(0, FIRST, 1);
+      const firstRows = await fetchRange(0, FIRST);
       if (onBatch) onBatch(firstRows);
       if (total <= FIRST) return firstRows;
 
@@ -8623,7 +8624,7 @@
         while (next < pages) {
           const i = next++;
           try {
-            const rows = await fetchRange(offsets[i], SIZE, 1);
+            const rows = await fetchRange(offsets[i], SIZE);
             results[i] = rows;
             if (onBatch) onBatch(rows);
           } catch (e) {
@@ -8640,7 +8641,7 @@
       // olmadan) yeniden dene — genelde bu noktada Postgres yükü azalmış olur.
       for (const i of failedPages) {
         try {
-          const rows = await fetchRange(offsets[i], SIZE, 1);
+          const rows = await fetchRange(offsets[i], SIZE);
           results[i] = rows;
           if (onBatch) onBatch(rows);
         } catch (e) { /* hâlâ başarısız — bu sayfa eksik kalır, tüm yükleme iptal edilmez */ }
@@ -8954,6 +8955,10 @@
       document.getElementById('siteConfirm').style.display = 'none';
       _scCb = null;
     }
+    // Eksik veri sayfası uyarısını net-util.js buradan geçirir — o dosya
+    // hangi panelde olduğunu bilmesin diye bildirim fonksiyonu enjekte ediliyor.
+    if (window.NCNet) NCNet.setNotifier(m => showSiteNotice(m, 'warn'));
+
     function showSiteNotice(msg, type, duration) {
       const el = document.getElementById('siteNotice');
       el.innerHTML = I18N.t(msg);
