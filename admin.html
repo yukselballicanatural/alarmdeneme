@@ -661,7 +661,10 @@
 
       <!-- Result Code Breakdown -->
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-        <h3 class="text-sm font-bold text-white mb-3">Sonuç Kodu Aktivitesi</h3>
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <h3 class="text-sm font-bold text-white">Sonuç Kodu Aktivitesi</h3>
+          <span id="resultCodeExportMount"></span>
+        </div>
         <div class="overflow-x-auto">
           <table class="tbl w-full">
             <thead>
@@ -679,7 +682,10 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <h3 class="text-sm font-bold text-white mb-3">Takım Performansı</h3>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <h3 class="text-sm font-bold text-white">Takım Performansı</h3>
+            <span id="teamSummaryExportMount"></span>
+          </div>
           <div class="overflow-auto max-h-80">
             <table class="tbl w-full">
               <thead><tr class="text-slate-400">
@@ -695,7 +701,10 @@
           </div>
         </div>
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <h3 class="text-sm font-bold text-white mb-3">Deal Sayısına Göre En İyi Danışmanlar</h3>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <h3 class="text-sm font-bold text-white">Deal Sayısına Göre En İyi Danışmanlar</h3>
+            <span id="agentSummaryExportMount"></span>
+          </div>
           <div class="overflow-auto max-h-80">
             <table class="tbl w-full">
               <thead><tr class="text-slate-400">
@@ -720,7 +729,8 @@
     <div id="view-users" class="hidden">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h2 class="text-xl font-bold text-white">Team Management</h2>
-        <div class="flex gap-2 flex-wrap">
+        <div class="flex gap-2 flex-wrap items-center">
+          <span id="usersExportMount"></span>
           <button onclick="loadUsers()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-slate-300 text-xs rounded-lg font-semibold border border-gray-700">↻ Refresh</button>
           <button onclick="openUserModal(null)" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg font-semibold">+ Add User</button>
         </div>
@@ -865,8 +875,8 @@
     <div id="view-logs" class="hidden">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-bold text-white">Sistem Logları</h2>
-        <div class="flex gap-2">
-          <button onclick="exportLogsExcel()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs rounded-lg font-semibold">⬇ Export</button>
+        <div class="flex gap-2 items-center">
+          <span id="logsExportMount"></span>
           <button onclick="loadLogs()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg font-semibold">↻ Refresh</button>
         </div>
       </div>
@@ -1040,8 +1050,8 @@
             Tüm Sistemi Güncelle
           </button>
           <span id="alarmsExportMount"></span>
-          <button onclick="exportAlarmPerformance()" class="am-btn">TL Performans</button>
-          <button onclick="exportRegionPerformance()" class="am-btn">Bölge Performans</button>
+          <span id="tlPerfExportMount"></span>
+          <span id="regionPerfExportMount"></span>
           <button onclick="openEngineSettingsModal()" class="am-icon-btn" title="Motor Ayarları">⚙️</button>
         </div>
       </div>
@@ -1550,6 +1560,7 @@
         </div>
         <div style="margin-left:auto" class="flex items-end gap-3">
           <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Toplam</label><span id="actCount" class="text-white font-bold text-sm">—</span></div>
+          <span id="activityExportMount"></span>
           <button onclick="loadAdminActivity()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg font-semibold">↻ Yenile</button>
         </div>
       </div>
@@ -1586,7 +1597,7 @@
             <option value="90">Son 90 gün</option>
           </select>
         </div>
-        <button onclick="_tlExportCsv()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-slate-200 text-xs rounded-lg font-semibold border border-gray-700">⭳ CSV</button>
+        <span id="tlUsageExportMount"></span>
         <button onclick="loadTlUsage(true)" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg font-semibold">↻ Yenile</button>
       </div>
     </div>
@@ -2927,10 +2938,8 @@
       ['actDateFrom','actDateTo'].forEach(id => NCDatePicker.setValue(id, ''));
       renderAdminActivity();
     }
-    function renderAdminActivity() {
-      const tbody = document.getElementById('activityBody');
-      const empty = document.getElementById('activityEmpty');
-      if (!tbody) return;
+    // Filtre mantığı ayrı: tablo da export da bunu kullanıyor (tek kaynak).
+    function _actFilteredRows() {
       const search = (document.getElementById('actSearch')?.value || '').toLowerCase().trim();
       const typeF  = document.getElementById('actType')?.value || '';
       const ownerF = document.getElementById('actOwnerFilter')?.value || '';
@@ -2941,12 +2950,25 @@
       if (ownerF) data = data.filter(l => l._owner === ownerF);
       if (search) data = data.filter(l => [l._name, l.action_by, l.note, l._team].join(' ').toLowerCase().includes(search));
       if (dFrom || dTo) data = data.filter(l => { const d = l.created_at ? String(l.created_at).slice(0,10) : ''; if (!d) return false; if (dFrom && d < dFrom) return false; if (dTo && d > dTo) return false; return true; });
+      return data;
+    }
+
+    // Aksiyon etiketleri — tablo ve export aynı metni kullanıyor.
+    function _actLabel(t) {
+      const m = { status_change:I18N.t('Durum Değişti'), note:I18N.t('Not Eklendi'), closed:I18N.t('Kapatıldı'), reopened:I18N.t('Yeniden Açıldı'), created:I18N.t('Oluşturuldu'), auto_closed:I18N.t('Otomatik Kapatıldı'), whatsapp_sent:I18N.t('WhatsApp Gönderildi') };
+      return m[t] || t || '';
+    }
+
+    function renderAdminActivity() {
+      const tbody = document.getElementById('activityBody');
+      const empty = document.getElementById('activityEmpty');
+      if (!tbody) return;
+      const data = _actFilteredRows();
       document.getElementById('actCount').textContent = data.length;
       if (!data.length) { tbody.innerHTML = ''; empty.textContent = I18N.t('Kayıtlı aksiyon bulunamadı.'); empty.style.display = 'block'; return; }
       empty.style.display = 'none';
-      const actionLabels = { status_change:I18N.t('Durum Değişti'), note:I18N.t('Not Eklendi'), closed:I18N.t('Kapatıldı'), reopened:I18N.t('Yeniden Açıldı'), created:I18N.t('Oluşturuldu'), auto_closed:I18N.t('Otomatik Kapatıldı'), whatsapp_sent:I18N.t('WhatsApp Gönderildi') };
       tbody.innerHTML = data.slice(0, 500).map(l => {
-        const act = actionLabels[l.action_type] || l.action_type;
+        const act = _actLabel(l.action_type);
         const transition = (l.new_status && l.new_status !== l.old_status)
           ? `${_amStatusMeta(l.old_status).label || l.old_status || '—'} → <strong style="color:${_amStatusMeta(l.new_status).color}">${_amStatusMeta(l.new_status).label || l.new_status}</strong>`
           : '';
@@ -3572,26 +3594,20 @@
       if (e.key === 'Escape' && document.getElementById('tlDetailModal')?.classList.contains('open')) closeTlDetail();
     });
 
-    function _tlExportCsv() {
-      if (!_tlRows || !_tlRows.length) return;
-      const head = ['Takim Lideri', 'Takim', 'Bolge', 'Durum', 'Skor', 'Son Giris', 'Son Aksiyon',
-        'Aktif Gun', 'Aksiyon', 'Giris', 'Alarm Yuku', 'Dokunulan', 'Kapsam %'];
-      const esc = v => '"' + String(v === null || v === undefined ? '' : v).replace(/"/g, '""') + '"';
-      const lines = [head.map(esc).join(';')];
-      _tlRows.slice().sort((a, b) => a.score - b.score).forEach(r => {
-        lines.push([r.name, r.teamLabel, r.region, _tlStatusMeta(r.status).label, r.score,
-          r.lastLoginAll ? String(r.lastLoginAll).slice(0, 16).replace('T', ' ') : 'hic',
-          r.lastAction ? String(r.lastAction).slice(0, 16).replace('T', ' ') : 'hic',
-          r.actionDays, r.actions, r.logins, r.workload, r.touched,
-          r.coverage === null ? '' : Math.round(r.coverage * 100)].map(esc).join(';'));
-      });
-      // Excel'in Türkçe karakterleri doğru okuması için BOM
-      const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `lider-takibi-${_tlDayStr(Date.now())}.csv`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    // Panelin geri kalanıyla aynı export menüsünü (CSV/XLSX/PDF/HTML) kullanıyor;
+    // önceden elle yazılmış noktalı virgüllü tek biçimlik CSV vardı.
+    function exportTlUsage(format) {
+      if (!_tlRows || !_tlRows.length) { showSiteNotice(I18N.t('Dışa aktarılacak veri yok.'), 'warn'); return; }
+      const headers = ['Takım Lideri', 'Takım', 'Bölge', 'Durum', 'Skor', 'Son Giriş', 'Son Aksiyon',
+        'Aktif Gün', 'Aksiyon', 'Giriş', 'Alarm Yükü', 'Dokunulan', 'Kapsam %'];
+      const dt = v => v ? String(v).slice(0, 16).replace('T', ' ') : I18N.t('kayıt yok');
+      const rows = _tlRows.slice().sort((a, b) => a.score - b.score).map(r => [
+        r.name, r.teamLabel, r.region, _tlStatusMeta(r.status).label, r.score,
+        dt(r.lastLoginAll), dt(r.lastAction),
+        r.actionDays, r.actions, r.logins, r.workload, r.touched,
+        r.coverage === null ? '' : Math.round(r.coverage * 100),
+      ]);
+      NCExport.download(format || 'csv', headers, rows, 'lider_takibi', 'Lider Takibi — Sistem Kullanımı');
     }
 
     // ── İptal Alarmları ──────────────────────────────────────────────
@@ -5903,13 +5919,8 @@
       }
     }
 
-    function _csvDownload(rows, filename) {
-      const blob = new Blob([rows.join('\n')], { type:'text/csv;charset=utf-8;' });
-      const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    }
-    function _csvRow(cols) { return cols.map(c => `"${String(c??'').replace(/"/g,'""')}"`).join(','); }
+    // (_csvDownload / _csvRow kaldırıldı — son iki kullanıcısı olan TL ve Bölge
+    //  performans raporları da artık NCExport'a geçti, elle CSV üreten kod kalmadı.)
 
     function exportAdminAlarms(format) {
       const data = filterAdminAlarms();
@@ -5977,6 +5988,72 @@
       NCExport.download(format || 'csv', headers, rows, 'won_alarmi_admin', 'Won Alarmı');
     }
 
+    // ── Sonradan export kazanan sayfalar ──────────────────────────────
+    // ORTAK KURAL: export ekranda O AN GÖRÜNEN veriyi verir, yani aktif
+    // filtreler uygulanmış hâlini. Bu yüzden filtreleme mantığı render
+    // fonksiyonundan ayrı bir yardımcıya çıkarıldı ve ikisi de onu kullanıyor —
+    // aksi halde filtre kuralı iki yerde yaşar ve zamanla ayrışır.
+    //
+    // TEK İSTİSNA satır sayısı: tablolar performans için kırpılıyor (aktivite
+    // 500, en iyi danışmanlar 30). Export'ta kırpma YOK; birinin 500 satırlık
+    // ekran görüntüsünü indirip eksik rapor sanması, tam veriden daha kötü.
+
+    function exportLogsAdmin(format) {
+      const data = _logsFilteredRows();
+      if (!data.length) { showSiteNotice(I18N.t('Dışa aktarılacak veri yok.'), 'warn'); return; }
+      const headers = ['Zaman','Kullanıcı','Ad Soyad','Rol','Takım','Sayfa','İşlem','Deal Adı','Deal ID','Detay'];
+      const rows = data.map(l => [l.created_at, l.username, l.full_name, l.role, l.team, l.page, l.action_type, l.deal_name, l.deal_id, l.details]);
+      NCExport.download(format || 'csv', headers, rows, 'sistem_loglari', 'Sistem Logları');
+    }
+    // Eski buton bu adı çağırıyordu — dışarıda kalan bir çağrı varsa kırılmasın.
+    function exportLogsExcel() { exportLogsAdmin('xlsx'); }
+
+    function exportUsersAdmin(format) {
+      const data = _usersFilteredRows();
+      if (!data.length) { showSiteNotice(I18N.t('Dışa aktarılacak veri yok.'), 'warn'); return; }
+      // Şifre kolonu KASITLI olarak yok: değerler hashli tutuluyor, API'den
+      // dönmüyor ve zaten dosyaya yazılacak bir bilgi değil.
+      const headers = ['Ad Soyad','Kullanıcı Adı','Rol','Takım'];
+      const rows = data.map(u => [uName(u), u['Username'], u['Role'], uTeam(u)]);
+      NCExport.download(format || 'csv', headers, rows, 'kullanicilar', 'Team Management');
+    }
+
+    function exportActivityAdmin(format) {
+      const data = _actFilteredRows();
+      if (!data.length) { showSiteNotice(I18N.t('Dışa aktarılacak veri yok.'), 'warn'); return; }
+      const headers = ['Zaman','Kim','Rol','Takım','Hasta','Deal ID','Aksiyon','Önceki Durum','Yeni Durum','Not'];
+      const rows = data.map(l => [
+        _amFmtDateTime(l.created_at), l.action_by, l.action_role, l._team,
+        l._name || '', l.deal_id || '', _actLabel(l.action_type),
+        l.old_status ? (_amStatusMeta(l.old_status).label || l.old_status) : '',
+        l.new_status ? (_amStatusMeta(l.new_status).label || l.new_status) : '',
+        l.note || '',
+      ]);
+      NCExport.download(format || 'csv', headers, rows, 'aktivite_admin', 'Aktivite / İşlem Geçmişi');
+    }
+
+    function exportResultCodes(format) {
+      const rows = _resultCodeSorted();
+      if (!rows.length) { showSiteNotice(I18N.t('Dışa aktarılacak veri yok.'), 'warn'); return; }
+      NCExport.download(format || 'csv', ['Sonuç Kodu','Alt Kod','Adet','Danışman'],
+        rows.map(r => [r.code, r.sub, r.count, r.agents]), 'sonuc_kodu_aktivitesi', 'Sonuç Kodu Aktivitesi');
+    }
+
+    function exportTeamSummary(format) {
+      const rows = _teamSummarySorted();
+      if (!rows.length) { showSiteNotice(I18N.t('Dışa aktarılacak veri yok.'), 'warn'); return; }
+      NCExport.download(format || 'csv', ['Takım','Deal','Ödenen','Ödenmeyen','Toplam','Kazanılan'],
+        rows.map(v => [v.team, v.deals, v.paid, v.unpaid, v.total, v.won]), 'takim_performansi', 'Takım Performansı');
+    }
+
+    function exportAgentSummary(format) {
+      // Tabloda ilk 30 gösteriliyor; export TAMAMINI veriyor (bkz. yukarıdaki not).
+      const rows = _agentSummarySorted();
+      if (!rows.length) { showSiteNotice(I18N.t('Dışa aktarılacak veri yok.'), 'warn'); return; }
+      NCExport.download(format || 'csv', ['Danışman','Deal','Ödenen','Tamamlanan'],
+        rows.map(v => [v.agent, v.deals, v.paid, v.wonPaid || 0]), 'en_iyi_danismanlar', 'Deal Sayısına Göre En İyi Danışmanlar');
+    }
+
     // Sayfa başlıklarındaki "Export" butonları — bkz. export-util.js
     function mountAdminExportButtons() {
       const map = {
@@ -5988,15 +6065,36 @@
         wonExportMount:          'exportAdminWon',
         teamMembersExportMount: 'exportTeamMembersAdmin',
         depExportMount:         'exportDailyEntryAdmin',
+        // Aşağıdakiler sonradan eklendi — bu sayfalarda ya hiç export yoktu ya
+        // da tek biçimlik (yalnızca CSV/XLSX) bir buton vardı. Artık hepsi aynı
+        // CSV/XLSX/PDF/HTML menüsünü kullanıyor.
+        logsExportMount:        'exportLogsAdmin',
+        usersExportMount:       'exportUsersAdmin',
+        activityExportMount:    'exportActivityAdmin',
+        tlUsageExportMount:     'exportTlUsage',
+        resultCodeExportMount:  'exportResultCodes',
+        teamSummaryExportMount: 'exportTeamSummary',
+        agentSummaryExportMount: 'exportAgentSummary',
       };
       for (const [mountId, fnName] of Object.entries(map)) {
         const el = document.getElementById(mountId);
         if (el) el.innerHTML = NCExport.renderButton(mountId + 'Menu', fnName);
       }
+      // Alarm İzleme'de iki ayrı rapor yan yana — ikisi de "Export" yazarsa
+      // hangisinin ne indirdiği anlaşılmıyor, bu yüzden etiketli.
+      const labeled = {
+        tlPerfExportMount:     ['exportAlarmPerformance', 'TL Performans'],
+        regionPerfExportMount: ['exportRegionPerformance', 'Bölge Performans'],
+      };
+      for (const [mountId, [fnName, label]] of Object.entries(labeled)) {
+        const el = document.getElementById(mountId);
+        if (el) el.innerHTML = NCExport.renderButton(mountId + 'Menu', fnName, label);
+      }
     }
 
     // TL / Bölge bazlı alarm performans raporu (PDF Bölüm 14)
-    function exportAlarmPerformance() {
+    // Artık ortak export menüsünü kullanıyor — eskiden yalnızca CSV veriyordu.
+    function exportAlarmPerformance(format) {
       const active = new Set(['open','seen','in_progress','arrived','examined','processing','escalated']);
       const teams = {};
       adminAllAlarms.forEach(a => {
@@ -6011,15 +6109,16 @@
         if (['closed','cancelled'].includes(a.status)) teams[t].closed++;
         if (a.status === 'no_show') teams[t].noshow++;
       });
-      const headers = _csvRow(['Takım','Team Leader','Bölge','Toplam Alarm','Aktif','Gecikmiş','Kapatılan','No-show','Kapatma Oranı %']);
-      const rows = [headers, ...Object.entries(teams)
+      const headers = ['Takım','Team Leader','Bölge','Toplam Alarm','Aktif','Gecikmiş','Kapatılan','No-show','Kapatma Oranı %'];
+      const rows = Object.entries(teams)
         .sort((a,b) => b[1].total - a[1].total)
-        .map(([team, v]) => _csvRow([team, v.leader, v.region, v.total, v.open, v.overdue, v.closed, v.noshow, v.total ? Math.round((v.closed + v.noshow) / v.total * 100) : 0]))];
-      _csvDownload(rows, `alarm_performans_${new Date().toISOString().slice(0,10)}.csv`);
+        .map(([team, v]) => [team, v.leader, v.region, v.total, v.open, v.overdue, v.closed, v.noshow, v.total ? Math.round((v.closed + v.noshow) / v.total * 100) : 0]);
+      if (!rows.length) { showSiteNotice(I18N.t('Dışa aktarılacak veri yok.'), 'warn'); return; }
+      NCExport.download(format || 'csv', headers, rows, 'alarm_performans', 'TL Performans');
     }
 
     // Region bazlı alarm performans raporu (PDF Bölüm 14 — TL'den ayrı, bölge özeti)
-    function exportRegionPerformance() {
+    function exportRegionPerformance(format) {
       const active = new Set(['open','seen','in_progress','arrived','examined','processing','escalated']);
       const regions = {};
       adminAllAlarms.forEach(a => {
@@ -6033,11 +6132,12 @@
         if (a.alarm_type === 'arrival_missing' && active.has(a.status)) regions[r].missing++;
         if (_amIsToday(a) && active.has(a.status)) regions[r].today++;
       });
-      const headers = _csvRow(['Bölge','Toplam Alarm','Aktif','Gecikmiş','Bugün Gelecek','Eksik Tarih','Kapatılan','No-show','Kapatma Oranı %']);
-      const rows = [headers, ...Object.entries(regions)
+      const headers = ['Bölge','Toplam Alarm','Aktif','Gecikmiş','Bugün Gelecek','Eksik Tarih','Kapatılan','No-show','Kapatma Oranı %'];
+      const rows = Object.entries(regions)
         .sort((a,b) => b[1].total - a[1].total)
-        .map(([region, v]) => _csvRow([region, v.total, v.open, v.overdue, v.today, v.missing, v.closed, v.noshow, v.total ? Math.round((v.closed + v.noshow) / v.total * 100) : 0]))];
-      _csvDownload(rows, `region_performans_${new Date().toISOString().slice(0,10)}.csv`);
+        .map(([region, v]) => [region, v.total, v.open, v.overdue, v.today, v.missing, v.closed, v.noshow, v.total ? Math.round((v.closed + v.noshow) / v.total * 100) : 0]);
+      if (!rows.length) { showSiteNotice(I18N.t('Dışa aktarılacak veri yok.'), 'warn'); return; }
+      NCExport.download(format || 'csv', headers, rows, 'region_performans', 'Bölge Performans');
     }
 
     // ── Gün Filtresi — TÜM sayfayı (KPI kartları + bölge panelleri + Alarm
@@ -7226,7 +7326,7 @@
     }
 
     function exportDealsAdmin(format) {
-      if (!filteredDeals.length) { showSiteNotice('No data to export.', 'warn'); return; }
+      if (!filteredDeals.length) { showSiteNotice(I18N.t('Dışa aktarılacak veri yok.'), 'warn'); return; }
       const headers = ['Deal Name','Deal ID','Team','Agent','Stage','Language','Arrival Date','Oluşturulma','Visit 1','Visit 2','Visit 3','Deal Amount','Paid Amount','Unpaid Amount','Payment Status','Visit Status','Result Code','Sub Code','Agent Note','Status'];
       const rows = filteredDeals.map(d => [
         d['Deal Name']||'', d['DealID']||'', d['Team Group']||'', d['Deal Owner Name']||'',
@@ -7263,12 +7363,21 @@
       return activeCol === col ? `<span class="sort-arrow">${dir === 1 ? '▲' : '▼'}</span>` : '';
     }
 
-    function renderTeamSummaryTable() {
-      const rows = _teamSummaryRows.slice().sort((a,b) => {
-        const va = a[_teamSortCol], vb = b[_teamSortCol];
-        if (typeof va === 'string') return _teamSortDir * String(va).localeCompare(String(vb));
-        return _teamSortDir * ((va||0) - (vb||0));
+    // Özet tablolarının sıralaması — tablo ve export aynı sırayı kullansın diye
+    // ortak yardımcı. Export ekranda gördüğün sırayla inmeli.
+    function _sumSort(rows, col, dir) {
+      return rows.slice().sort((a, b) => {
+        const va = a[col], vb = b[col];
+        if (typeof va === 'string') return dir * String(va).localeCompare(String(vb));
+        return dir * ((va || 0) - (vb || 0));
       });
+    }
+    function _teamSummarySorted()  { return _sumSort(_teamSummaryRows, _teamSortCol, _teamSortDir); }
+    function _agentSummarySorted() { return _sumSort(_agentSummaryRows, _agentSortCol, _agentSortDir); }
+    function _resultCodeSorted()   { return _sumSort(_resultCodeRows, _resultSortCol, _resultSortDir); }
+
+    function renderTeamSummaryTable() {
+      const rows = _teamSummarySorted();
       document.getElementById('teamSummaryBody').innerHTML = rows.map(v => `
           <tr class="border-b border-gray-800/50 hover:bg-gray-800/30">
             <td class="py-1 text-slate-200">${fmt(v.team)}</td>
@@ -7290,11 +7399,7 @@
     }
 
     function renderAgentSummaryTable() {
-      const rows = _agentSummaryRows.slice().sort((a,b) => {
-        const va = a[_agentSortCol], vb = b[_agentSortCol];
-        if (typeof va === 'string') return _agentSortDir * String(va).localeCompare(String(vb));
-        return _agentSortDir * ((va||0) - (vb||0));
-      }).slice(0, 30);
+      const rows = _agentSummarySorted().slice(0, 30);
       document.getElementById('agentSummaryBody').innerHTML = rows.map(v => `
           <tr class="border-b border-gray-800/50 hover:bg-gray-800/30">
             <td class="py-1 text-slate-200">${fmt(v.agent)}</td>
@@ -7317,11 +7422,7 @@
     let _resultCodeRows = [];
     let _resultSortCol = 'count', _resultSortDir = -1;
     function renderResultCodeTable() {
-      const rows = _resultCodeRows.slice().sort((a, b) => {
-        const va = a[_resultSortCol], vb = b[_resultSortCol];
-        if (typeof va === 'string') return _resultSortDir * String(va).localeCompare(String(vb));
-        return _resultSortDir * ((va || 0) - (vb || 0));
-      });
+      const rows = _resultCodeSorted();
       document.getElementById('resultCodeBody').innerHTML = rows.map(r => `
           <tr class="border-b border-gray-800/50 hover:bg-gray-800/30">
             <td class="py-1.5 text-slate-200">${fmt(r.code)}</td>
@@ -7908,13 +8009,19 @@
       renderUsersTable();
     }
 
-    function renderUsersTable() {
+    // Filtre mantığı ayrı: tablo da export da bunu kullanıyor (tek kaynak).
+    function _usersFilteredRows() {
       const search = (document.getElementById('userSearch')?.value || '').toLowerCase();
       let list = allUsers;
       if (activeTeamFilter) list = list.filter(u => uTeam(u) === activeTeamFilter);
       if (search) list = list.filter(u =>
         [uName(u), u['Username'], u['Role'], uTeam(u)].join(' ').toLowerCase().includes(search)
       );
+      return list;
+    }
+
+    function renderUsersTable() {
+      const list = _usersFilteredRows();
       const roleStyle = r => {
         r = (r || '').toLowerCase();
         if (r === 'super-admin' || r === 'super admin') return 'color:#e879f9;font-weight:700';
@@ -8149,7 +8256,8 @@
       ALARM_REOPEN:I18N.t('Alarm Yeniden Aç'), ALARM_ESCALATE:I18N.t('Alarm Eskale')
     };
 
-    function renderLogs() {
+    // Filtre mantığı ayrı: tablo da export da bunu kullanıyor (tek kaynak).
+    function _logsFilteredRows() {
       const actionFilter = document.getElementById('logFilter').value;
       const userFilter   = (document.getElementById('logUser').value || '').toLowerCase();
       const pageFilter   = document.getElementById('logPage').value;
@@ -8157,7 +8265,7 @@
       const search       = (document.getElementById('logSearch').value || '').toLowerCase();
       const dateFrom     = document.getElementById('logDateFrom').value || '';
       const dateTo       = document.getElementById('logDateTo').value || '';
-      const logs = allLogs.filter(l => {
+      return allLogs.filter(l => {
         if (actionFilter && (l.action_type||'') !== actionFilter) return false;
         if (userFilter   && !(l.username||'').toLowerCase().includes(userFilter)) return false;
         if (pageFilter   && (l.page||'') !== pageFilter) return false;
@@ -8171,6 +8279,10 @@
         }
         return true;
       });
+    }
+
+    function renderLogs() {
+      const logs = _logsFilteredRows();
       document.getElementById('logCount').textContent = logs.length + ' / ' + allLogs.length;
       if (!logs.length) {
         document.getElementById('logsEmpty').classList.remove('hidden');
@@ -8292,17 +8404,10 @@
       );
     }
 
-    function exportLogsExcel() {
-      if (!allLogs.length) { showSiteNotice('No logs to export.', 'warn'); return; }
-      const ws = XLSX.utils.json_to_sheet(allLogs.map(l => ({
-        Zaman: l.created_at||'', Kullanici: l.username||'', Ad_Soyad: l.full_name||'',
-        Rol: l.role||'', Takim: l.team||'', Sayfa: l.page||'',
-        Islem: l.action_type||'', Deal_Adi: l.deal_name||'', Deal_ID: l.deal_id||'', Detay: l.details||''
-      })));
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Logs');
-      XLSX.writeFile(wb, 'logs_' + new Date().toISOString().slice(0,10) + '.xlsx');
-    }
+    // (Eski XLSX-only exportLogsExcel buradan kaldırıldı — aynı adı taşıyan
+    //  ikinci bir tanım vardı ve bu sonraki tanım öncekini eziyordu. Log
+    //  export'u artık exportLogsAdmin(format) üzerinden, ekrandaki filtrelere
+    //  saygı duyarak çalışıyor.)
 
     async function addLog(actionType, details, dealId, dealName, oldValues) {
       try {

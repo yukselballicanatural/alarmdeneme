@@ -824,6 +824,15 @@
     'Geçmiş tarih düzenlenemez. Düzeltme yetkisi admindedir.': 'Past dates cannot be edited. Corrections are admin-only.',
     'Kaydedilecek yeni giriş yok (mevcut kayıtlar kilitli).': 'No new entries to save (existing records are locked).',
     'Dışa aktarılacak veri yok.': 'No data to export.',
+    // Yeni export edilen sayfaların başlık/kolon adları (Loglar, Kullanıcılar,
+    // Aktivite, Lider Takibi, Özet tabloları, TL/Bölge performans, RM özeti).
+    // Zaten sözlükte olanlar tekrar eklenmedi.
+    'Kullanıcı Adı': 'Username',
+    'Deal Adı': 'Deal Name',
+    'Önceki Durum': 'Previous Status',
+    'Dokunulan': 'Touched',
+    'Kapsam %': 'Coverage %',
+    'Yönetim Özeti — Bölge Alarmları': 'Management Summary — Regional Alarms',
     'Bu tarih salt okunur — yalnızca bugün ve dün düzenlenebilir. Daha eski günlerin düzeltme yetkisi admin panelindedir.': 'This date is read-only — only today and yesterday are editable. Older days can only be corrected in the admin panel.',
     'Bu tarih düzenlenemez — yalnızca bugün ve dün. Daha eski günler için düzeltme yetkisi admindedir.': 'This date cannot be edited — only today and yesterday. Older days are admin-only.',
     'GÜN SONU RAPORLAMA': 'END-OF-DAY REPORTING',

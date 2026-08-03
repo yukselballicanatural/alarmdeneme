@@ -645,9 +645,7 @@
           <svg style="width:13px;height:13px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           Yenile
         </button>
-        <button onclick="exportRmCsv()" style="padding:8px 14px;background:#1e293b;border:1px solid #334155;border-radius:10px;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s" onmouseover="this.style.background='#1e3a5f';this.style.borderColor='#1e40af';this.style.color='#60a5fa'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155';this.style.color='#94a3b8'">
-          Export CSV
-        </button>
+        <span id="rmExportMount"></span>
       </div>
     </div>
 
@@ -916,7 +914,8 @@
     <div style="background:#0f172a;border:1px solid #1e293b;border-radius:14px;padding:14px 16px;margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <span style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em">Filtreler</span>
-        <div style="display:flex;gap:10px">
+        <div style="display:flex;gap:10px;align-items:center">
+          <span id="tlActivityExportMount"></span>
           <button onclick="_tlactReset()" style="font-size:10px;font-weight:700;color:#818cf8;background:none;border:none;cursor:pointer">Temizle</button>
           <button onclick="loadTlActivity()" style="font-size:10px;font-weight:700;color:#2dd4bf;background:none;border:none;cursor:pointer">↻ Yenile</button>
         </div>
@@ -4966,10 +4965,8 @@
     document.getElementById('tlactOwnerFilter').value = '';
     renderTlActivity();
   }
-  function renderTlActivity() {
-    const tbody = document.getElementById('tlActivityBody');
-    const empty = document.getElementById('tlActivityEmpty');
-    if (!tbody) return;
+  // Filtre mantığı ayrı: tablo da export da bunu kullanıyor (tek kaynak).
+  function _tlactFilteredRows() {
     const search = (document.getElementById('tlactSearch')?.value || '').toLowerCase().trim();
     const typeF  = document.getElementById('tlactType')?.value || '';
     const ownerF = document.getElementById('tlactOwnerFilter')?.value || '';
@@ -4977,9 +4974,19 @@
     if (typeF) data = data.filter(l => l.action_type === typeF);
     if (ownerF) data = data.filter(l => l._owner === ownerF);
     if (search) data = data.filter(l => [l._name, l.action_by, l.note].join(' ').toLowerCase().includes(search));
+    return data;
+  }
+
+  const _TLACT_LABELS = { status_change:'Durum Değişti', note:'Not Eklendi', closed:'Kapatıldı', reopened:'Yeniden Açıldı', created:'Oluşturuldu', auto_closed:'Otomatik Kapatıldı' };
+
+  function renderTlActivity() {
+    const tbody = document.getElementById('tlActivityBody');
+    const empty = document.getElementById('tlActivityEmpty');
+    if (!tbody) return;
+    const data = _tlactFilteredRows();
     if (!data.length) { tbody.innerHTML = ''; empty.textContent = I18N.t('Kayıtlı aksiyon bulunamadı.'); empty.style.display = 'block'; return; }
     empty.style.display = 'none';
-    const actionLabels = { status_change:'Durum Değişti', note:'Not Eklendi', closed:'Kapatıldı', reopened:'Yeniden Açıldı', created:'Oluşturuldu', auto_closed:'Otomatik Kapatıldı' };
+    const actionLabels = _TLACT_LABELS;
     tbody.innerHTML = data.slice(0, 500).map(l => {
       const act = actionLabels[l.action_type] || l.action_type;
       const sm = statusMeta(l.new_status);
@@ -5265,13 +5272,14 @@
     I18N.translateDOM(tbody);
   }
 
-  function renderRmAlarmTable() {
+  // Filtre mantığı ayrı: tablo da export da bunu kullanıyor (tek kaynak).
+  function _rmAlarmFilteredRows() {
     const search     = (document.getElementById('rmAlarmSearch').value || '').toLowerCase();
     const teamFilt   = document.getElementById('rmTeamFilter').value;
     const statusFilt = document.getElementById('rmStatusFilter').value;
     const activeStatuses = new Set(['open','seen','in_progress','arrived','examined','processing','escalated']);
 
-    const data = allAlarms.filter(a => {
+    return allAlarms.filter(a => {
       if (teamFilt && (TeamMap.normalize(a.team) || a.team) !== teamFilt) return false;
       if (statusFilt === 'overdue') { if (!isOverdue(a)) return false; }
       else if (statusFilt) { if (a.status !== statusFilt) return false; }
@@ -5282,7 +5290,10 @@
       }
       return true;
     });
+  }
 
+  function renderRmAlarmTable() {
+    const data = _rmAlarmFilteredRows();
     const tbody = document.getElementById('rmAlarmTbody');
     const empty = document.getElementById('rmAlarmEmpty');
     document.getElementById('rmAlarmCount').textContent = `${data.length} ${I18N.t('alarm gösteriliyor')}`;
@@ -5333,11 +5344,31 @@
     } catch(e) { showNotice('Eskale hatası: ' + e.message, 'error'); }
   }
 
+  // Ekranda görünen (filtrelenmiş) bölge alarmlarını verir. Önceden allAlarms
+  // tamamı iniyordu: takım/durum/arama filtresi uygulanmış bir listeye bakan
+  // kullanıcı, indirdiği dosyada bambaşka bir kapsam buluyordu.
   function exportRmCsv(format) {
-    const data = allAlarms;
+    const data = _rmAlarmFilteredRows();
+    if (!data.length) { showNotice(I18N.t('Dışa aktarılacak veri yok.'), 'error'); return; }
     const headers = ['Hasta','Danışman','Takım','Bölge','Alarm Tipi','Alan','Tarih','Kalan Gün','Durum','Not','Oluşturma'];
     const rows = data.map(a => [a.deal_name,a.deal_owner,a.team,a.region,a.alarm_type,a.reference_field,a.reference_date,a.days_remaining,a.status,a.note,a.created_at]);
-    NCExport.download(format || 'csv', headers, rows, 'rm_alarmlar');
+    NCExport.download(format || 'csv', headers, rows, 'rm_alarmlar', 'Yönetim Özeti — Bölge Alarmları');
+  }
+
+  function exportTlActivity(format) {
+    const data = _tlactFilteredRows();
+    if (!data.length) { showNotice(I18N.t('Dışa aktarılacak veri yok.'), 'error'); return; }
+    // Tabloda ilk 500 satır gösteriliyor; export kırpmıyor — eksik rapor
+    // indirmek, tam veriden daha kötü.
+    const headers = ['Zaman','Kim','Hasta','Aksiyon','Önceki Durum','Yeni Durum','Not'];
+    const rows = data.map(l => [
+      formatDateTime(l.created_at), l.action_by, l._name || '',
+      _TLACT_LABELS[l.action_type] || l.action_type || '',
+      l.old_status ? (statusMeta(l.old_status).label || l.old_status) : '',
+      l.new_status ? (statusMeta(l.new_status).label || l.new_status) : '',
+      l.note || '',
+    ]);
+    NCExport.download(format || 'csv', headers, rows, 'aktivite_takim', 'Aktivite / İşlem Geçmişi');
   }
 
   // ── Sidebar toggle ───────────────────────────────────────────────
@@ -5629,7 +5660,7 @@
     showNotice('PDF indirildi, mesaj panoya kopyalandı. WhatsApp\'ta PDF\'i ekleyip Gönder\'e bas.', 'success');
   }
 
-  // Sayfa başlıklarındaki "Export" butonları — 8 sayfa, tek noktadan
+  // Sayfa başlıklarındaki "Export" butonları — tek noktadan
   // (bkz. export-util.js: NCExport.renderButton) mount edilir.
   function mountExportButtons() {
     const map = {
@@ -5641,6 +5672,10 @@
       wonExportMount:          'exportWonAlarms',
       teamMembersExportMount:  'exportTeamMembers',
       depExportMount:          'exportDailyEntry',
+      // Sonradan eklendi: Aktivite'de hiç export yoktu, Yönetim Özeti'nde
+      // (RM) yalnızca sabit "Export CSV" butonu vardı.
+      tlActivityExportMount:   'exportTlActivity',
+      rmExportMount:           'exportRmCsv',
     };
     for (const [mountId, fnName] of Object.entries(map)) {
       const el = document.getElementById(mountId);

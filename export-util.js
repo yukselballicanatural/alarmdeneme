@@ -167,14 +167,23 @@ window.NCExport = (function () {
 
   // Ortak "Export" butonu + menü HTML'i — her sayfa kendi menuId'sini ve
   // export fonksiyon adını verir (fnName('csv'|'xlsx'|'pdf'|'html') şeklinde çağrılır).
-  function renderButton(menuId, fnName) {
+  //
+  // label: aynı ekranda birden fazla export butonu varsa hepsi "Export" yazınca
+  // hangisinin neyi indirdiği anlaşılmıyor (Alarm İzleme'de TL Performans ve
+  // Bölge Performans yan yana). Verilmezse "Export" kalır.
+  //
+  // align: menü varsayılan olarak butonun SAĞINA hizalı açılır; sol kenara yakın
+  // butonlarda (tablo başlığındaki gibi) bu menüyü kartın dışına taşırabiliyor,
+  // 'left' ile sola hizalanır.
+  function renderButton(menuId, fnName, label, align) {
+    const side = align === 'left' ? 'left:0' : 'right:0';
     return `<div class="nc-export-wrap" style="position:relative;display:inline-block">
       <button onclick="NCExport.toggleMenu('${menuId}')" style="padding:8px 14px;background:#1e293b;border:1px solid #334155;border-radius:10px;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s" onmouseover="this.style.background='#1e3a5f';this.style.borderColor='#1e40af';this.style.color='#60a5fa'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155';this.style.color='#94a3b8'">
         <svg style="width:13px;height:13px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-        ${_t('Export')}
+        ${_escHtml(label ? _t(label) : _t('Export'))}
         <svg style="width:10px;height:10px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
       </button>
-      <div id="${menuId}" class="nc-export-menu" style="display:none;position:absolute;top:calc(100% + 4px);right:0;z-index:500;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:6px;min-width:120px;box-shadow:0 12px 30px rgba(0,0,0,0.5)">
+      <div id="${menuId}" class="nc-export-menu" style="display:none;position:absolute;top:calc(100% + 4px);${side};z-index:500;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:6px;min-width:120px;box-shadow:0 12px 30px rgba(0,0,0,0.5)">
         <button onclick="NCExport.closeAllMenus();${fnName}('csv')" style="width:100%;text-align:left;padding:8px 10px;background:none;border:none;border-radius:7px;color:#cbd5e1;font-size:11.5px;font-weight:600;cursor:pointer" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='none'">CSV</button>
         <button onclick="NCExport.closeAllMenus();${fnName}('xlsx')" style="width:100%;text-align:left;padding:8px 10px;background:none;border:none;border-radius:7px;color:#cbd5e1;font-size:11.5px;font-weight:600;cursor:pointer" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='none'">XLSX</button>
         <button onclick="NCExport.closeAllMenus();${fnName}('pdf')" style="width:100%;text-align:left;padding:8px 10px;background:none;border:none;border-radius:7px;color:#cbd5e1;font-size:11.5px;font-weight:600;cursor:pointer" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='none'">PDF</button>
