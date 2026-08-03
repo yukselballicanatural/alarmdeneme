@@ -189,17 +189,24 @@ html[data-theme="light"] .nav-btn {
   transition: background .22s var(--ease), color .22s var(--ease),
               transform .3s var(--spring), box-shadow .25s var(--ease) !important;
 }
+html[data-theme="light"] .nav-btn { position: relative; z-index: 1; }
 html[data-theme="light"] .nav-btn:not(.active) { color: var(--ink-2) !important; }
+/* Hover — yeşil değil, KOYU cam (üzerine gelince camın koyulaşması) */
 html[data-theme="light"] .nav-btn:not(.active):hover {
-  background: var(--g-3) !important;
+  background: rgba(18, 22, 34, 0.09) !important;
   color: var(--ink) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 8px rgba(23, 43, 99, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
+/* Aktif öğenin zemini şeffaf — koyu cam göstergeyi .lq-seg-ind çiziyor
+   (kayan animasyon için tek bir katman gerekiyor) */
 html[data-theme="light"] .nav-btn.active {
-  background: linear-gradient(150deg, #14b8a6, #0d9488 58%, #0f766e) !important;
+  background: transparent !important;
   color: #fff !important;
-  box-shadow: 0 6px 20px -5px rgba(13, 148, 136, 0.62),
-              inset 0 1px 0 rgba(255, 255, 255, 0.42) !important;
+  box-shadow: none !important;
+}
+html[data-theme="light"] .lq-seg:not(:has(.lq-seg-ind)) .nav-btn.active,
+html[data-theme="light"] .nav-btn.active:not(.lq-seg *) {
+  background: rgba(18, 22, 34, 0.62) !important;
 }
 html[data-theme="light"] .nav-btn:active,
 html[data-theme="light"] .tab-pill:active,
@@ -232,16 +239,22 @@ html[data-theme="light"] .tab-pill {
   border-radius: 999px !important;
   transition: background .22s var(--ease), color .2s var(--ease), transform .3s var(--spring) !important;
 }
+html[data-theme="light"] .tab-pill { position: relative; z-index: 1; }
 html[data-theme="light"] .tab-pill:not(.active) {
   background: var(--g-2) !important;
   color: var(--ink-2) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
-html[data-theme="light"] .tab-pill:not(.active):hover { background: var(--g-hover) !important; color: var(--ink) !important; }
+/* Hover — koyu cam */
+html[data-theme="light"] .tab-pill:not(.active):hover {
+  background: rgba(18, 22, 34, 0.13) !important;
+  color: var(--ink) !important;
+}
+/* Aktif: zemin şeffaf, koyu cam göstergeyi kayan .lq-seg-ind çiziyor */
 html[data-theme="light"] .tab-pill.active {
-  background: linear-gradient(150deg, #14b8a6, #0d9488) !important;
+  background: transparent !important;
   color: #fff !important;
-  box-shadow: 0 5px 16px -4px rgba(13, 148, 136, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important;
 }
 
 html[data-theme="light"] .dep-quick-btn { color: var(--ink-2) !important; border-radius: 10px !important; }
@@ -315,8 +328,11 @@ html[data-theme="light"] .dep-tbl tbody td {
 }
 html[data-theme="light"] .alarm-tbl tbody tr,
 html[data-theme="light"] .dep-tbl tbody tr { transition: background .2s var(--ease); }
+/* Hafif zebra — satırlar camda birbirinden ayrışsın */
+html[data-theme="light"] .alarm-tbl tbody tr:nth-child(even) td,
+html[data-theme="light"] .dep-tbl tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.20); }
 html[data-theme="light"] .alarm-tbl tbody tr:hover td,
-html[data-theme="light"] .dep-tbl tbody tr:hover td { background: rgba(255, 255, 255, 0.55) !important; }
+html[data-theme="light"] .dep-tbl tbody tr:hover td { background: rgba(255, 255, 255, 0.62) !important; }
 html[data-theme="light"] .dep-tbl tbody tr.dep-row-off td { background: rgba(239, 68, 68, 0.07) !important; }
 html[data-theme="light"] .dep-tbl tbody tr.dep-row-off:hover td { background: rgba(239, 68, 68, 0.12) !important; }
 html[data-theme="light"] .sarrow { color: var(--ink-3) !important; }
@@ -523,9 +539,25 @@ html[data-theme="light"] .nc-notice {
 }
 
 /* ── 11. GÖRÜNÜM GEÇİŞLERİ — yay (spring) hissi ──────────────────────── */
-html[data-theme="light"] main > div[id^="view-"] { animation: lgViewIn .52s var(--spring); }
+/* Görünüm geçişi — iPhone kamera filtre şeridi gibi: buzlu camdan
+   netleşerek ve hafifçe yaklaşarak gelir */
+html[data-theme="light"] main > div[id^="view-"] { animation: lgViewIn .62s var(--spring); }
 @keyframes lgViewIn {
-  from { opacity: 0; transform: translateY(14px) scale(.985); filter: blur(3px); }
+  0%   { opacity: 0; transform: translateY(18px) scale(.972); filter: blur(10px) saturate(140%); }
+  50%  { opacity: 1; }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+/* İçerik blokları kademeli süzülür — katmanlı derinlik hissi */
+html[data-theme="light"] main > div[id^="view-"] > * {
+  animation: lgStagger .58s var(--spring) backwards;
+}
+html[data-theme="light"] main > div[id^="view-"] > *:nth-child(1) { animation-delay: 30ms; }
+html[data-theme="light"] main > div[id^="view-"] > *:nth-child(2) { animation-delay: 75ms; }
+html[data-theme="light"] main > div[id^="view-"] > *:nth-child(3) { animation-delay: 120ms; }
+html[data-theme="light"] main > div[id^="view-"] > *:nth-child(4) { animation-delay: 165ms; }
+html[data-theme="light"] main > div[id^="view-"] > *:nth-child(n+5) { animation-delay: 200ms; }
+@keyframes lgStagger {
+  from { opacity: 0; transform: translateY(12px); filter: blur(6px); }
   to   { opacity: 1; transform: none; filter: none; }
 }
 
@@ -558,9 +590,291 @@ html[data-theme="dark"] .lg-theme-toggle:hover { background: #0d9488; color: #ff
 html[data-theme="dark"] .lg-theme-toggle .lg-icon-sun { display: block; }
 html[data-theme="dark"] .lg-theme-toggle .lg-icon-moon { display: none; }
 
+/* ═════════════════════════════════════════════════════════════════════
+   14. KAYAN SEGMENT GÖSTERGESİ (liquid-ui.js) — iOS segment kontrolü
+   Aktif butonun kendi zemini şeffaf; koyu camı bu katman çizer ve
+   seçim değişince yay (spring) ile kayar.
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] .lq-seg { position: relative; }
+html[data-theme="light"] .lq-seg-ind {
+  position: absolute;
+  top: 0; left: 0;
+  border-radius: 999px;
+  background: rgba(18, 22, 34, 0.62);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: 0 6px 20px -6px rgba(12, 16, 30, 0.55),
+              inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition: transform .52s var(--spring), width .42s var(--spring),
+              height .42s var(--spring), opacity .25s var(--ease);
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform, width;
+}
+/* Sidebar navigasyonunda köşeler pill değil, yumuşak kare */
+html[data-theme="light"] #sidebarFull .lq-seg-ind { border-radius: 12px; }
+
+/* ═════════════════════════════════════════════════════════════════════
+   15. LIQUID SELECT — cam açılır liste (native select yerine)
+   ═════════════════════════════════════════════════════════════════════ */
+.lq-sel { position: relative; display: block; width: 100%; min-width: 0; }
+/* Orijinal select DOM'da kalır (değer kaynağı o) ama görünmez */
+select.lq-native {
+  position: absolute !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 100% !important;
+  height: 100% !important;
+  left: 0; top: 0;
+  margin: 0 !important;
+  border: 0 !important;
+  z-index: -1;
+}
+html[data-theme="light"] .lq-trigger {
+  width: 100%;
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 11px;
+  font-size: 12px; font-weight: 500;
+  text-align: left;
+  color: var(--ink);
+  background: var(--g-3);
+  border: 1px solid var(--edge-soft);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 2px rgba(23, 43, 99, 0.04);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  cursor: pointer;
+  transition: background .22s var(--ease), border-color .2s var(--ease),
+              box-shadow .25s var(--ease), transform .3s var(--spring);
+}
+html[data-theme="light"] .lq-trigger:hover { background: rgba(255, 255, 255, 0.74); }
+html[data-theme="light"] .lq-trigger:active { transform: scale(.985); }
+html[data-theme="light"] .lq-trigger.lq-active {
+  border-color: rgba(13, 148, 136, 0.7);
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.14);
+  background: rgba(255, 255, 255, 0.84);
+}
+html[data-theme="light"] .lq-trigger-label {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+html[data-theme="light"] .lq-trigger-chev {
+  width: 12px; height: 12px; flex-shrink: 0;
+  color: var(--ink-3);
+  transition: transform .38s var(--spring);
+}
+html[data-theme="light"] .lq-trigger.lq-active .lq-trigger-chev { transform: rotate(180deg); color: var(--accent); }
+html[data-theme="light"] .lq-disabled .lq-trigger { opacity: .45; cursor: not-allowed; }
+
+/* Açılır panel — body'ye fixed olarak eklenir, hiçbir yerde kırpılmaz */
+.lq-panel {
+  position: fixed;
+  z-index: 10050;
+  display: none;
+  overflow: hidden auto;
+  padding: 7px;
+  border-radius: 18px;
+  /* Okunabilirlik için panel biraz daha opak: altındaki filtre satırının
+     yazıları camdan sızıp metni bozmasın */
+  background: rgba(255, 255, 255, 0.80);
+  -webkit-backdrop-filter: blur(44px) saturate(200%);
+  backdrop-filter: blur(44px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  box-shadow: 0 8px 24px rgba(23, 43, 99, 0.14),
+              0 32px 80px -16px rgba(23, 43, 99, 0.32),
+              inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transform-origin: top center;
+  scrollbar-width: thin;
+}
+.lq-panel.lq-flip { transform-origin: bottom center; }
+.lq-panel::-webkit-scrollbar { width: 5px; }
+.lq-panel::-webkit-scrollbar-thumb { background: rgba(23, 43, 99, 0.22); border-radius: 99px; }
+.lq-panel.lq-open { display: block; animation: lqPanelIn .42s cubic-bezier(.34, 1.4, .56, 1); }
+@keyframes lqPanelIn {
+  0%   { opacity: 0; transform: translateY(-10px) scale(.92); filter: blur(6px); }
+  55%  { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+.lq-panel .lq-search { padding: 3px 4px 7px; }
+.lq-panel .lq-search input {
+  width: 100%; box-sizing: border-box;
+  padding: 7px 10px;
+  font-size: 12px; color: #12141a;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(23, 43, 99, 0.12);
+  border-radius: 10px;
+  outline: none;
+}
+.lq-panel .lq-search input:focus {
+  border-color: rgba(13, 148, 136, 0.6);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.13);
+}
+.lq-opt {
+  padding: 8px 11px;
+  font-size: 12px; font-weight: 500;
+  color: #12141a;
+  border-radius: 11px;
+  cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: background .16s ease, color .16s ease, transform .25s cubic-bezier(.34, 1.4, .56, 1);
+  /* Kademeli açılış — macOS menü hissi */
+  animation: lqOptIn .34s cubic-bezier(.22, 1, .36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 18ms);
+}
+@keyframes lqOptIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+.lq-opt:hover { background: rgba(18, 22, 34, 0.10); }
+.lq-opt:active { transform: scale(.975); }
+.lq-opt-on {
+  background: rgba(18, 22, 34, 0.62);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.lq-opt-on:hover { background: rgba(18, 22, 34, 0.72); }
+
+/* ═════════════════════════════════════════════════════════════════════
+   16. SIDEBAR KAYDIRMA + ALARM ÖZETİ KUTULARI
+   ═════════════════════════════════════════════════════════════════════ */
+/* İnce, cama uygun kaydırma çubuğu — kalın gri çubuk kutudan taşıyordu */
+html[data-theme="light"] #sidebarFull {
+  padding-bottom: 6px !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(23, 43, 99, 0.20) transparent;
+}
+html[data-theme="light"] #sidebarFull::-webkit-scrollbar { width: 5px; }
+html[data-theme="light"] #sidebarFull::-webkit-scrollbar-track { background: transparent; }
+html[data-theme="light"] #sidebarFull::-webkit-scrollbar-thumb {
+  background: rgba(23, 43, 99, 0.16);
+  border-radius: 99px;
+}
+html[data-theme="light"] #sidebarFull:hover::-webkit-scrollbar-thumb { background: rgba(23, 43, 99, 0.30); }
+
+/* Sidebar içeriği panelden taşıp kırpılmasın diye ölçüler biraz sıkıştırıldı
+   (dizüstü yüksekliklerinde kaydırma çubuğu hiç çıkmadan sığar) */
+html[data-theme="light"] #sidebarFull .nav-btn { padding: 7px 11px !important; }
+html[data-theme="light"] #sidebarFull > div:first-child { padding: 14px 14px 11px !important; }
+html[data-theme="light"] #sidebarFull div[onclick] { padding: 8px 11px !important; }
+html[data-theme="light"] #sidebarFull div[onclick] span[id^="kpi"] { font-size: 18px !important; }
+html[data-theme="light"] #sidebarFull > div[style*="padding:12px 10px" i] { padding: 10px 9px !important; }
+html[data-theme="light"] #sidebarFull > div[style*="padding:14px 16px" i] { padding: 11px 14px !important; }
+html[data-theme="light"] #langToggleMount { padding: 0 9px 7px !important; }
+html[data-theme="light"] #sidebarFull > div:last-child { padding: 0 9px 11px !important; gap: 6px !important; }
+html[data-theme="light"] #sidebarFull > div:last-child button { padding: 9px !important; }
+
+/* Alarm Özeti kutuları — pastel cam */
+html[data-theme="light"] #sidebarFull div[onclick] {
+  background: rgba(255, 255, 255, 0.34) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.42) !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 2px 10px rgba(23, 43, 99, 0.06);
+  transition: background .25s var(--ease), transform .32s var(--spring),
+              box-shadow .28s var(--ease), border-color .25s var(--ease) !important;
+}
+html[data-theme="light"] #sidebarFull div[onclick]:hover {
+  background: rgba(255, 255, 255, 0.56) !important;
+  transform: translateY(-2px) scale(1.015);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 10px 24px -6px rgba(23, 43, 99, 0.20);
+}
+/* Her kutuya kendi pastel tonu (içindeki sayacın id'sinden tanınır) */
+html[data-theme="light"] #sidebarFull div[onclick]:has(#kpiOpen)    { background: rgba(245, 158, 11, 0.16) !important; }
+html[data-theme="light"] #sidebarFull div[onclick]:has(#kpiToday)   { background: rgba(34, 197, 94, 0.16) !important; }
+html[data-theme="light"] #sidebarFull div[onclick]:has(#kpiOverdue) { background: rgba(239, 68, 68, 0.15) !important; }
+html[data-theme="light"] #sidebarFull div[onclick]:has(#kpiMissing) { background: rgba(100, 116, 139, 0.14) !important; }
+html[data-theme="light"] #sidebarFull div[onclick]:has(#kpiOpen):hover    { background: rgba(245, 158, 11, 0.26) !important; }
+html[data-theme="light"] #sidebarFull div[onclick]:has(#kpiToday):hover   { background: rgba(34, 197, 94, 0.26) !important; }
+html[data-theme="light"] #sidebarFull div[onclick]:has(#kpiOverdue):hover { background: rgba(239, 68, 68, 0.25) !important; }
+html[data-theme="light"] #sidebarFull div[onclick]:has(#kpiMissing):hover { background: rgba(100, 116, 139, 0.24) !important; }
+/* Sayılar ve etiketler — pastel zeminde okunur koyu tonlar */
+html[data-theme="light"] #kpiOpen    { color: #92590a !important; }
+html[data-theme="light"] #kpiToday   { color: #14713a !important; }
+html[data-theme="light"] #kpiOverdue { color: #a51f1f !important; }
+html[data-theme="light"] #kpiMissing { color: #465063 !important; }
+html[data-theme="light"] #sidebarFull div[onclick] svg { opacity: .75 !important; }
+
+/* ═════════════════════════════════════════════════════════════════════
+   17. HIZLI FİLTRE ROZETLERİ — pastel, rakamlar net okunur
+   (eskiden rgba(...,0.2) zemin + parlak metin: camda soluk kalıyordu)
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] .badge-cnt {
+  font-weight: 800 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  transition: background .25s var(--ease), color .25s var(--ease);
+}
+html[data-theme="light"] [style*="rgba(251,191,36,0.2)" i] { background: rgba(245, 158, 11, 0.34) !important; color: #7c4a02 !important; }
+html[data-theme="light"] [style*="rgba(74,222,128,0.2)" i]  { background: rgba(34, 197, 94, 0.32) !important;  color: #10602f !important; }
+html[data-theme="light"] [style*="rgba(251,146,60,0.2)" i]  { background: rgba(249, 115, 22, 0.32) !important;  color: #8a3708 !important; }
+html[data-theme="light"] [style*="rgba(248,113,113,0.2)" i] { background: rgba(239, 68, 68, 0.30) !important;   color: #8e1b1b !important; }
+html[data-theme="light"] [style*="rgba(96,165,250,0.2)" i]  { background: rgba(59, 130, 246, 0.30) !important;  color: #16388f !important; }
+html[data-theme="light"] [style*="rgba(129,140,248,0.2)" i] { background: rgba(99, 102, 241, 0.30) !important;  color: #2f2f96 !important; }
+/* Aktif segmentin (koyu cam) üzerindeki rozet — açık kalmalı */
+html[data-theme="light"] .tab-pill.active .badge-cnt {
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #12141a !important;
+}
+html[data-theme="light"] .nav-btn.active .badge-cnt { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+
+/* ═════════════════════════════════════════════════════════════════════
+   18. NOT POPUP — siyah değil, KOYU CAM (metin açık ve boğmayan)
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] #notePopup {
+  background: rgba(20, 25, 40, 0.72) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.20) !important;
+  border-radius: 18px !important;
+  padding: 13px 15px !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  line-height: 1.55;
+  box-shadow: 0 10px 30px rgba(12, 16, 30, 0.28),
+              0 30px 70px -18px rgba(12, 16, 30, 0.45),
+              inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+  animation: lqNoteIn .34s cubic-bezier(.34, 1.4, .56, 1);
+}
+@keyframes lqNoteIn {
+  from { opacity: 0; transform: translateY(-8px) scale(.94); filter: blur(5px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+/* "!" not butonu — pastel amber cam */
+html[data-theme="light"] button[onclick*="showNoteTip" i] {
+  background: rgba(245, 158, 11, 0.20) !important;
+  border: 1px solid rgba(245, 158, 11, 0.5) !important;
+  color: #8a5406 !important;
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: background .2s var(--ease), transform .28s var(--spring) !important;
+}
+html[data-theme="light"] button[onclick*="showNoteTip" i]:hover {
+  background: rgba(245, 158, 11, 0.36) !important;
+  transform: translateY(-1px) scale(1.06);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   19. EXPORT MENÜSÜ AÇILIŞ ANİMASYONU
+   display:none → block geçişi CSS animasyonunu yeniden tetikler.
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] .nc-export-menu { animation: lqPanelIn .4s cubic-bezier(.34, 1.4, .56, 1); }
+html[data-theme="light"] .nc-export-menu button {
+  animation: lqOptIn .3s cubic-bezier(.22, 1, .36, 1) backwards;
+}
+html[data-theme="light"] .nc-export-menu button:nth-child(1) { animation-delay: 20ms; }
+html[data-theme="light"] .nc-export-menu button:nth-child(2) { animation-delay: 45ms; }
+html[data-theme="light"] .nc-export-menu button:nth-child(3) { animation-delay: 70ms; }
+html[data-theme="light"] .nc-export-menu button:nth-child(4) { animation-delay: 95ms; }
+
 /* ── 13. Hareket azaltma tercihi ─────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   html[data-theme="light"] main > div[id^="view-"],
+  html[data-theme="light"] main > div[id^="view-"] > *,
   html[data-theme="light"] .modal-box,
-  html[data-theme="light"] .nc-cal-popup { animation: none !important; }
+  html[data-theme="light"] .nc-cal-popup,
+  html[data-theme="light"] #notePopup,
+  .lq-panel.lq-open,
+  .lq-opt,
+  html[data-theme="light"] .nc-export-menu,
+  html[data-theme="light"] .nc-export-menu button { animation: none !important; }
+  html[data-theme="light"] .lq-seg-ind { transition: opacity .2s ease !important; }
 }

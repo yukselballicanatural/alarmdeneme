@@ -179,10 +179,11 @@
   function toggleThemeMode() {
     var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
     var next = cur === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('nc_theme', next);
-    var lbl = document.getElementById('themeToggleLabel');
-    if (lbl) lbl.textContent = next === 'dark' ? 'Açık Tema' : 'Koyu Tema';
+    // Sayfa yenilenerek geçilir: cam açılır listeler (liquid-ui.js) yalnızca
+    // açık temada kurulur, koyu tema da böylece birebir orijinal kalır.
+    // Dil değiştirme de (I18N.setLangAndReload) aynı yaklaşımı kullanıyor.
+    location.reload();
   }
   document.addEventListener('DOMContentLoaded', function() {
     var lbl = document.getElementById('themeToggleLabel');
@@ -1422,6 +1423,9 @@
 <script src="export-util.js"></script>
 <script src="attach-util.js"></script>
 <script src="deals-live.js"></script>
+<!-- Liquid Glass etkileşim katmanı: cam açılır listeler + kayan segment
+     göstergesi. Yalnızca açık temada devreye girer, mantığa dokunmaz. -->
+<script src="liquid-ui.js"></script>
 <script>
   let SUPABASE_URL = '';
   let SUPABASE_KEY = '';
