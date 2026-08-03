@@ -1,0 +1,566 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   liquid-glass.css — Apple "Liquid Glass" (macOS Sequoia / iOS 18) katmanı
+   ───────────────────────────────────────────────────────────────────────
+   Yalnızca  html[data-theme="light"]  altında çalışır. Panellerin orijinal
+   koyu teması hiç değiştirilmez; tema butonu "dark"a alındığında tarayıcı
+   otomatik olarak eski görünüme döner.
+
+   Cam efektinin ÇALIŞMASININ ŞARTI: arkada kırılacak RENK olması. Bu yüzden
+   zemin canlı bir "mesh gradient" — paneller yarı saydam olduğu için bu
+   renkler camın içinden süzülerek görünür. Zemin beyaz olsaydı paneller de
+   beyaz görünür ve efekt kaybolurdu.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-theme="light"] {
+  /* Cam yüzeyler — düşük opaklık kritik, yoksa "beyaz kart" olur */
+  --g-1: rgba(255, 255, 255, 0.40);   /* ana paneller */
+  --g-2: rgba(255, 255, 255, 0.26);   /* iç/ikincil yüzeyler */
+  --g-3: rgba(255, 255, 255, 0.58);   /* input, öne çıkan yüzey */
+  --g-hover: rgba(255, 255, 255, 0.62);
+
+  /* Kenar ışığı — Apple'ın imzası: üstte parlak, altta soluk hairline */
+  --edge: rgba(255, 255, 255, 0.55);
+  --edge-soft: rgba(255, 255, 255, 0.32);
+
+  /* Camın üst kenarında biriken ışık + iç çerçeve parlaması */
+  --sheen: inset 0 1px 0 0 rgba(255, 255, 255, 0.85),
+           inset 0 0 0 1px rgba(255, 255, 255, 0.20),
+           inset 0 -1px 0 0 rgba(255, 255, 255, 0.12);
+
+  /* Yumuşak, katmanlı gölge — sert gölge yok */
+  --sh-1: 0 2px 8px rgba(23, 43, 99, 0.06), 0 8px 28px rgba(23, 43, 99, 0.10);
+  --sh-2: 0 4px 14px rgba(23, 43, 99, 0.08), 0 18px 50px -10px rgba(23, 43, 99, 0.18);
+  --sh-3: 0 8px 24px rgba(23, 43, 99, 0.12), 0 32px 80px -16px rgba(23, 43, 99, 0.30);
+
+  --blur: 30px;
+  --sat: 190%;
+
+  /* Metin — yüksek kontrast (donuk gri metin camda okunmaz) */
+  --ink: #12141a;
+  --ink-2: #4b5364;
+  --ink-3: #7c8496;
+
+  --accent: #0d9488;
+  --accent-2: #2563eb;
+
+  --r-lg: 26px;
+  --r-md: 20px;
+  --r-sm: 14px;
+
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --spring: cubic-bezier(.34, 1.4, .56, 1);
+}
+
+/* ── 1. ZEMİN — canlı mesh gradient (camın kıracağı renk) ─────────────
+   Gradient'ler body'nin background'ına DEĞİL, sabit konumlu bir pseudo
+   katmana veriliyor: `background-attachment:fixed` ile çok katmanlı
+   gradient bazı motorlarda hiç boyanmıyor (ekran görüntüsü/print dahil)
+   ve zemin beyaz kalıyordu — bu da cam efektini tamamen öldürüyor.
+   position:fixed olduğu için body'nin flex akışına da girmez.          */
+html[data-theme="light"] { background: #cfdcfa; }
+html[data-theme="light"] body {
+  background:
+    radial-gradient(1250px 900px at 6%   0%,  rgba(37, 99, 235, 0.55),  transparent 62%),
+    radial-gradient(1050px 820px at 97%  4%,  rgba(139, 92, 246, 0.52), transparent 60%),
+    radial-gradient(1150px 900px at 92% 70%,  rgba(13, 148, 136, 0.48), transparent 62%),
+    radial-gradient(980px 820px at 2%   72%,  rgba(79, 70, 229, 0.44),  transparent 60%),
+    radial-gradient(900px 760px at 44%  36%,  rgba(56, 189, 248, 0.34), transparent 64%),
+    radial-gradient(760px 640px at 62%  98%,  rgba(236, 72, 153, 0.18), transparent 62%),
+    linear-gradient(158deg, #d3e1fb 0%, #d6d9fa 46%, #cfe9f2 100%) !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  color: var(--ink);
+}
+
+html[data-theme="light"] ::-webkit-scrollbar-track { background: transparent !important; }
+html[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(23, 43, 99, 0.20) !important;
+  border-radius: 99px;
+}
+html[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(23, 43, 99, 0.34) !important; }
+
+/* Tablo başlıkları — orijinalde kırmızı; camda okunur bir kırmızıya çekildi */
+html[data-theme="light"] th { color: #b91c1c !important; }
+
+html[data-theme="light"] h1, html[data-theme="light"] h2,
+html[data-theme="light"] h3, html[data-theme="light"] h4 {
+  color: var(--ink) !important;
+  letter-spacing: -0.015em;
+}
+
+/* ── 2. SIDEBAR — yüzen cam panel (macOS kenar çubuğu) ───────────────── */
+html[data-theme="light"] #sidebarFull,
+html[data-theme="light"] #sidebarMini {
+  background: var(--g-1) !important;
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  border: 1px solid var(--edge-soft) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--sh-2), var(--sheen);
+  margin: 10px 0 10px 10px !important;
+  height: calc(100vh - 20px) !important;
+  top: 10px !important;
+}
+html[data-theme="light"] #sidebarFull > div,
+html[data-theme="light"] #sidebarMini > div { border-color: var(--edge-soft) !important; }
+
+html[data-theme="light"] #userAvatar,
+html[data-theme="light"] #miniAvatar {
+  box-shadow: 0 6px 18px -4px rgba(13, 148, 136, 0.55), var(--sheen);
+}
+html[data-theme="light"] #sidebarName { color: var(--ink) !important; }
+html[data-theme="light"] #sidebarTeam { color: var(--ink-2) !important; }
+html[data-theme="light"] .nc-project-name { color: #5a6180 !important; }
+
+/* ── 3. ANA CAM PANELLER ─────────────────────────────────────────────── */
+html[data-theme="light"] .filter-card,
+html[data-theme="light"] .dep-card,
+html[data-theme="light"] .deal-total-bar,
+html[data-theme="light"] .tl-kanban-col,
+html[data-theme="light"] .nc-cal-popup,
+html[data-theme="light"] .modal-box {
+  background: var(--g-1) !important;
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  border: 1px solid var(--edge-soft) !important;
+  border-radius: var(--r-md) !important;
+  box-shadow: var(--sh-1), var(--sheen);
+}
+
+/* İç yüzeyler — daha az opak, cam üstünde cam hissi */
+html[data-theme="light"] .info-card,
+html[data-theme="light"] .tl-kanban-card,
+html[data-theme="light"] .tl-kanban-col-head {
+  background: var(--g-2) !important;
+  border: 1px solid var(--edge-soft) !important;
+  border-radius: var(--r-sm) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+}
+html[data-theme="light"] .tl-kanban-card {
+  transition: transform .28s var(--spring), background .25s var(--ease), box-shadow .25s var(--ease);
+}
+html[data-theme="light"] .tl-kanban-card:hover {
+  background: var(--g-hover) !important;
+  transform: translateY(-3px) scale(1.012);
+  box-shadow: var(--sh-2);
+  border-color: var(--edge) !important;
+}
+html[data-theme="light"] .today-card {
+  transition: transform .3s var(--spring), box-shadow .3s var(--ease), background .25s var(--ease) !important;
+}
+html[data-theme="light"] .today-card:hover {
+  background: var(--g-hover) !important;
+  transform: translateY(-4px) scale(1.015) !important;
+  box-shadow: var(--sh-2) !important;
+  border-color: var(--edge) !important;
+}
+
+/* Etiket / değer tipografisi */
+html[data-theme="light"] .filter-label,
+html[data-theme="light"] .deal-total-label,
+html[data-theme="light"] .info-label { color: var(--ink-3) !important; }
+html[data-theme="light"] .info-val,
+html[data-theme="light"] .deal-total-value { color: var(--ink) !important; }
+
+/* ── 4. MODAL — ağır blur backdrop + yay animasyonu ──────────────────── */
+html[data-theme="light"] .modal-bg {
+  background: rgba(18, 26, 48, 0.22) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+html[data-theme="light"] .modal-box {
+  border-radius: 28px !important;
+  background: rgba(255, 255, 255, 0.52) !important;
+  -webkit-backdrop-filter: blur(44px) saturate(200%);
+  backdrop-filter: blur(44px) saturate(200%);
+  box-shadow: var(--sh-3), var(--sheen);
+  animation: lgModalIn .46s var(--spring);
+}
+@keyframes lgModalIn {
+  from { opacity: 0; transform: translateY(16px) scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── 5. BUTONLAR — cam pill + ışık süzülmesi + yay basma ─────────────── */
+html[data-theme="light"] button { -webkit-tap-highlight-color: transparent; }
+
+html[data-theme="light"] .nav-btn {
+  border-radius: 12px !important;
+  transition: background .22s var(--ease), color .22s var(--ease),
+              transform .3s var(--spring), box-shadow .25s var(--ease) !important;
+}
+html[data-theme="light"] .nav-btn:not(.active) { color: var(--ink-2) !important; }
+html[data-theme="light"] .nav-btn:not(.active):hover {
+  background: var(--g-3) !important;
+  color: var(--ink) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 8px rgba(23, 43, 99, 0.07);
+}
+html[data-theme="light"] .nav-btn.active {
+  background: linear-gradient(150deg, #14b8a6, #0d9488 58%, #0f766e) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 20px -5px rgba(13, 148, 136, 0.62),
+              inset 0 1px 0 rgba(255, 255, 255, 0.42) !important;
+}
+html[data-theme="light"] .nav-btn:active,
+html[data-theme="light"] .tab-pill:active,
+html[data-theme="light"] .dep-quick-btn:active,
+html[data-theme="light"] .nc-cal-day:active { transform: scale(.955); }
+
+/* Sidebar'ın inline stilli butonları (Uygulamalar / Logout / toggle / mini nav) */
+html[data-theme="light"] aside button:not(.nav-btn) {
+  background: var(--g-2) !important;
+  border: 1px solid var(--edge-soft) !important;
+  color: var(--ink-2) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transition: background .22s var(--ease), transform .3s var(--spring), color .2s var(--ease) !important;
+}
+html[data-theme="light"] aside button:not(.nav-btn):hover {
+  background: var(--g-hover) !important;
+  color: var(--ink) !important;
+  transform: translateY(-1px);
+}
+html[data-theme="light"] aside button:not(.nav-btn):active { transform: scale(.93); }
+/* Mini sidebar'ın aktif ikonu teal kalsın */
+html[data-theme="light"] aside button[style*="background:#0d9488" i] {
+  background: linear-gradient(150deg, #14b8a6, #0d9488) !important;
+  color: #fff !important;
+  box-shadow: 0 5px 16px -4px rgba(13, 148, 136, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Tab pill'ler */
+html[data-theme="light"] .tab-pill {
+  border-radius: 999px !important;
+  transition: background .22s var(--ease), color .2s var(--ease), transform .3s var(--spring) !important;
+}
+html[data-theme="light"] .tab-pill:not(.active) {
+  background: var(--g-2) !important;
+  color: var(--ink-2) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+html[data-theme="light"] .tab-pill:not(.active):hover { background: var(--g-hover) !important; color: var(--ink) !important; }
+html[data-theme="light"] .tab-pill.active {
+  background: linear-gradient(150deg, #14b8a6, #0d9488) !important;
+  color: #fff !important;
+  box-shadow: 0 5px 16px -4px rgba(13, 148, 136, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+html[data-theme="light"] .dep-quick-btn { color: var(--ink-2) !important; border-radius: 10px !important; }
+html[data-theme="light"] .dep-quick-btn:hover { background: var(--g-3) !important; color: var(--ink) !important; }
+html[data-theme="light"] .dep-quick-btn.dep-quick-active {
+  background: linear-gradient(150deg, #6366f1, #4f46e5) !important;
+  box-shadow: 0 5px 16px -4px rgba(79, 70, 229, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.38) !important;
+}
+
+/* Metrik pill'leri — renkleri korunur, üzerine cam parlaması eklenir */
+html[data-theme="light"] .metric-pill {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 8px rgba(23, 43, 99, 0.10);
+  transition: transform .3s var(--spring), filter .2s var(--ease), box-shadow .2s var(--ease) !important;
+}
+html[data-theme="light"] .metric-pill:hover {
+  transform: translateY(-2px) scale(1.03) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 20px -4px rgba(23, 43, 99, 0.22);
+  filter: none !important;
+}
+
+/* ── 6. INPUT / SELECT / DATE ────────────────────────────────────────── */
+html[data-theme="light"] .filter-sel,
+html[data-theme="light"] .filter-inp,
+html[data-theme="light"] .nc-date-trigger,
+html[data-theme="light"] .dep-input,
+html[data-theme="light"] textarea.modal-note {
+  background: var(--g-3) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid var(--edge-soft) !important;
+  border-radius: 12px !important;
+  color: var(--ink) !important;
+  box-shadow: inset 0 1px 2px rgba(23, 43, 99, 0.05);
+  transition: border-color .2s var(--ease), box-shadow .25s var(--ease), background .2s var(--ease) !important;
+}
+html[data-theme="light"] .filter-sel:hover,
+html[data-theme="light"] .filter-inp:hover,
+html[data-theme="light"] .nc-date-trigger:hover { background: rgba(255, 255, 255, 0.72) !important; }
+html[data-theme="light"] .filter-sel:focus,
+html[data-theme="light"] .filter-inp:focus,
+html[data-theme="light"] .dep-input:focus,
+html[data-theme="light"] textarea.modal-note:focus,
+html[data-theme="light"] .nc-date-trigger.active {
+  border-color: rgba(13, 148, 136, 0.7) !important;
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.14) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+}
+html[data-theme="light"] .filter-sel option { background: #fff !important; color: var(--ink) !important; }
+html[data-theme="light"] .nc-date-trigger .nc-date-text { color: var(--ink) !important; }
+html[data-theme="light"] .nc-date-trigger .nc-date-text.placeholder { color: var(--ink-3) !important; }
+html[data-theme="light"] .nc-date-trigger svg { color: var(--ink-3) !important; }
+
+/* ── 7. TABLOLAR — saydam gövde, cam sticky başlık ───────────────────── */
+html[data-theme="light"] .alarm-tbl th,
+html[data-theme="light"] .dep-tbl thead th {
+  background: rgba(255, 255, 255, 0.66) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  border-bottom: 1px solid var(--edge-soft) !important;
+  color: var(--ink-3) !important;
+}
+html[data-theme="light"] .dep-tbl tfoot td {
+  background: rgba(13, 148, 136, 0.10) !important;
+  border-top: 1px solid rgba(13, 148, 136, 0.35) !important;
+  color: var(--ink) !important;
+}
+html[data-theme="light"] .alarm-tbl td,
+html[data-theme="light"] .dep-tbl tbody td {
+  border-bottom: 1px solid rgba(23, 43, 99, 0.07) !important;
+  color: var(--ink);
+}
+html[data-theme="light"] .alarm-tbl tbody tr,
+html[data-theme="light"] .dep-tbl tbody tr { transition: background .2s var(--ease); }
+html[data-theme="light"] .alarm-tbl tbody tr:hover td,
+html[data-theme="light"] .dep-tbl tbody tr:hover td { background: rgba(255, 255, 255, 0.55) !important; }
+html[data-theme="light"] .dep-tbl tbody tr.dep-row-off td { background: rgba(239, 68, 68, 0.07) !important; }
+html[data-theme="light"] .dep-tbl tbody tr.dep-row-off:hover td { background: rgba(239, 68, 68, 0.12) !important; }
+html[data-theme="light"] .sarrow { color: var(--ink-3) !important; }
+html[data-theme="light"] .sarrow.active { color: var(--accent) !important; }
+
+/* ── 8. TAKVİM ───────────────────────────────────────────────────────── */
+html[data-theme="light"] .nc-cal-popup {
+  background: rgba(255, 255, 255, 0.62) !important;
+  -webkit-backdrop-filter: blur(38px) saturate(200%);
+  backdrop-filter: blur(38px) saturate(200%);
+  box-shadow: var(--sh-2), var(--sheen);
+  animation: lgCalIn .34s var(--spring);
+}
+@keyframes lgCalIn {
+  from { opacity: 0; transform: translateY(-10px) scale(.95); }
+  to   { opacity: 1; transform: none; }
+}
+html[data-theme="light"] .nc-cal-nav-btn,
+html[data-theme="light"] .nc-cal-title button,
+html[data-theme="light"] .nc-cal-footer button { color: var(--ink-2) !important; }
+html[data-theme="light"] .nc-cal-nav-btn:hover {
+  background: linear-gradient(150deg, #14b8a6, #0d9488) !important; color: #fff !important;
+}
+html[data-theme="light"] .nc-cal-title button:hover,
+html[data-theme="light"] .nc-cal-footer button:hover,
+html[data-theme="light"] .nc-cal-panel-item:hover {
+  background: rgba(13, 148, 136, 0.12) !important; color: #0f766e !important;
+}
+html[data-theme="light"] .nc-cal-dow { color: var(--ink-3) !important; }
+html[data-theme="light"] .nc-cal-day,
+html[data-theme="light"] .nc-cal-panel-item { color: var(--ink) !important; }
+html[data-theme="light"] .nc-cal-day.muted { color: var(--ink-3) !important; opacity: .45; }
+html[data-theme="light"] .nc-cal-day:hover { background: rgba(13, 148, 136, 0.14) !important; color: #0f766e !important; }
+html[data-theme="light"] .nc-cal-day.selected,
+html[data-theme="light"] .nc-cal-panel-item.selected {
+  background: linear-gradient(150deg, #14b8a6, #0d9488) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px -3px rgba(13, 148, 136, 0.6) !important;
+}
+html[data-theme="light"] .nc-cal-footer { border-top: 1px solid var(--edge-soft) !important; }
+
+/* ── 9. EXPORT MENÜSÜ — inline koyu stiller burada ezilir ────────────── */
+html[data-theme="light"] .nc-export-menu {
+  background: rgba(255, 255, 255, 0.62) !important;
+  -webkit-backdrop-filter: blur(34px) saturate(200%);
+  backdrop-filter: blur(34px) saturate(200%);
+  border: 1px solid var(--edge-soft) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--sh-2), var(--sheen) !important;
+  padding: 7px !important;
+}
+html[data-theme="light"] .nc-export-menu button {
+  color: var(--ink) !important;
+  border-radius: 10px !important;
+  transition: background .18s var(--ease), transform .25s var(--spring) !important;
+}
+html[data-theme="light"] .nc-export-menu button:hover { background: rgba(13, 148, 136, 0.13) !important; }
+html[data-theme="light"] .nc-export-menu button:active { transform: scale(.96); }
+html[data-theme="light"] .nc-export-btn,
+html[data-theme="light"] [id$="ExportMount"] > button {
+  background: var(--g-3) !important;
+  border: 1px solid var(--edge-soft) !important;
+  color: var(--ink-2) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 2px 8px rgba(23, 43, 99, 0.07) !important;
+}
+html[data-theme="light"] .nc-export-btn:hover,
+html[data-theme="light"] [id$="ExportMount"] > button:hover {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: var(--ink) !important;
+}
+
+/* ── 10. INLINE KOYU STİLLERİ CAMA ÇEVİR ─────────────────────────────── */
+/* DİKKAT: `:not(body)` şart — <body> etiketinin kendi inline
+   `background:#020617` değeri de bu listeye takılıyor ve zemin mesh
+   gradient'i %40 beyaz camla kaplanıp tüm efekt kayboluyordu. */
+html[data-theme="light"] [style*="background:#020617" i]:not(body),
+html[data-theme="light"] [style*="background:#0f172a" i]:not(body),
+html[data-theme="light"] [style*="background:#0d1526" i]:not(body),
+html[data-theme="light"] [style*="background:#111827" i]:not(body),
+html[data-theme="light"] [style*="background:#0b1220" i]:not(body),
+html[data-theme="light"] [style*="background:#0a1120" i]:not(body),
+html[data-theme="light"] [style*="background:#141d30" i]:not(body),
+html[data-theme="light"] [style*="background:#0d1a2b" i]:not(body),
+html[data-theme="light"] [style*="background:#1e2c45" i]:not(body),
+html[data-theme="light"] [style*="background:#0f1b30" i]:not(body) {
+  background: var(--g-1) !important;
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+/* Nötr slate chip'ler — hafif cam, blur'suz (performans) */
+html[data-theme="light"] [style*="background:#1e293b" i]:not(aside button),
+html[data-theme="light"] [style*="background:#334155" i]:not(aside button) {
+  background: var(--g-2) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Kenarlıklar → hairline */
+html[data-theme="light"] [style*="1px solid #1e293b" i],
+html[data-theme="light"] [style*="1px solid #334155" i],
+html[data-theme="light"] [style*="1px solid #374151" i],
+html[data-theme="light"] [style*="1px solid #2a3752" i],
+html[data-theme="light"] [style*="1px solid #223049" i],
+html[data-theme="light"] [style*="2px solid #1e293b" i],
+html[data-theme="light"] [style*="2px solid #0d9488" i] { border-color: var(--edge-soft) !important; }
+
+/* Metin renkleri → okunur mürekkep */
+html[data-theme="light"] [style*="color:#f1f5f9" i],
+html[data-theme="light"] [style*="color:#e2e8f0" i],
+html[data-theme="light"] [style*="color:#cbd5e1" i],
+html[data-theme="light"] [style*="color:#c3cee2" i] { color: var(--ink) !important; }
+html[data-theme="light"] [style*="color:#94a3b8" i],
+html[data-theme="light"] [style*="color:#8393ab" i],
+html[data-theme="light"] [style*="color:#a5b4d6" i] { color: var(--ink-2) !important; }
+html[data-theme="light"] [style*="color:#64748b" i],
+html[data-theme="light"] [style*="color:#475569" i],
+html[data-theme="light"] [style*="color:#5b6b85" i],
+html[data-theme="light"] [style*="color:#48597a" i],
+html[data-theme="light"] [style*="color:#54637a" i],
+html[data-theme="light"] [style*="color:#78716c" i] { color: var(--ink-3) !important; }
+
+/* Koyu temada parlak olan accent'ler → camda okunur derin tonlar
+   (kontrast düşüklüğü camın en büyük düşmanı) */
+html[data-theme="light"] [style*="color:#fbbf24" i] { color: #a16207 !important; }
+html[data-theme="light"] [style*="color:#4ade80" i] { color: #15803d !important; }
+html[data-theme="light"] [style*="color:#f87171" i],
+html[data-theme="light"] [style*="color:#fca5a5" i] { color: #b91c1c !important; }
+html[data-theme="light"] [style*="color:#2dd4bf" i],
+html[data-theme="light"] [style*="color:#5eead4" i] { color: #0f766e !important; }
+html[data-theme="light"] [style*="color:#60a5fa" i],
+html[data-theme="light"] [style*="color:#93c5fd" i] { color: #1d4ed8 !important; }
+html[data-theme="light"] [style*="color:#818cf8" i],
+html[data-theme="light"] [style*="color:#a5b4fc" i] { color: #4338ca !important; }
+html[data-theme="light"] [style*="color:#c084fc" i] { color: #7e22ce !important; }
+html[data-theme="light"] [style*="color:#fb923c" i] { color: #c2410c !important; }
+html[data-theme="light"] [style*="color:#67e8f9" i],
+html[data-theme="light"] [style*="color:#22d3ee" i] { color: #0e7490 !important; }
+
+/* Renkli koyu zeminler → aynı tonun buzlu cam hâli */
+html[data-theme="light"] [style*="background:#450a0a" i],
+html[data-theme="light"] [style*="background:#2d0a0a" i] { background: rgba(239, 68, 68, 0.13) !important; }
+html[data-theme="light"] [style*="background:#052e16" i] { background: rgba(34, 197, 94, 0.13) !important; }
+html[data-theme="light"] [style*="background:#431407" i],
+html[data-theme="light"] [style*="background:#422006" i],
+html[data-theme="light"] [style*="background:#2d1a00" i] { background: rgba(249, 115, 22, 0.13) !important; }
+html[data-theme="light"] [style*="background:#1e1b4b" i],
+html[data-theme="light"] [style*="background:#2e1065" i],
+html[data-theme="light"] [style*="background:#3b1f6e" i],
+html[data-theme="light"] [style*="background:#1a0a2e" i],
+html[data-theme="light"] [style*="background:#4c1d95" i] { background: rgba(147, 51, 234, 0.13) !important; }
+html[data-theme="light"] [style*="background:#0e7490" i],
+html[data-theme="light"] [style*="background:#083344" i],
+html[data-theme="light"] [style*="background:#042f2e" i],
+html[data-theme="light"] [style*="background:#14343a" i],
+html[data-theme="light"] [style*="background:#0d1f1c" i] { background: rgba(13, 148, 136, 0.13) !important; }
+html[data-theme="light"] [style*="background:#1e3a5f" i] { background: rgba(37, 99, 235, 0.13) !important; }
+
+html[data-theme="light"] [style*="border:1px solid #7f1d1d" i],
+html[data-theme="light"] [style*="borderColor='#ef4444'" i] { border-color: rgba(185, 28, 28, 0.32) !important; }
+html[data-theme="light"] [style*="border:1px solid #166534" i] { border-color: rgba(21, 128, 61, 0.32) !important; }
+html[data-theme="light"] [style*="border:1px solid #92400e" i] { border-color: rgba(194, 65, 12, 0.32) !important; }
+html[data-theme="light"] [style*="border:1px solid #3b1f6e" i] { border-color: rgba(126, 34, 206, 0.32) !important; }
+
+/* ── 10b. LOGO — beyaz PNG açık zeminde görünmez, koyultuluyor ───────── */
+html[data-theme="light"] img[src*="beyaz" i] { filter: brightness(0.16); }
+
+/* ── 10c. SAYFA BAŞLIĞI BUTONLARI (inline stilli, tek tek hedeflenir) ── */
+html[data-theme="light"] #btnRunEngine {
+  background: var(--g-3) !important;
+  border: 1px solid var(--edge-soft) !important;
+  color: var(--ink-2) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 2px 8px rgba(23, 43, 99, 0.07) !important;
+  transition: background .22s var(--ease), color .2s var(--ease), transform .3s var(--spring) !important;
+}
+html[data-theme="light"] #btnRunEngine:hover {
+  background: linear-gradient(150deg, #14b8a6, #0d9488) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+html[data-theme="light"] #btnRunEngine:active { transform: scale(.96); }
+
+/* Tablo / Kanban segment kontrolü */
+html[data-theme="light"] #alarmsViewBtnTable,
+html[data-theme="light"] #alarmsViewBtnKanban { transition: all .22s var(--ease) !important; }
+html[data-theme="light"] #alarmsViewBtnTable[style*="background:#4f46e5" i],
+html[data-theme="light"] #alarmsViewBtnKanban[style*="background:#4f46e5" i] {
+  background: linear-gradient(150deg, #6366f1, #4f46e5) !important;
+  box-shadow: 0 4px 14px -3px rgba(79, 70, 229, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+}
+html[data-theme="light"] #alarmsViewBtnTable[style*="background:transparent" i],
+html[data-theme="light"] #alarmsViewBtnKanban[style*="background:transparent" i] { color: var(--ink-2) !important; }
+
+/* Bildirim/toast — showNotice() koyu zeminle geliyor */
+html[data-theme="light"] #noticeBox,
+html[data-theme="light"] .nc-notice {
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-radius: 16px !important;
+  box-shadow: var(--sh-2), var(--sheen) !important;
+}
+
+/* ── 11. GÖRÜNÜM GEÇİŞLERİ — yay (spring) hissi ──────────────────────── */
+html[data-theme="light"] main > div[id^="view-"] { animation: lgViewIn .52s var(--spring); }
+@keyframes lgViewIn {
+  from { opacity: 0; transform: translateY(14px) scale(.985); filter: blur(3px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+
+html[data-theme="light"] .spinner {
+  border-color: rgba(13, 148, 136, 0.18) !important;
+  border-top-color: #0d9488 !important;
+}
+
+/* ── 12. TEMA DEĞİŞTİRME BUTONU ──────────────────────────────────────── */
+.lg-theme-toggle {
+  border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: transform .3s cubic-bezier(.34, 1.4, .56, 1), background .22s ease, color .22s ease;
+}
+.lg-theme-toggle:active { transform: scale(.92); }
+html[data-theme="light"] .lg-theme-toggle {
+  background: rgba(255, 255, 255, 0.58) !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+  color: #4b5364 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 2px 8px rgba(23, 43, 99, 0.08) !important;
+}
+html[data-theme="light"] .lg-theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #0f766e !important;
+}
+html[data-theme="dark"] .lg-theme-toggle,
+html:not([data-theme]) .lg-theme-toggle { background: #1e293b; border: 1px solid #334155; color: #94a3b8; }
+html[data-theme="dark"] .lg-theme-toggle:hover { background: #0d9488; color: #fff; }
+.lg-theme-toggle .lg-icon-sun { display: none; }
+.lg-theme-toggle .lg-icon-moon { display: block; }
+html[data-theme="dark"] .lg-theme-toggle .lg-icon-sun { display: block; }
+html[data-theme="dark"] .lg-theme-toggle .lg-icon-moon { display: none; }
+
+/* ── 13. Hareket azaltma tercihi ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="light"] main > div[id^="view-"],
+  html[data-theme="light"] .modal-box,
+  html[data-theme="light"] .nc-cal-popup { animation: none !important; }
+}

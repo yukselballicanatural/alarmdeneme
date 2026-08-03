@@ -201,7 +201,7 @@ window.NCExport = (function () {
     // am modunda ölçü/renk .am-btn'den gelir; diğerlerinde satır içi stil.
     const btnAttr = am
       ? `class="am-btn"`
-      : `style="padding:${s.pad};background:#1e293b;border:1px solid #334155;border-radius:${s.radius};color:#94a3b8;font-size:${s.font};font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.25;white-space:nowrap;transition:all 0.15s" onmouseover="this.style.background='#1e3a5f';this.style.borderColor='#1e40af';this.style.color='#60a5fa'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155';this.style.color='#94a3b8'"`;
+      : `class="nc-export-btn" style="padding:${s.pad};background:#1e293b;border:1px solid #334155;border-radius:${s.radius};color:#94a3b8;font-size:${s.font};font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.25;white-space:nowrap;transition:all 0.15s" onmouseover="this.style.background='#1e3a5f';this.style.borderColor='#1e40af';this.style.color='#60a5fa'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155';this.style.color='#94a3b8'"`;
     return `<div class="nc-export-wrap" style="position:relative;display:inline-flex;align-items:center;vertical-align:middle">
       <button onclick="NCExport.toggleMenu('${menuId}')" ${btnAttr}>
         <svg style="width:${s.icon};height:${s.icon};flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
