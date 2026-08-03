@@ -105,6 +105,14 @@
     this.label.textContent = opt ? opt.textContent : '';
     this.trigger.disabled = this.sel.disabled;
     this.wrap.classList.toggle('lq-disabled', !!this.sel.disabled);
+    // Günlük Ekip Girişi'ndeki devam durumu (Çalışıyor / İzinli) anlamsal
+    // renk taşıyor — değeri sınıf olarak yansıt, rengi CSS versin
+    if (this.sel.classList.contains('dep-att-sel')) {
+      var v = String(this.sel.value || '').toLowerCase();
+      this.wrap.classList.add('lq-att');
+      this.trigger.classList.toggle('lq-att-off', v === 'off');
+      this.trigger.classList.toggle('lq-att-working', v !== 'off');
+    }
   };
 
   LiquidSelect.prototype.buildOptions = function () {
@@ -244,19 +252,23 @@
   window.addEventListener('scroll', function () { if (openInstance) openInstance.position(); }, true);
 
   function enhanceSelects(root) {
-    (root || document).querySelectorAll('select.filter-sel').forEach(function (s) {
+    (root || document).querySelectorAll('select.filter-sel, select.dep-att-sel').forEach(function (s) {
       if (!s.__lq) new LiquidSelect(s);
     });
   }
 
   /* ════════════════ 2. LIQUID SEGMENT (kayan gösterge) ════════════════ */
 
-  function Segment(container, itemSel) {
+  // activeFn: hangi öğenin aktif olduğunu belirleyen yordam. Bazı gruplar
+  // (Tablo/Kanban gibi) aktifliği CSS sınıfıyla değil satır içi stille
+  // işaretliyor — bu yüzden ölçüt dışarıdan verilebilir.
+  function Segment(container, itemSel, activeFn) {
     var self = this;
     if (container.__lqSeg) return;
     container.__lqSeg = this;
     this.el = container;
     this.itemSel = itemSel;
+    this.activeFn = activeFn || function (el) { return el.classList.contains('active'); };
     container.classList.add('lq-seg');
 
     var ind = document.createElement('span');
@@ -271,7 +283,12 @@
   }
 
   Segment.prototype.update = function (instant) {
-    var active = this.el.querySelector(this.itemSel + '.active');
+    var self = this;
+    var active = null;
+    Array.prototype.slice.call(this.el.querySelectorAll(this.itemSel)).some(function (el) {
+      if (self.activeFn(el)) { active = el; return true; }
+      return false;
+    });
     if (!active || active.offsetParent === null) { this.ind.style.opacity = '0'; return; }
     var i = this.ind;
     if (instant) i.style.transition = 'none';
@@ -301,7 +318,62 @@
     if (nav && nav.parentElement && nav.parentElement.querySelectorAll('.nav-btn').length > 1) {
       new Segment(nav.parentElement, '.nav-btn');
     }
+
+    // Tablo / Kanban geçişleri — aktiflik satır içi background ile
+    // işaretleniyor (JS '#4f46e5' veya 'transparent' yazıyor)
+    var inlineActive = function (el) {
+      var b = (el.style.background || el.style.backgroundColor || '').toLowerCase();
+      return !!b && b !== 'transparent' && b.indexOf('rgba(0, 0, 0, 0)') < 0;
+    };
+    ['alarmsViewBtnTable', 'dealsViewBtnTable'].forEach(function (id) {
+      var b = document.getElementById(id);
+      if (b && b.parentElement) new Segment(b.parentElement, 'button', inlineActive);
+    });
+
+    // Günlük Ekip Girişi — Bugün / Dün
+    var dq = document.querySelector('.dep-quick-btn');
+    if (dq && dq.parentElement && dq.parentElement.querySelectorAll('.dep-quick-btn').length > 1) {
+      new Segment(dq.parentElement, '.dep-quick-btn', function (el) {
+        return el.classList.contains('dep-quick-active');
+      });
+    }
   }
+
+  /* ════════════════ 3. TELEFON MASKESİ ════════════════
+     Türk cep numarasını yazarken biçimlendirir: (5xx) xxx xx xx
+     Güvenli: _validatePhone() zaten rakam dışı her şeyi soyuyor
+     (v.replace(/[^\d]/g,'')), yani parantez/boşluk kaydı bozmaz. */
+
+  function formatTRPhone(raw) {
+    var d = String(raw || '').replace(/\D/g, '').slice(0, 10);
+    if (!d) return '';
+    if (d.length <= 3) return '(' + d;
+    var rest = [d.slice(3, 6), d.slice(6, 8), d.slice(8, 10)].filter(Boolean);
+    return '(' + d.slice(0, 3) + ') ' + rest.join(' ');
+  }
+
+  function isPhoneInput(el) {
+    return el && el.tagName === 'INPUT' &&
+      (el.id === 'waPhoneInput' || /^tmPhone-/.test(el.id || ''));
+  }
+
+  function applyPhoneMask(el) {
+    if (el.maxLength && el.maxLength < 16) el.maxLength = 16;
+    var f = formatTRPhone(el.value);
+    if (f !== el.value) {
+      el.value = f;
+      // İmleci sona al — kullanıcı soldan sağa yazdığı için doğal davranış
+      try { el.setSelectionRange(f.length, f.length); } catch (e) {}
+    }
+  }
+
+  document.addEventListener('input', function (e) {
+    if (isPhoneInput(e.target)) applyPhoneMask(e.target);
+  });
+  // Satır "Düzenle" ile açıldığında mevcut değeri de biçimlendir
+  document.addEventListener('focusin', function (e) {
+    if (isPhoneInput(e.target)) applyPhoneMask(e.target);
+  });
 
   /* ════════════════ Başlatma ════════════════ */
 
@@ -315,8 +387,8 @@
       var found = false;
       muts.forEach(function (m) {
         m.addedNodes && m.addedNodes.forEach(function (n) {
-          if (n.nodeType === 1 && (n.matches && n.matches('select.filter-sel') ||
-              n.querySelector && n.querySelector('select.filter-sel'))) found = true;
+          if (n.nodeType === 1 && (n.matches && n.matches('select.filter-sel, select.dep-att-sel') ||
+              n.querySelector && n.querySelector('select.filter-sel, select.dep-att-sel'))) found = true;
         });
       });
       if (found) enhanceSelects();

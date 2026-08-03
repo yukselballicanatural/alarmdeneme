@@ -1082,3 +1082,284 @@ html[data-theme="light"] aside button[style*="background: rgb(13, 148, 136)" i] 
   box-shadow: 0 5px 16px -4px rgba(13, 148, 136, 0.6) !important;
 }
 
+
+/* ═════════════════════════════════════════════════════════════════════
+   23. GENEL YIĞIN SIRASI — takvim / export menüsü tablonun arkasında
+   kalmasın. Bölüm 20 yalnızca .filter-card'ı kaldırıyordu; İptal
+   Edilenler ve Aktivite gibi görünümlerin filtre kutusu ise satır içi
+   stilli düz bir div (sınıfı yok). :has() ile "içinde takvim alanı veya
+   export menüsü olan, görünümün doğrudan çocuğu" kutular topluca
+   yukarı alınır.
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] main > div[id^="view-"] > div:has(.nc-date-field),
+html[data-theme="light"] main > div[id^="view-"] > div:has(.nc-export-wrap),
+html[data-theme="light"] main > div[id^="view-"] > div:has(> span[id$="ExportMount"]) {
+  position: relative;
+  z-index: 70;
+}
+html[data-theme="light"] .nc-export-wrap { position: relative; z-index: 300; }
+html[data-theme="light"] .nc-export-menu { z-index: 500 !important; }
+/* Tablo sarmalayıcıları her zaman altta kalsın */
+html[data-theme="light"] main > div[id^="view-"] > div:has(> table) { position: relative; z-index: 1; }
+
+/* Takvim saf beyaz görünmesin — kâğıt gibi değil, cam gibi dursun */
+html[data-theme="light"] .nc-cal-popup {
+  background: linear-gradient(158deg, rgba(255, 255, 255, 0.88), rgba(238, 243, 255, 0.80)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   24. TABLO / KANBAN GEÇİŞİ — kayan cam segment
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] div:has(> #alarmsViewBtnTable),
+html[data-theme="light"] div:has(> #dealsViewBtnTable) {
+  background: var(--g-2) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  backdrop-filter: blur(16px) saturate(170%);
+  border: 1px solid var(--edge-soft) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+html[data-theme="light"] #alarmsViewBtnTable,
+html[data-theme="light"] #alarmsViewBtnKanban,
+html[data-theme="light"] #dealsViewBtnTable,
+html[data-theme="light"] #dealsViewBtnKanban {
+  position: relative; z-index: 1;
+  background: transparent !important;
+  border-radius: 9px !important;
+  color: var(--ink-2) !important;
+  transition: color .24s var(--ease), transform .3s var(--spring) !important;
+}
+/* Aktif olan (JS satır içi indigo yazıyor) — yazı beyaz, zemini kayan
+   gösterge çiziyor */
+html[data-theme="light"] #alarmsViewBtnTable[style*="rgb(79, 70, 229)" i],
+html[data-theme="light"] #alarmsViewBtnKanban[style*="rgb(79, 70, 229)" i],
+html[data-theme="light"] #dealsViewBtnTable[style*="rgb(79, 70, 229)" i],
+html[data-theme="light"] #dealsViewBtnKanban[style*="rgb(79, 70, 229)" i],
+html[data-theme="light"] #alarmsViewBtnTable[style*="background:#4f46e5" i],
+html[data-theme="light"] #alarmsViewBtnKanban[style*="background:#4f46e5" i],
+html[data-theme="light"] #dealsViewBtnTable[style*="background:#4f46e5" i],
+html[data-theme="light"] #dealsViewBtnKanban[style*="background:#4f46e5" i] {
+  background: transparent !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+html[data-theme="light"] div:has(> #alarmsViewBtnTable) .lq-seg-ind,
+html[data-theme="light"] div:has(> #dealsViewBtnTable) .lq-seg-ind { border-radius: 9px; }
+
+/* ═════════════════════════════════════════════════════════════════════
+   25. ALARM MODAL — Aksiyon Geçmişi + WhatsApp butonları
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] #alarmHistoryList {
+  background: rgba(255, 255, 255, 0.44) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid var(--edge-soft) !important;
+  border-radius: 14px !important;
+  padding: 10px 13px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  scrollbar-width: thin;
+}
+html[data-theme="light"] #alarmHistoryList::-webkit-scrollbar { width: 5px; }
+html[data-theme="light"] #alarmHistoryList::-webkit-scrollbar-thumb { background: rgba(23, 43, 99, 0.18); border-radius: 99px; }
+/* Geçmiş metinleri gri kalıp okunmuyordu — belirginleştirildi */
+html[data-theme="light"] #alarmHistoryList,
+html[data-theme="light"] #alarmHistoryList div,
+html[data-theme="light"] #alarmHistoryList span { color: #2b3140 !important; }
+html[data-theme="light"] #alarmHistoryList > * + * {
+  border-top: 1px solid rgba(23, 43, 99, 0.09);
+  padding-top: 7px;
+  margin-top: 7px;
+}
+html[data-theme="light"] #alarmHistoryWrap > label { color: var(--ink-2) !important; }
+
+/* WhatsApp butonları — kendi yeşili korunur, cam ve parlak olur */
+html[data-theme="light"] button[onclick*="WhatsApp" i],
+html[data-theme="light"] #depWaBtn {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(150deg, #2fc36b 0%, #1faa57 55%, #158f46 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  border-radius: 12px !important;
+  color: #fff !important;
+  box-shadow: 0 6px 20px -5px rgba(21, 143, 70, 0.55),
+              inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+  transition: transform .3s var(--spring), filter .2s var(--ease), box-shadow .26s var(--ease) !important;
+}
+html[data-theme="light"] button[onclick*="WhatsApp" i]::after,
+html[data-theme="light"] #depWaBtn::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 52% 0;
+  background: linear-gradient(rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0));
+  border-radius: inherit;
+  pointer-events: none;
+}
+html[data-theme="light"] button[onclick*="WhatsApp" i]:hover,
+html[data-theme="light"] #depWaBtn:hover { transform: translateY(-1.5px); filter: brightness(1.06); }
+html[data-theme="light"] button[onclick*="WhatsApp" i]:active,
+html[data-theme="light"] #depWaBtn:active { transform: scale(.965); }
+
+/* ═════════════════════════════════════════════════════════════════════
+   26. "Bekliyor" gibi durum yazıları — küçük gri metin yerine pastel çip
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] span[style*="color:#f59e0b" i],
+html[data-theme="light"] span[style*="color: rgb(245, 158, 11)" i] {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.28) !important;
+  color: #7c4a02 !important;
+  border: 1px solid rgba(245, 158, 11, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  font-weight: 800 !important;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   27. FİLTRE BAŞLIĞINDAKİ METİN BUTONLARI (Temizle / Yenile)
+   Düz renkli yazılardı, camda kayboluyordu → cam çip buton
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] button[onclick*="Reset" i],
+html[data-theme="light"] button[onclick="loadTlActivity()"] {
+  padding: 6px 13px !important;
+  background: var(--g-3) !important;
+  border: 1px solid var(--edge-soft) !important;
+  border-radius: 999px !important;
+  color: var(--ink-2) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 2px 8px rgba(23, 43, 99, 0.06) !important;
+  transition: background .22s var(--ease), color .2s var(--ease), transform .3s var(--spring) !important;
+}
+html[data-theme="light"] button[onclick*="Reset" i]:hover,
+html[data-theme="light"] button[onclick="loadTlActivity()"]:hover {
+  background: rgba(13, 148, 136, 0.16) !important;
+  color: #0f766e !important;
+  transform: translateY(-1px);
+}
+html[data-theme="light"] button[onclick*="Reset" i]:active,
+html[data-theme="light"] button[onclick="loadTlActivity()"]:active { transform: scale(.95); }
+
+/* ═════════════════════════════════════════════════════════════════════
+   28. TAKIMIMDAKİ KİŞİLER tablosu — cam + düzenleme satırı animasyonu
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] #tmTableWrap {
+  background: var(--g-1) !important;
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  border: 1px solid var(--edge-soft) !important;
+  border-radius: var(--r-md) !important;
+  box-shadow: var(--sh-1), var(--sheen);
+  padding: 2px;
+}
+html[data-theme="light"] #tmTable thead th {
+  background: rgba(255, 255, 255, 0.62) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  color: var(--ink-3) !important;
+  border-bottom: 1px solid var(--edge-soft) !important;
+  padding: 11px 13px !important;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+html[data-theme="light"] #tmTable tbody td {
+  border-bottom: 1px solid rgba(23, 43, 99, 0.07) !important;
+  padding: 9px 13px !important;
+  color: var(--ink);
+  vertical-align: middle;
+}
+html[data-theme="light"] #tmTable tbody tr { transition: background .2s var(--ease); }
+html[data-theme="light"] #tmTable tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.20); }
+html[data-theme="light"] #tmTable tbody tr:hover td { background: rgba(255, 255, 255, 0.62) !important; }
+/* "Düzenle" ile açılan alanlar buzlu camdan netleşerek gelsin */
+html[data-theme="light"] #tmTable tbody td input,
+html[data-theme="light"] #tmTable tbody td .lq-sel,
+html[data-theme="light"] #tmTable tbody td button { animation: lqCellIn .4s var(--spring) backwards; }
+@keyframes lqCellIn {
+  from { opacity: 0; transform: translateY(-5px) scale(.96); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+/* Telefon alanı — maskeli (5xx) xxx xx xx, ferah ve şık */
+html[data-theme="light"] input[id^="tmPhone-"],
+html[data-theme="light"] #waPhoneInput {
+  width: 160px !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+  font-weight: 600;
+  padding: 7px 13px !important;
+  border-radius: 999px !important;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   29. GÜNLÜK EKİP GİRİŞİ
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] .dep-card {
+  background: var(--g-1) !important;
+  border-radius: var(--r-md) !important;
+}
+html[data-theme="light"] .dep-tbl tbody tr.dep-row-off td { background: rgba(239, 68, 68, 0.08) !important; }
+html[data-theme="light"] .dep-input {
+  border-radius: 10px !important;
+  font-variant-numeric: tabular-nums;
+}
+/* Durum rozetleri — "pending" hiç okunmuyordu */
+html[data-theme="light"] .dep-badge-saved {
+  background: rgba(34, 197, 94, 0.30) !important;
+  color: #10602f !important;
+  border: 1px solid rgba(34, 197, 94, 0.45) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+html[data-theme="light"] .dep-badge-pending {
+  background: rgba(245, 158, 11, 0.32) !important;
+  color: #7c4a02 !important;
+  border: 1px solid rgba(245, 158, 11, 0.48) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* Bugün / Dün — mavi gradient yerine kayan koyu cam gösterge */
+html[data-theme="light"] .dep-quick-btn {
+  position: relative;
+  z-index: 1;
+  border-radius: 999px !important;
+  padding: 7px 16px !important;
+  letter-spacing: .01em;
+  color: var(--ink-2) !important;
+  transition: color .24s var(--ease), transform .3s var(--spring) !important;
+}
+html[data-theme="light"] .dep-quick-btn:hover {
+  background: rgba(18, 22, 34, 0.10) !important;
+  color: var(--ink) !important;
+}
+html[data-theme="light"] .dep-quick-btn.dep-quick-active,
+html[data-theme="light"] .dep-quick-btn.dep-quick-active:hover {
+  background: transparent !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+html[data-theme="light"] .dep-quick-btn:active { transform: scale(.955); }
+
+/* Devam durumu (Çalışıyor / İzinli) — cam pill açılır liste */
+html[data-theme="light"] .lq-att .lq-trigger {
+  border-radius: 999px !important;
+  padding: 5px 11px !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  justify-content: center;
+}
+html[data-theme="light"] .lq-att .lq-trigger-label { flex: 0 1 auto; text-align: center; }
+html[data-theme="light"] .lq-trigger.lq-att-working {
+  background: rgba(34, 197, 94, 0.24) !important;
+  border-color: rgba(34, 197, 94, 0.45) !important;
+  color: #10602f !important;
+}
+html[data-theme="light"] .lq-trigger.lq-att-working:hover { background: rgba(34, 197, 94, 0.36) !important; }
+html[data-theme="light"] .lq-trigger.lq-att-off {
+  background: rgba(239, 68, 68, 0.22) !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  color: #8e1b1b !important;
+}
+html[data-theme="light"] .lq-trigger.lq-att-off:hover { background: rgba(239, 68, 68, 0.34) !important; }
+html[data-theme="light"] .lq-att .lq-trigger-chev { width: 10px; height: 10px; }
