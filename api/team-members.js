@@ -197,15 +197,34 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       if (claims.r === 'team-leader' && !myTeam) { res.status(200).json({ team: '', members: [] }); return; }
 
-      const [uR, zR] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/Users?select=*&order=id.asc&limit=2000`, { headers: H }),
-        // zoho_users: Zoho org kullanıcılarının aynası. Tablo yoksa (404) eski
-        // davranışa (yalnız Users) düşülür.
-        fetch(`${SUPABASE_URL}/rest/v1/zoho_users?select=*&limit=2000`, { headers: H }),
+      // DİKKAT: PostgREST yanıtları 1000 satırda KESİLİYOR (db-max-rows).
+      // "limit=2000" yazmak bunu değiştirmiyor, yalnızca yanlış bir güven
+      // veriyordu — tablo 1000 satırı geçince fazlası SESSİZCE düşerdi ve
+      // kadronun bir kısmı kaybolurdu. Bu yüzden sayfalı çekiliyor.
+      async function fetchAllPaged(path) {
+        const out = [];
+        let offset = 0;
+        while (true) {
+          const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}&limit=1000&offset=${offset}`, { headers: H });
+          if (!r.ok) return { ok: false, rows: out };
+          const batch = await r.json();
+          if (!Array.isArray(batch) || !batch.length) break;
+          out.push(...batch);
+          if (batch.length < 1000) break;
+          offset += 1000;
+        }
+        return { ok: true, rows: out };
+      }
+
+      const [uRes, zRes] = await Promise.all([
+        fetchAllPaged('Users?select=*&order=id.asc'),
+        // zoho_users: Zoho org kullanıcılarının aynası. Tablo yoksa (404) ok:false
+        // döner ve eski davranışa (yalnız Users) düşülür.
+        fetchAllPaged('zoho_users?select=*&order=id.asc'),
       ]);
-      if (!uR.ok) { res.status(502).json({ error: 'Veritabanı hatası.' }); return; }
-      const userRows = await uR.json();
-      const zohoRows = zR.ok ? await zR.json() : [];
+      if (!uRes.ok) { res.status(502).json({ error: 'Veritabanı hatası.' }); return; }
+      const userRows = uRes.rows;
+      const zohoRows = zRes.ok ? zRes.rows : [];
 
       // Users tarafını isimle indeksle — Users."Deal Owner Name" ile
       // zoho_users.full_name aynı değer uzayında (Zoho görünen adı).

@@ -2188,7 +2188,22 @@
         // sayısıyla çarpılıyordu (5K alarm = 5 ardışık istek), şimdi tek
         // istek süresine iner. Won/İptal loader'larıyla aynı desen.
         const PAGE = 1000;
-        const baseUrl = `${SUPABASE_URL}/rest/v1/alarms?order=created_at.desc${regionQ}&limit=${PAGE}`;
+        // ── Yalnızca GÖSTERİLEN alarmları indir ────────────────────────────
+        // Önceden alarms tablosunun TAMAMI iniyordu: 25.165 satır / 26 sayfa,
+        // ~17 MB. Panelin bu veriden gerçekten kullandığı kısım 1.553 satır —
+        // yani indirilenin %94'ü boşa gidiyordu ve panel dakikalarca "yükleniyor"
+        // görünüyordu.
+        //   * status: aktif durumlar + no_show. no_show şart çünkü "Bugün
+        //     Gelmedi" KPI'ı (mk5) bugün no_show'a çekilenleri sayıyor;
+        //     kapalı/iptal satırlar hiçbir KPI'da kullanılmıyor.
+        //   * payment_tracking: alarm tablosu/monitör bu tipi zaten satır
+        //     bazında eliyor (bkz. renderAdminAlarmTable) — 2.384 satır boşuna.
+        // "Kapatılan Alarmlar" sayfası kapalı satırlara ihtiyaç duyuyor; onlar
+        // o sayfa AÇILDIĞINDA _amEnsureClosedAlarms() ile bir kez yükleniyor.
+        const ACTIVE_Q = '&status=' + encodeURIComponent(
+          'in.(open,seen,in_progress,escalated,arrived,examined,processing,no_show)') +
+          '&alarm_type=neq.payment_tracking';
+        const baseUrl = `${SUPABASE_URL}/rest/v1/alarms?order=created_at.desc${regionQ}${ACTIVE_Q}&limit=${PAGE}`;
         const first = await fetch(`${baseUrl}&offset=0`, { headers: { ...H, Prefer: 'count=exact' } });
         if (!first.ok) throw new Error('HTTP ' + first.status);
         let all = await first.json();
@@ -2202,13 +2217,24 @@
           ));
           rest.forEach(p => { if (Array.isArray(p)) all.push(...p); });
         }
-        _amAlarmsRaw = all;
+        // Bu çağrı YALNIZCA aktif alarmları getiriyor. "Kapatılan Alarmlar"
+        // sayfası açıldıysa kapalı satırlar _amEnsureClosedAlarms ile ayrıca
+        // yüklenmiş olabilir — düz atama onları silerdi (canlı yenileme
+        // dakikada bir çalışıyor, tablo aniden boşalırdı). Onları koru.
+        if (_amClosedLoaded) {
+          const activeIds = new Set(all.map(a => String(a.id)));
+          const keptClosed = _amAlarmsRaw.filter(a =>
+            a.status === 'closed' && !activeIds.has(String(a.id)));
+          _amAlarmsRaw = all.concat(keptClosed);
+        } else {
+          _amAlarmsRaw = all;
+        }
         await _amApplyYearFilter();     // seçili yıla göre süz + tüm render
         document.getElementById('adminEngineStatus').textContent = `${adminAllAlarms.length} ${I18N.t('alarm yüklendi')}`;
         const lr = document.getElementById('amLastRefresh');
         if (lr) lr.textContent = new Date().toLocaleTimeString('tr-TR');
         _amUpdateBadges(adminAllAlarms);
-        _setCache(_alarmsCacheKey(), all);
+        _setCache(_alarmsCacheKey(), _amAlarmsRaw);
       } catch(e) {
         document.getElementById('adminEngineStatus').textContent = I18N.t('Yükleme hatası: ') + e.message;
       }
@@ -2612,6 +2638,49 @@
       sel.innerHTML = `<option value="">${I18N.t("Tüm Deal Owner'lar")}</option>` + owners.map(o => `<option value="${fmt(o)}">${fmt(o)}</option>`).join('');
       _closedAlarmsOwnersPopulated = true;
     }
+    // ── Kapalı alarmları TEMBEL yükle ─────────────────────────────────────
+    // loadAdminAlarms artık yalnızca aktif alarmları indiriyor (bkz. oradaki
+    // not). "Kapatılan Alarmlar" sayfası ise kapalı satırları gösteriyor —
+    // bunlar 20.870 satır, yani ilk açılışta indirilirse tüm kazanç kaybolur.
+    // Bu yüzden yalnızca o sayfaya girildiğinde, bir kez yükleniyor.
+    let _amClosedLoaded = false;
+    let _amClosedLoading = null;
+    async function _amEnsureClosedAlarms() {
+      if (_amClosedLoaded) return;
+      if (_amClosedLoading) return _amClosedLoading;
+      _amClosedLoading = (async () => {
+        const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
+        const regionQ = window.isRM ? `&region=eq.${encodeURIComponent(window.rmRegion)}` : '';
+        const PAGE = 1000;
+        // payment_tracking DAHİL: bu sayfa o tipteki eski kapalı satırları da
+        // listeliyor (yalnızca "Alarm Tipi" hücresini boş bırakıyor).
+        const baseUrl = `${SUPABASE_URL}/rest/v1/alarms?order=closed_at.desc.nullslast` +
+          `${regionQ}&status=eq.closed&limit=${PAGE}`;
+        try {
+          const first = await fetch(`${baseUrl}&offset=0`, { headers: { ...H, Prefer: 'count=exact' } });
+          if (!first.ok) return;
+          let all = await first.json();
+          const range = first.headers.get('content-range');
+          const total = range && range.includes('/') ? Number(range.split('/')[1]) : all.length;
+          if (total > all.length) {
+            const offsets = [];
+            for (let off = PAGE; off < total; off += PAGE) offsets.push(off);
+            const rest = await Promise.all(offsets.map(off =>
+              fetch(`${baseUrl}&offset=${off}`, { headers: H }).then(r => r.ok ? r.json() : [])
+            ));
+            rest.forEach(p => { if (Array.isArray(p)) all.push(...p); });
+          }
+          // Aktif listeyle birleştir — id'ye göre tekilleştir.
+          const seen = new Set(_amAlarmsRaw.map(a => String(a.id)));
+          for (const a of all) if (!seen.has(String(a.id))) _amAlarmsRaw.push(a);
+          _amClosedLoaded = true;
+          await _amApplyYearFilter();
+        } catch (e) { /* sessiz — sayfa aktif alarmlarla çalışmaya devam eder */ }
+        finally { _amClosedLoading = null; }
+      })();
+      return _amClosedLoading;
+    }
+
     function renderAdminClosedAlarms() {
       // Deal/kayıt gizlenmez — bu deal'in kapandığını görmek önemli. Sadece
       // "Payment Takip" ALARM TİPİ etiketi hiçbir yerde gösterilmiyor (aşağıda
@@ -5629,7 +5698,12 @@
       // çağrıları) — sayfaya girer girmez ELDEKİ veriyle ANINDA render edilir
       // (kullanıcı "Yükleniyor" görmez), sonra arka planda sessizce tazelenir.
       else if (v === 'today') { renderAdminToday(); loadAdminAlarms(true).then(renderAdminToday); }
-      else if (v === 'closed-alarms') { renderAdminClosedAlarms(); loadAdminAlarms(true).then(renderAdminClosedAlarms); }
+      // Kapalı satırlar ilk açılışta indirilmiyor (bkz. _amEnsureClosedAlarms) —
+      // bu sayfaya girildiğinde bir kez yüklenip tablo yeniden çiziliyor.
+      else if (v === 'closed-alarms') {
+        renderAdminClosedAlarms();
+        _amEnsureClosedAlarms().then(renderAdminClosedAlarms);
+      }
       else if (v === 'cancelled-alarms') { renderAdminCancelledAlarms(); loadAdminCancelledDeals(); }
       else if (v === 'won-alarms') { renderAdminWonAlarms(); loadAdminWonAlarms(); }
       else if (v === 'activity') loadAdminActivity();
@@ -5661,7 +5735,7 @@
       _liveAlarmTimer = setInterval(async () => {
         if (_currentView === 'alarms-monitor') { await loadAdminAlarms(true); renderAdminAlarmTable(); }
         else if (_currentView === 'today')     { await loadAdminAlarms(true); renderAdminToday(); }
-        else if (_currentView === 'closed-alarms') { await loadAdminAlarms(true); renderAdminClosedAlarms(); }
+        else if (_currentView === 'closed-alarms') { await loadAdminAlarms(true); await _amEnsureClosedAlarms(); renderAdminClosedAlarms(); }
         else if (_currentView === 'cancelled-alarms') await loadAdminCancelledDeals();
         else if (_currentView === 'won-alarms')       await loadAdminWonAlarms();
       }, 60000);
@@ -7444,7 +7518,10 @@
     // Alarm durumu deal verisinden daha sık değiştiği için TTL daha kısa.
     const _ALARMS_TTL = 5 * 60 * 1000; // 5 dk
     const _LIST_CACHE_TTL = 5 * 60 * 1000; // 5 dk — İptal/Won listeleri
-    function _alarmsCacheKey() { return 'nc_admin_alarms_v2_2026' + (window.isRM ? '_rm_' + window.rmRegion : ''); }
+    // v3: artık yalnızca aktif alarmlar cache'leniyor (payment_tracking ve
+    // kapalı satırlar hariç). Anahtar bilerek yükseltildi — v2 cache'i 25 bin
+    // satırlık eski tam veriyi taşıyor, onu okumak kazancı geri alırdı.
+    function _alarmsCacheKey() { return 'nc_admin_alarms_v3_2026' + (window.isRM ? '_rm_' + window.rmRegion : ''); }
     function _cancelledCacheKey() { return 'nc_admin_cancelled_v2_2026' + (window.isRM ? '_rm_' + window.rmRegion : ''); }
     function _wonCacheKey() { return 'nc_admin_won_v2_2026' + (window.isRM ? '_rm_' + window.rmRegion : ''); }
 
@@ -7535,13 +7612,19 @@
       if (onBatch) onBatch(firstRows);
       if (total <= FIRST) return firstRows;
 
-      // 3. Kalanları sınırlı eşzamanlılıkla, parça parça indir (Supabase çok
-      // fazla paralel isteği aynı anda kaldıramıyor, statement timeout / 500 dönüyor).
-      // SIZE küçültüldü (1000→600) ve CONCURRENCY düşürüldü (4→2): Postgres
-      // tarafında aynı anda daha az/daha küçük sorgu çalışınca statement
-      // timeout'a (57014→500) düşme ihtimali belirgin şekilde azalıyor.
-      const SIZE = 600;
-      const CONCURRENCY = 2;
+      // 3. Kalanları sınırlı eşzamanlılıkla, parça parça indir.
+      // SIZE/CONCURRENCY bir zamanlar 49 BİN satırlık filtresiz sorgu için
+      // küçültülmüştü (1000→600, 4→2) çünkü Postgres statement timeout'a
+      // düşüyordu. Sorgu artık DEALS_2026_Q ile sınırlı: 4.961 satır, yani
+      // o kadar temkinli olmak gerekmiyor.
+      //
+      // SIZE 1000'İ AŞMAMALI: Supabase/PostgREST yanıtları 1000 satırda
+      // KESİYOR (db-max-rows). Ölçtüm: limit=1500/2000/2500 istekleri de
+      // yalnızca 1000 satır döndürüyor. Offset adımı SIZE'a göre hesaplandığı
+      // için SIZE>1000 olsaydı aradaki satırlar SESSİZCE ATLANIRDI —
+      // 2000 denendiğinde 4.961 satırın yalnızca 2.961'i geldi.
+      const SIZE = 1000;
+      const CONCURRENCY = 3;
       const remaining = total - FIRST;
       const pages = Math.ceil(remaining / SIZE);
       const offsets = Array.from({ length: pages }, (_, i) => FIRST + i * SIZE);

@@ -112,6 +112,23 @@ export default async function handler(req, res) {
   const H  = { apikey: SERVICE_KEY, Authorization: 'Bearer ' + SERVICE_KEY };
   const HJ = { ...H, 'Content-Type': 'application/json; charset=utf-8' };
 
+  // PostgREST yanıtları 1000 satırda KESİLİYOR (db-max-rows) — "limit=2000"
+  // yazmak bunu değiştirmiyor, fazlası sessizce düşer. Bu yüzden sayfalı çek.
+  async function fetchAllPaged(path) {
+    const out = [];
+    let offset = 0;
+    while (true) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}&limit=1000&offset=${offset}`, { headers: H });
+      if (!r.ok) return { ok: false, rows: out };
+      const batch = await r.json();
+      if (!Array.isArray(batch) || !batch.length) break;
+      out.push(...batch);
+      if (batch.length < 1000) break;
+      offset += 1000;
+    }
+    return { ok: true, rows: out };
+  }
+
   try {
     // ── 0. Zoho kullanıcı aynası (varsa BİRİNCİL kaynak) ──────────────
     // zoho_users, Zoho'nun Users modülünün aynası (bkz. zoho_users_sync.sql):
@@ -126,13 +143,10 @@ export default async function handler(req, res) {
     // vekil kuralda gereken "yönetici rolünü atla" istisnası burada GEREKMİYOR.
     const zoho = new Map();      // nameKey → zoho_users satırı
     {
-      const zr = await fetch(
-        `${SUPABASE_URL}/rest/v1/zoho_users` +
-        `?select=id,full_name,original_agent_name,email,role,region,status,exit_date,phone,mobile&limit=5000`,
-        { headers: H }
-      );
+      const zr = await fetchAllPaged(
+        'zoho_users?select=id,full_name,original_agent_name,email,role,region,status,exit_date,phone,mobile&order=id.asc');
       if (zr.ok) {
-        for (const z of await zr.json()) {
+        for (const z of zr.rows) {
           const k = nameKey(z.full_name);
           if (k) zoho.set(k, z);
         }
@@ -183,9 +197,9 @@ export default async function handler(req, res) {
     }
 
     // ── 2. Users ile karşılaştır ──
-    const uR = await fetch(`${SUPABASE_URL}/rest/v1/Users?select=*&order=id.asc&limit=2000`, { headers: H });
-    if (!uR.ok) { res.status(502).json({ error: 'Veritabanı hatası (Users).' }); return; }
-    const users = await uR.json();
+    const uRes = await fetchAllPaged('Users?select=*&order=id.asc');
+    if (!uRes.ok) { res.status(502).json({ error: 'Veritabanı hatası (Users).' }); return; }
+    const users = uRes.rows;
 
     const changes = [];     // takım değişiklikleri
     const leavers = [];     // Zoho'da artık aktif olmayanlar
