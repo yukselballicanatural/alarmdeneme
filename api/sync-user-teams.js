@@ -220,6 +220,15 @@ export default async function handler(req, res) {
           zohoStatus: z.exit_date
             ? `exit_date ${String(z.exit_date).slice(0, 10)}`
             : (z.status || '(bilinmiyor)'),
+          // Panelde "neden aktif değil" sorusunu cevaplayabilmek için ham
+          // alanlar da gidiyor: exit_date ve status BAĞIMSIZ iki gerekçe
+          // (isLeaver notuna bakınız — exit_date geçmişte olup status hâlâ
+          // 'active' görünen kişiler var). Tek bir birleşik metin bunları
+          // ayırt edilemez hâle getiriyordu.
+          exitDate: z.exit_date ? String(z.exit_date).slice(0, 10) : null,
+          zohoStatusRaw: z.status || null,
+          zohoRole: z.role || '',
+          email: z.email || '',
         });
         continue;   // ayrılan biri için takım güncellemesi anlamsız
       }

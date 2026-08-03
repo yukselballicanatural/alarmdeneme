@@ -474,6 +474,20 @@
     '{n} takım güncellendi.': '{n} teams updated.',
     '{n} takım güncellendi, {f} başarısız.': '{n} teams updated, {f} failed.',
     '{n} danışmanın takımı Zoho ile uyuşmuyor.': "{n} consultants' teams do not match Zoho.",
+    // Uyarı dökümü ("bunlar kim, neden aktif değil"). 'Takım'/'Rol' gibi kısa
+    // sözcükler zaten sözlükte; burada yalnızca yeni metinler var.
+    'Kimler?': 'Who?',
+    "Zoho'da aktif değil": 'Not active in Zoho',
+    'Takımı uyuşmuyor': 'Team mismatch',
+    'takım yok': 'no team',
+    'Girişi kapat': 'Disable login',
+    'Girişi Kapat': 'Disable Login',
+    'Çıkış tarihi {d}': 'Exit date {d}',
+    'Zoho durumu: {a}': 'Zoho status: {a}',
+    'Zoho kaydı aktif değil': 'Zoho record is not active',
+    "Zoho hâlâ 'active' diyor": "Zoho still says 'active'",
+    'Bu kişinin girişi kapatılacak. Kayıt SİLİNMEZ — günlük performans ve alarm geçmişi korunur.':
+      "This person's login will be disabled. The record is NOT deleted — daily performance and alarm history are preserved.",
     'Takım güncellendi.': 'Team updated.',
     'Takım güncellenemedi: ': 'Team update failed: ',
     'Hasta, Deal ID veya danışman ara...': 'Search patient, Deal ID or consultant...',

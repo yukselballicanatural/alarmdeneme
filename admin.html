@@ -779,10 +779,14 @@
         <svg style="width:16px;height:16px;color:#fbbf24;flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         <span id="tmSyncMsg" style="color:#fbbf24;font-size:12px;font-weight:700"></span>
         <span id="tmSyncSrc" style="color:#b45309;font-size:11px">Kaynak: her danışmanın en son deal'indeki takım.</span>
+        <button id="tmSyncDetailBtn" onclick="amTmToggleSyncDetail()" style="padding:4px 10px;background:#78350f4d;border:1px solid #b45309;border-radius:8px;color:#fbbf24;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Kimler? ▾</button>
         <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
           <button id="tmSyncLeaverBtn" onclick="amTmDeactivateLeavers()" style="display:none;padding:7px 14px;background:#450a0a;border:1px solid #7f1d1d;border-radius:9px;color:#f87171;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap"></button>
           <button id="tmSyncTeamBtn" onclick="amTmApplyAllDrift()" style="padding:7px 14px;background:#0d9488;border:none;border-radius:9px;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap">Tümünü Zoho'ya Göre Eşitle</button>
         </span>
+        <!-- Uyarının dökümü: sayı tek başına işe yaramıyordu ("bunlar kim?").
+             Kişi kişi ad, takım, rol ve GEREKÇE burada listeleniyor. -->
+        <div id="tmSyncDetail" style="display:none;width:100%;margin-top:2px;border-top:1px solid #b4530966;padding-top:11px"></div>
       </div>
       <div id="tmLoading" class="flex flex-col items-center py-16 gap-4">
         <div class="spinner-anim"></div>
@@ -5102,6 +5106,98 @@
       document.getElementById('tmSyncLeaverBtn').style.display = L ? '' : 'none';
       document.getElementById('tmSyncLeaverBtn').textContent =
         I18N.t('{n} ayrılan kişinin girişini kapat').replace('{n}', L);
+      _amTmRenderSyncDetail();
+    }
+
+    // ── Uyarının dökümü ────────────────────────────────────────────────
+    // Uyarı yalnızca sayı veriyordu; "bunlar kim, neden aktif değil" cevapsız
+    // kalıyordu. Gerekçe API'den HAM alanlarla geliyor (exit_date + status ayrı
+    // ayrı), çünkü ikisi bağımsız iki sebep: canlı veride exit_date'i geçmişte
+    // olup status'ü hâlâ 'active' görünen kişiler var (bkz. api/sync-user-teams.js
+    // isLeaver notu). Birleşik tek metin bunu ayırt edilemez hâle getiriyordu.
+    let _amTmDetailOpen = false;
+
+    function amTmToggleSyncDetail() {
+      _amTmDetailOpen = !_amTmDetailOpen;
+      _amTmRenderSyncDetail();
+    }
+
+    // Tarihi gg.aa.yyyy göster — ISO biçimi panelin geri kalanıyla uyumsuz.
+    function _amTmDate(s) {
+      if (!s) return '—';
+      const p = String(s).slice(0, 10).split('-');
+      return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : String(s).slice(0, 10);
+    }
+
+    // Ayrılma gerekçesi — hangi sinyalin tetiklediği açıkça yazılıyor.
+    function _amTmLeaverReason(l) {
+      const bits = [];
+      const st = String(l.zohoStatusRaw || '').toLowerCase();
+      if (l.exitDate) bits.push(I18N.t('Çıkış tarihi {d}').replace('{d}', _amTmDate(l.exitDate)));
+      if (l.zohoStatusRaw && st !== 'active') bits.push(I18N.t('Zoho durumu: {a}').replace('{a}', l.zohoStatusRaw));
+      // Eski uçtan (yalnızca zohoStatus dönen) yanıtta yedek: ham metni göster.
+      if (!bits.length) bits.push(l.zohoStatus ? String(l.zohoStatus) : I18N.t('Zoho kaydı aktif değil'));
+      // Çelişki: çıkış tarihi geçmiş ama Zoho hâlâ 'active' diyor. Bu gerçek bir
+      // veri durumu, gizlemiyoruz — admin neye baktığını bilsin.
+      if (l.exitDate && st === 'active') bits.push(I18N.t("Zoho hâlâ 'active' diyor"));
+      return bits.join(' · ');
+    }
+
+    function _amTmRenderSyncDetail() {
+      const box = document.getElementById('tmSyncDetail');
+      const btn = document.getElementById('tmSyncDetailBtn');
+      if (!box || !btn) return;
+      if (!_amTmDetailOpen) {
+        box.style.display = 'none';
+        btn.textContent = I18N.t('Kimler?') + ' ▾';
+        return;
+      }
+      btn.textContent = I18N.t('Kimler?') + ' ▴';
+      box.style.display = 'block';
+      const H = (t, c) => `<div style="font-size:11px;font-weight:800;color:${c};letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px">${_escHtml(t)}</div>`;
+      const out = [];
+
+      if (_amTmLeavers.length) {
+        out.push(`<div style="margin-bottom:12px">`
+          + H(I18N.t('Zoho\'da aktif değil') + ` (${_amTmLeavers.length})`, '#f87171')
+          + `<div style="display:flex;flex-direction:column;gap:5px">`
+          + _amTmLeavers.map(l => `<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;background:#450a0a4d;border:1px solid #7f1d1d80;border-radius:8px;padding:6px 10px">
+               <b style="color:#fecaca;font-size:12px">${_escHtml(l.fullName || l.username || '—')}</b>
+               <span style="color:#94a3b8;font-size:11px">${_escHtml(l.team || I18N.t('takım yok'))} · ${_escHtml(l.role || '—')}</span>
+               <span style="color:#fca5a5;font-size:11px">${_escHtml(_amTmLeaverReason(l))}</span>
+               ${l.username ? `<span style="color:#475569;font-size:10.5px">${_escHtml(l.username)}</span>` : ''}
+               ${l.username ? `<button onclick="amTmDeactivateOne('${_jsStrAttr(l.username)}')" style="margin-left:auto;padding:3px 9px;background:#7f1d1d;border:none;border-radius:7px;color:#fecaca;font-size:10.5px;font-weight:700;cursor:pointer;white-space:nowrap">${_escHtml(I18N.t('Girişi kapat'))}</button>` : ''}
+             </div>`).join('')
+          + `</div></div>`);
+      }
+
+      if (_amTmDrift.size) {
+        const all = [..._amTmDrift.values()];
+        out.push(`<div>`
+          + H(I18N.t('Takımı uyuşmuyor') + ` (${all.length})`, '#fbbf24')
+          + `<div style="display:flex;flex-direction:column;gap:5px">`
+          + all.map(d => `<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;background:#78350f33;border:1px solid #b4530980;border-radius:8px;padding:6px 10px">
+               <b style="color:#fde68a;font-size:12px">${_escHtml(d.fullName || d.username || '—')}</b>
+               <span style="color:#94a3b8;font-size:11px">${_escHtml(d.role || '—')}</span>
+               <span style="font-size:11px;color:#cbd5e1">${_escHtml(d.from || I18N.t('takım yok'))} → <b style="color:#5eead4">${_escHtml(d.to)}</b></span>
+               <span style="color:#64748b;font-size:10.5px">${_escHtml(_amTmSourceLabel(d))}</span>
+             </div>`).join('')
+          + `</div></div>`);
+      }
+
+      box.innerHTML = out.join('');
+    }
+
+    // Tek kişinin girişini kapat — uç zaten usernames ile kapsamı daraltıyor.
+    function amTmDeactivateOne(username) {
+      const l = _amTmLeavers.find(x => x.username === username);
+      if (!l) return;
+      const body = I18N.t('Bu kişinin girişi kapatılacak. Kayıt SİLİNMEZ — günlük performans ve alarm geçmişi korunur.')
+        + `<br><br><b>${_escHtml(l.fullName || username)}</b>`
+        + `<br><span style="font-size:11px;color:#94a3b8">${_escHtml(l.team || '—')} · ${_escHtml(l.role || '')}</span>`
+        + `<br><span style="font-size:11px;color:#f87171">${_escHtml(_amTmLeaverReason(l))}</span>`;
+      showSiteConfirm('Girişi Kapat', body, I18N.t('Girişi kapat'), '#dc2626',
+        () => _amTmRunSync([username], true));
     }
 
     // İşten ayrılanların girişini kapat — kayıt SİLİNMEZ, yalnızca is_active=false
@@ -5110,7 +5206,7 @@
       const all = _amTmLeavers;
       if (!all.length) return;
       const list = all.slice(0, 12).map(l =>
-        `<div style="margin-top:3px">${_escHtml(l.fullName)} <span style="color:#64748b">— ${_escHtml(l.team || '—')} · ${_escHtml(l.role || '')} · Zoho: ${_escHtml(l.zohoStatus)}</span></div>`
+        `<div style="margin-top:3px">${_escHtml(l.fullName)} <span style="color:#64748b">— ${_escHtml(l.team || '—')} · ${_escHtml(l.role || '')} · ${_escHtml(_amTmLeaverReason(l))}</span></div>`
       ).join('');
       const more = all.length > 12
         ? `<div style="margin-top:4px;color:#64748b">${_escHtml(I18N.t('+{n} kişi daha').replace('{n}', all.length - 12))}</div>`
