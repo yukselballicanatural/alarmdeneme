@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -161,8 +161,246 @@
     .tl-kanban-card:hover { border-color:#0d9488; transform:translateY(-1px); }
     .nc-project-name { font-family:'Cormorant Garamond', serif; font-style:italic; font-weight:500; font-size:12px; letter-spacing:.03em; line-height:1.35; color:#a5b4d6; margin-top:6px; }
   </style>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       LIQUID GLASS — macOS/iOS tarzı buzlu-cam tema katmanı.
+       Yalnızca html[data-theme="light"] altında aktif; orijinal koyu tema
+       (yukarıdaki <style>) HİÇ değiştirilmedi — toggle "dark" moduna
+       geçince tarayıcı otomatik olarak orijinal koyu görünüme döner.
+       ══════════════════════════════════════════════════════════════════ -->
+  <style id="liquidGlassLight">
+    html[data-theme="light"] {
+      --lg-page-1: #eef1f6;
+      --lg-page-2: #e4e9f2;
+      --lg-surface: rgba(255,255,255,0.62);
+      --lg-surface-strong: rgba(255,255,255,0.78);
+      --lg-surface-soft: rgba(255,255,255,0.46);
+      --lg-surface-input: rgba(255,255,255,0.55);
+      --lg-border: rgba(15,23,42,0.09);
+      --lg-border-strong: rgba(15,23,42,0.14);
+      --lg-text-1: #1d1d1f;
+      --lg-text-2: #6e6e76;
+      --lg-text-3: #9a9aa2;
+      --lg-accent: #0d9488;
+      --lg-accent-2: #4f46e5;
+      --lg-shadow-sm: 0 2px 10px rgba(30,41,59,0.06);
+      --lg-shadow-md: 0 10px 34px -8px rgba(30,41,59,0.14);
+      --lg-shadow-lg: 0 24px 64px -16px rgba(30,41,59,0.22);
+      --lg-blur: 22px;
+      --lg-radius: 18px;
+      --lg-spring: cubic-bezier(.22,1,.36,1);
+    }
+
+    /* ── Sayfa zemini: macOS duvar kağıdı hissi — sabit renkli lekeler ── */
+    html[data-theme="light"] body {
+      background:
+        radial-gradient(1200px 700px at 8% -10%, rgba(45,212,191,0.20), transparent 60%),
+        radial-gradient(1000px 800px at 100% 0%, rgba(129,140,248,0.18), transparent 55%),
+        radial-gradient(900px 900px at 50% 110%, rgba(20,184,166,0.12), transparent 60%),
+        linear-gradient(160deg, var(--lg-page-1), var(--lg-page-2)) !important;
+      background-attachment: fixed !important;
+      color: var(--lg-text-1);
+    }
+    html[data-theme="light"] ::-webkit-scrollbar-track { background: transparent !important; }
+    html[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(15,23,42,0.18) !important; }
+    html[data-theme="light"] th { color: #dc2626 !important; }
+
+    /* Genel glass yüzey yardımcı sınıfı + tüm buton/kart basma efekti */
+    html[data-theme="light"] button { -webkit-tap-highlight-color: transparent; }
+    html[data-theme="light"] button:active,
+    html[data-theme="light"] [onclick]:active { transform: scale(0.96); transition: transform .12s var(--lg-spring); }
+
+    /* ── Sidebar: yüzen cam panel ── */
+    html[data-theme="light"] #sidebarFull,
+    html[data-theme="light"] #sidebarMini {
+      background: var(--lg-surface) !important;
+      backdrop-filter: blur(var(--lg-blur)) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(180%) !important;
+      border-right: 1px solid var(--lg-border) !important;
+      box-shadow: var(--lg-shadow-md);
+    }
+    html[data-theme="light"] main { position: relative; z-index: 0; }
+    html[data-theme="light"] #userAvatar, html[data-theme="light"] #miniAvatar { box-shadow: 0 4px 14px rgba(13,148,136,0.35); }
+    html[data-theme="light"] #sidebarName, html[data-theme="light"] h1, html[data-theme="light"] h2, html[data-theme="light"] h3, html[data-theme="light"] h4 { color: var(--lg-text-1) !important; }
+    html[data-theme="light"] #sidebarTeam { color: var(--lg-text-2) !important; }
+
+    /* ── Nav butonları ── */
+    html[data-theme="light"] .nav-btn.active { background: var(--lg-accent) !important; color: #fff !important; box-shadow: 0 4px 16px -2px rgba(13,148,136,0.5); }
+    html[data-theme="light"] .nav-btn:not(.active) { color: var(--lg-text-2) !important; }
+    html[data-theme="light"] .nav-btn:not(.active):hover { background: rgba(15,23,42,0.06) !important; color: var(--lg-text-1) !important; }
+    html[data-theme="light"] #mini-nav-alarms:not([style*="background:transparent"]) { box-shadow: 0 4px 14px -2px rgba(13,148,136,0.45); }
+    html[data-theme="light"] aside button:not(.nav-btn):hover { background: rgba(15,23,42,0.07) !important; }
+
+    /* ── Kartlar / paneller ── */
+    html[data-theme="light"] .filter-card,
+    html[data-theme="light"] .dep-card,
+    html[data-theme="light"] .info-card,
+    html[data-theme="light"] .deal-total-bar,
+    html[data-theme="light"] .tl-kanban-col,
+    html[data-theme="light"] .tl-kanban-col-head,
+    html[data-theme="light"] .tl-kanban-card,
+    html[data-theme="light"] .nc-cal-popup,
+    html[data-theme="light"] .modal-box {
+      background: var(--lg-surface) !important;
+      backdrop-filter: blur(var(--lg-blur)) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(180%) !important;
+      border: 1px solid var(--lg-border) !important;
+      box-shadow: var(--lg-shadow-md);
+    }
+    html[data-theme="light"] .tl-kanban-card { box-shadow: var(--lg-shadow-sm); border-radius: 14px !important; }
+    html[data-theme="light"] .tl-kanban-card:hover { border-color: var(--lg-accent) !important; box-shadow: var(--lg-shadow-md); }
+    html[data-theme="light"] .today-card:hover { border-color: var(--lg-accent) !important; box-shadow: 0 10px 30px rgba(13,148,136,0.18) !important; }
+    html[data-theme="light"] .modal-box { border-radius: 22px !important; box-shadow: var(--lg-shadow-lg); }
+    html[data-theme="light"] .modal-bg { background: rgba(15,23,42,0.28) !important; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    html[data-theme="light"] .filter-label, html[data-theme="light"] .deal-total-label, html[data-theme="light"] .info-label { color: var(--lg-text-3) !important; }
+    html[data-theme="light"] .info-val, html[data-theme="light"] .deal-total-value { color: var(--lg-text-1) !important; }
+    html[data-theme="light"] .nc-project-name { color: #6b6f9c !important; }
+
+    /* ── Inputlar / seçiciler ── */
+    html[data-theme="light"] .filter-sel, html[data-theme="light"] .filter-inp,
+    html[data-theme="light"] .nc-date-trigger, html[data-theme="light"] .dep-input,
+    html[data-theme="light"] textarea.modal-note {
+      background: var(--lg-surface-input) !important;
+      border: 1px solid var(--lg-border-strong) !important;
+      color: var(--lg-text-1) !important;
+      backdrop-filter: blur(10px);
+    }
+    html[data-theme="light"] .filter-sel option { background:#fff !important; color: var(--lg-text-1) !important; }
+    html[data-theme="light"] .filter-sel:focus, html[data-theme="light"] .filter-inp:focus,
+    html[data-theme="light"] .dep-input:focus, html[data-theme="light"] textarea.modal-note:focus,
+    html[data-theme="light"] .nc-date-trigger.active {
+      border-color: var(--lg-accent) !important; box-shadow: 0 0 0 3px rgba(13,148,136,0.16) !important;
+    }
+    html[data-theme="light"] .nc-date-trigger .nc-date-text { color: var(--lg-text-1) !important; }
+    html[data-theme="light"] .nc-date-trigger .nc-date-text.placeholder { color: var(--lg-text-3) !important; }
+
+    /* ── Tab / pill / rozet ── */
+    html[data-theme="light"] .tab-pill.active { background: var(--lg-accent) !important; color: #fff !important; }
+    html[data-theme="light"] .tab-pill:not(.active) { background: rgba(15,23,42,0.06) !important; color: var(--lg-text-2) !important; }
+    html[data-theme="light"] .tab-pill:not(.active):hover { background: rgba(15,23,42,0.1) !important; color: var(--lg-text-1) !important; }
+    html[data-theme="light"] .dep-quick-btn { color: var(--lg-text-2) !important; }
+    html[data-theme="light"] .dep-quick-btn:hover { background: rgba(15,23,42,0.06) !important; color: var(--lg-text-1) !important; }
+
+    /* ── Tablolar ── */
+    html[data-theme="light"] .alarm-tbl th, html[data-theme="light"] .dep-tbl thead th, html[data-theme="light"] .dep-tbl tfoot td {
+      background: var(--lg-surface-soft) !important; color: var(--lg-text-3) !important; border-bottom: 1px solid var(--lg-border) !important;
+    }
+    html[data-theme="light"] .alarm-tbl td { border-bottom: 1px solid var(--lg-border) !important; color: var(--lg-text-1); }
+    html[data-theme="light"] .alarm-tbl tbody tr:hover td, html[data-theme="light"] .dep-tbl tbody tr:hover td { background: rgba(13,148,136,0.06) !important; }
+    html[data-theme="light"] .dep-tbl tbody td { border-bottom: 1px solid var(--lg-border) !important; }
+    html[data-theme="light"] .sarrow { color: var(--lg-text-3) !important; }
+
+    /* ── Takvim ── */
+    html[data-theme="light"] .nc-cal-nav-btn, html[data-theme="light"] .nc-cal-title button, html[data-theme="light"] .nc-cal-footer button { color: var(--lg-text-2) !important; }
+    html[data-theme="light"] .nc-cal-title button:hover, html[data-theme="light"] .nc-cal-footer button:hover { background: rgba(13,148,136,0.1) !important; color: var(--lg-accent) !important; }
+    html[data-theme="light"] .nc-cal-dow { color: var(--lg-text-3) !important; }
+    html[data-theme="light"] .nc-cal-day { color: var(--lg-text-1) !important; }
+    html[data-theme="light"] .nc-cal-day.muted { color: var(--lg-text-3) !important; opacity: .5; }
+    html[data-theme="light"] .nc-cal-day:hover { background: rgba(13,148,136,0.12) !important; color: var(--lg-accent) !important; }
+    html[data-theme="light"] .nc-cal-footer { border-top: 1px solid var(--lg-border) !important; }
+
+    /* ── Genel koyu-hex yakalayıcılar: tüm dosyadaki inline stiller ── */
+    html[data-theme="light"] [style*="background:#020617" i],
+    html[data-theme="light"] [style*="background:#0f172a" i],
+    html[data-theme="light"] [style*="background:#0d1526" i],
+    html[data-theme="light"] [style*="background:#111827" i],
+    html[data-theme="light"] [style*="background:#0b1220" i],
+    html[data-theme="light"] [style*="background:#0a1120" i],
+    html[data-theme="light"] [style*="background:#1a1f2e" i],
+    html[data-theme="light"] [style*="background:#0d1a2b" i],
+    html[data-theme="light"] [style*="background:#141d30" i],
+    html[data-theme="light"] [style*="background:#131c2e" i],
+    html[data-theme="light"] [style*="background:#0f1b30" i],
+    html[data-theme="light"] [style*="background:#0d1f1c" i],
+    html[data-theme="light"] [style*="background:#1e2c45" i] {
+      background: var(--lg-surface) !important;
+      backdrop-filter: blur(var(--lg-blur)) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(180%) !important;
+    }
+    html[data-theme="light"] [style*="background:#1e293b" i],
+    html[data-theme="light"] [style*="background:#334155" i] {
+      background: var(--lg-surface-soft) !important;
+    }
+    html[data-theme="light"] [style*="border:1px solid #1e293b" i],
+    html[data-theme="light"] [style*="border:1px solid #334155" i],
+    html[data-theme="light"] [style*="border:1px solid #374151" i],
+    html[data-theme="light"] [style*="border:1px solid #2a3752" i],
+    html[data-theme="light"] [style*="border:1px solid #223049" i],
+    html[data-theme="light"] [style*="border-bottom:1px solid #1e293b" i],
+    html[data-theme="light"] [style*="border-bottom:2px solid #1e293b" i],
+    html[data-theme="light"] [style*="border-top:1px solid #1e293b" i],
+    html[data-theme="light"] [style*="border-top:2px solid #0d9488" i],
+    html[data-theme="light"] [style*="border-right:1px solid #1e293b" i] {
+      border-color: var(--lg-border) !important;
+    }
+    html[data-theme="light"] [style*="color:#f1f5f9" i],
+    html[data-theme="light"] [style*="color:#e2e8f0" i],
+    html[data-theme="light"] [style*="color:#cbd5e1" i],
+    html[data-theme="light"] [style*="color:#c3cee2" i] {
+      color: var(--lg-text-1) !important;
+    }
+    html[data-theme="light"] [style*="color:#94a3b8" i],
+    html[data-theme="light"] [style*="color:#64748b" i],
+    html[data-theme="light"] [style*="color:#475569" i],
+    html[data-theme="light"] [style*="color:#8393ab" i],
+    html[data-theme="light"] [style*="color:#48597a" i],
+    html[data-theme="light"] [style*="color:#54637a" i],
+    html[data-theme="light"] [style*="color:#5b6b85" i],
+    html[data-theme="light"] [style*="color:#78716c" i] {
+      color: var(--lg-text-2) !important;
+    }
+    /* Koyu-tonlu renkli rozet/kart zeminleri (kırmızı/yeşil/turuncu/mor/mavi tint) — ton korunarak hafifletiliyor */
+    html[data-theme="light"] [style*="background:#450a0a" i], html[data-theme="light"] [style*="background:#2d0a0a" i] { background: rgba(239,68,68,0.10) !important; }
+    html[data-theme="light"] [style*="background:#052e16" i] { background: rgba(34,197,94,0.10) !important; }
+    html[data-theme="light"] [style*="background:#431407" i], html[data-theme="light"] [style*="background:#422006" i], html[data-theme="light"] [style*="background:#2d1a00" i] { background: rgba(249,115,22,0.10) !important; }
+    html[data-theme="light"] [style*="background:#1e1b4b" i], html[data-theme="light"] [style*="background:#2e1065" i], html[data-theme="light"] [style*="background:#3b1f6e" i], html[data-theme="light"] [style*="background:#1a0a2e" i], html[data-theme="light"] [style*="background:#4c1d95" i] { background: rgba(168,85,247,0.10) !important; }
+    html[data-theme="light"] [style*="background:#0e7490" i], html[data-theme="light"] [style*="background:#083344" i], html[data-theme="light"] [style*="background:#042f2e" i], html[data-theme="light"] [style*="background:#14343a" i] { background: rgba(20,184,166,0.10) !important; }
+    html[data-theme="light"] [style*="background:#1e3a5f" i] { background: rgba(59,130,246,0.10) !important; }
+    html[data-theme="light"] [style*="border:1px solid #7f1d1d" i] { border-color: rgba(239,68,68,0.35) !important; }
+    html[data-theme="light"] [style*="border:1px solid #166534" i] { border-color: rgba(34,197,94,0.35) !important; }
+    html[data-theme="light"] [style*="border:1px solid #92400e" i], html[data-theme="light"] [style*="border-color:#92400e" i] { border-color: rgba(249,115,22,0.35) !important; }
+
+    /* ── Görünüm geçişi: her switchView() çağrısında yumuşak "spring" animasyon ── */
+    html[data-theme="light"] main > div[id^="view-"] { animation: lgViewIn .4s var(--lg-spring); }
+    @keyframes lgViewIn { from { opacity:0; transform:translateY(8px) scale(.99); } to { opacity:1; transform:none; } }
+    html[data-theme="light"] .modal-box { animation: lgModalIn .28s var(--lg-spring); }
+    @keyframes lgModalIn { from { opacity:0; transform:translateY(10px) scale(.96); } to { opacity:1; transform:none; } }
+
+    /* ── Dark/Light toggle butonu ── */
+    .lg-theme-toggle {
+      border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: transform .15s cubic-bezier(.22,1,.36,1), background .2s;
+    }
+    .lg-theme-toggle:active { transform: scale(0.92); }
+    html[data-theme="light"] .lg-theme-toggle { background: rgba(15,23,42,0.06); color: #6e6e76; }
+    html[data-theme="light"] .lg-theme-toggle:hover { background: rgba(13,148,136,0.14); color: #0d9488; }
+    html[data-theme="dark"] .lg-theme-toggle, html:not([data-theme]) .lg-theme-toggle { background: #1e293b; color: #94a3b8; }
+    html[data-theme="dark"] .lg-theme-toggle:hover { background: #0d9488; color: #fff; }
+    .lg-theme-toggle .lg-icon-sun { display: none; }
+    .lg-theme-toggle .lg-icon-moon { display: block; }
+    html[data-theme="dark"] .lg-theme-toggle .lg-icon-sun { display: block; }
+    html[data-theme="dark"] .lg-theme-toggle .lg-icon-moon { display: none; }
+  </style>
 </head>
 <body class="flex flex-row min-h-screen text-slate-100" style="background:#020617">
+<script>
+  (function() {
+    var saved = localStorage.getItem('nc_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+  function toggleThemeMode() {
+    var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    var next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('nc_theme', next);
+    var lbl = document.getElementById('themeToggleLabel');
+    if (lbl) lbl.textContent = next === 'dark' ? 'Açık Tema' : 'Koyu Tema';
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    var lbl = document.getElementById('themeToggleLabel');
+    if (lbl) lbl.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? 'Açık Tema' : 'Koyu Tema';
+  });
+</script>
 
 <!-- ════════════════ SIDEBAR FULL ════════════════ -->
 <aside id="sidebarFull" style="width:260px;min-width:260px;background:#0f172a;border-right:1px solid #1e293b;display:flex;flex-direction:column;height:100vh;position:sticky;top:0;overflow-y:auto;flex-shrink:0;transition:width 0.25s">
@@ -277,6 +515,11 @@
   <div id="langToggleMount" style="padding:0 10px 10px"></div>
   <!-- Uygulamalar + Logout -->
   <div style="padding:0 10px 14px;display:flex;flex-direction:column;gap:8px">
+    <button onclick="toggleThemeMode()" class="lg-theme-toggle" title="Görünüm" style="width:100%;padding:10px;border-radius:10px;font-size:11px;font-weight:700;gap:8px">
+      <svg class="lg-icon-moon" style="width:14px;height:14px;margin-right:4px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 1020.354 15.354z"/></svg>
+      <svg class="lg-icon-sun" style="width:14px;height:14px;margin-right:4px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36l-.71-.71M6.34 6.34l-.71-.71m12.02 0l-.71.71M6.34 17.66l-.71.71M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      <span id="themeToggleLabel">Koyu Tema</span>
+    </button>
     <button onclick="window.location.href='apps.html'" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:10px;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s" onmouseover="this.style.background='#1e2f4a';this.style.borderColor='#3b5578';this.style.color='#93c5fd'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155';this.style.color='#94a3b8'">
       <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
       Uygulamalar
@@ -319,6 +562,10 @@
   </div>
   <button onclick="I18N.toggle()" title="TR / EN" style="width:36px;height:26px;border-radius:9999px;background:#1e293b;border:1px solid #334155;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:12px;font-size:8px;font-weight:800;transition:all 0.15s">
     <span id="miniLangLabel">TR</span>
+  </button>
+  <button onclick="toggleThemeMode()" class="lg-theme-toggle" title="Görünüm" style="width:36px;height:36px;border-radius:10px;margin-top:8px">
+    <svg class="lg-icon-moon" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 1020.354 15.354z"/></svg>
+    <svg class="lg-icon-sun" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36l-.71-.71M6.34 6.34l-.71-.71m12.02 0l-.71.71M6.34 17.66l-.71.71M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
   </button>
   <button onclick="window.location.href='apps.html'" title="Uygulamalar" style="width:36px;height:36px;border-radius:10px;background:#1e293b;border:1px solid #334155;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:8px;transition:all 0.15s">
     <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
