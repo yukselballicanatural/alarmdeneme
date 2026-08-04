@@ -1441,11 +1441,32 @@
   }
 </script>
 <script>
-  // Not popup'ı ARTIK SABİT KONUMDA: ekranın ortasında açılır, hangi
-  // satırdaki ünleme basıldığından bağımsız olarak her zaman aynı yerde.
-  // Konumu CSS sahipleniyor (#notePopup.nc-note-open) — burada top/left
-  // HESAPLANMAZ. Eskiden butonun rect'ine göre konumlanıyordu ve her not
-  // başka bir yerde açılıyordu.
+  // Not popup'ı ÜNLEMİN YANINDA açılır — ama konum kuralı SABİT:
+  // her zaman ünlemin ALTINA ve SOL kenarına hizalı. Altta yer yoksa
+  // üstüne döner; hiçbir koşulda ekran dışına taşmaz. Eskiden kural yoktu
+  // ve popup kimi satırda ekranın dışına sarkıyordu — "her not başka
+  // yerde" şikâyeti buradan geliyordu.
+  function positionNoteTip(el, src) {
+    const M = 8;                       // ekran kenarı payı
+    const r = src.getBoundingClientRect();
+    // Ölçüm için önce nötr bir konuma al (aynı görev içinde, ara boyama yok)
+    el.style.left = '0px';
+    el.style.top = '0px';
+    const w = el.offsetWidth, h = el.offsetHeight;
+
+    let left = r.left;                 // ünlemin sol kenarıyla hizalı
+    if (left + w > window.innerWidth - M) left = window.innerWidth - w - M;
+    left = Math.max(M, left);
+
+    let top = r.bottom + 8;            // varsayılan: ünlemin hemen altı
+    if (top + h > window.innerHeight - M) {
+      const above = r.top - 8 - h;     // sığmıyorsa üstüne çevir
+      top = above >= M ? above : Math.max(M, window.innerHeight - h - M);
+    }
+    el.style.left = left + 'px';
+    el.style.top  = top + 'px';
+  }
+
   function hideNoteTip() {
     const el = document.getElementById('notePopup');
     if (!el) return;
@@ -1469,14 +1490,25 @@
 
     el.textContent = text;
     el._src = src;
-    // Eski satır içi konumlardan arta kalan varsa temizle
-    el.style.top = ''; el.style.left = '';
     el.style.display = 'block';
     // Aynı popup yeniden açılırken giriş animasyonu tekrar oynasın
     el.classList.remove('nc-note-open');
     void el.offsetWidth;
     el.classList.add('nc-note-open');
+    positionNoteTip(el, src);
   }
+
+  // Sayfa kaydırılınca/pencere boyutlanınca popup ünlemin yanında kalsın;
+  // ünlem görünürden çıkarsa popup da kapansın (havada asılı kalmasın).
+  function _noteReflow() {
+    const el = document.getElementById('notePopup');
+    if (!el || !el.classList.contains('nc-note-open') || !el._src) return;
+    const r = el._src.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > window.innerHeight) { hideNoteTip(); return; }
+    positionNoteTip(el, el._src);
+  }
+  window.addEventListener('scroll', _noteReflow, true);
+  window.addEventListener('resize', _noteReflow);
 
   document.addEventListener('click', (ev) => {
     const el = document.getElementById('notePopup');

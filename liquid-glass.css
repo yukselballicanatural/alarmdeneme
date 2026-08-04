@@ -1940,38 +1940,36 @@ html[data-theme="light"] #alarmTabsRow .tab-pill:not(.active):hover {
   background: rgba(18, 22, 34, 0.10) !important;
 }
 
-/* ═════════════════════════════════════════════════════════════════════
-   37. NOT POPUP KONUMU — TEMADAN BAĞIMSIZ
-   Geometri tema meselesi değil (bkz. .lq-seg-ind dersi): bir katman
-   atlarsa popup yine eski yerinde açılırdı. Bu yüzden konum kapsam
-   DIŞINDA, tek yerde.
-   Eskiden JS butonun rect'ine göre top/left yazıyordu ve her not başka
-   bir yerde açılıyordu; artık her zaman ekranın ortası.
-   ═════════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════
+   37. NOT POPUP — ÜNLEMIN YANINDA, TEMADAN BAĞIMSIZ
+   Konumu positionNoteTip() hesaplıyor (her zaman ünlemin altına + sol
+   kenarına hizalı, sığmazsa üstüne döner, ekran dışına taşmaz).
+   Burada SADECE ölçü/yığın/animasyon var — top/left'e DOKUNULMAZ,
+   yoksa JS'in hesabını ezer. Bir tur merkeze sabitlemiştim; kullanıcı
+   "sabit yer" derken ünleme göre tutarlı konumu kastediyordu.
+   Geometri kapsam DIŞINDA: bir tema katmanı atlarsa bozulmasin.
+   ═══════════════════════════════════════════════════════════════════ */
 #notePopup {
-  /* satır içi max-width:280px'i ezip okunur bir genişlik veriyoruz */
-  max-width: min(440px, calc(100vw - 32px)) !important;
-  min-width: 260px;
+  /* satır içi max-width:280px'i ez — uzun notlar sıkışmasin, ama
+     ünlemin yanında duracak kadar dar kalsin */
+  max-width: min(360px, calc(100vw - 24px)) !important;
+  min-width: 220px;
 }
 #notePopup.nc-note-open {
   display: block !important;
   position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
   right: auto !important;
   bottom: auto !important;
-  transform: translate(-50%, -50%);
-  max-height: min(60vh, 460px);
+  max-height: min(52vh, 380px);
   overflow-y: auto;
   z-index: 10001;
+  animation: ncNoteAnchorIn .32s cubic-bezier(.34, 1.4, .56, 1) !important;
 }
-/* Giriş: camdan netleşerek ve hafif yay ile — konum sabit olduğu için
-   hareket artık "nereden çıktı" sorusunu doğurmuyor */
-#notePopup.nc-note-open { animation: ncNoteCenterIn .4s cubic-bezier(.34, 1.4, .56, 1) !important; }
-@keyframes ncNoteCenterIn {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(.9); filter: blur(8px); }
+/* Giriş: ünlemden doğuyormuş gibi, camdan netleşerek */
+@keyframes ncNoteAnchorIn {
+  from { opacity: 0; transform: translateY(-5px) scale(.96); filter: blur(6px); }
   60%  { opacity: 1; filter: blur(0); }
-  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: none; }
+  to   { opacity: 1; transform: none; filter: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   #notePopup.nc-note-open { animation: none !important; }
