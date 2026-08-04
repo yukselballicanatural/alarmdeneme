@@ -131,12 +131,27 @@ html[data-theme="dark"] .nav-btn.active {
   color: #fff !important;
   box-shadow: none !important;
 }
+/* KRİTİK — buradaki position/top/left ATLANMIŞTI ve gösterge normal bir
+   flex ÇOCUĞU gibi davranıyordu: kendi hücresini kaplayıp düğmeleri yana
+   itiyordu (Tablo/Kanban ve Bugün/Dün kutularının "patlamasının" sebebi
+   buydu). Dikey sidebar'da hatanın etkisi göze çarpmıyordu — gösterge
+   sütunun ilk satırına oturup aktif öğeye yaklaşık denk geliyordu.
+   Geometri temaya bağlı DEĞİL: açık temadaki 14. bölümle birebir aynı
+   olmak zorunda; renk dışındaki hiçbir değeri temaya bırakma. */
 html[data-theme="dark"] .lq-seg-ind {
+  position: absolute;
+  top: 0; left: 0;
+  border-radius: 999px;
   background: var(--d-sel);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   backdrop-filter: blur(16px) saturate(150%);
   box-shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.6),
               inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition: transform .52s var(--d-spring), width .42s var(--d-spring),
+              height .42s var(--d-spring), opacity .25s var(--d-ease);
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform, width;
 }
 html[data-theme="dark"] #sidebarFull .lq-seg-ind { border-radius: 12px; }
 

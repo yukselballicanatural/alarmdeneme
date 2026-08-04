@@ -590,6 +590,12 @@ html[data-theme="dark"] .lg-theme-toggle .lg-icon-moon { display: none; }
    Aktif butonun kendi zemini şeffaf; koyu camı bu katman çizer ve
    seçim değişince yay (spring) ile kayar.
    ═════════════════════════════════════════════════════════════════════ */
+/* Geometri temadan BAĞIMSIZ: gösterge her koşulda akıştan çıkmak zorunda.
+   Bir tema katmanı bunu atlarsa gösterge normal flex çocuğu olur ve
+   düğmeleri yana iter — koyu temada tam bu olmuştu. */
+.lq-seg { position: relative; }
+.lq-seg-ind { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 0; }
+
 html[data-theme="light"] .lq-seg { position: relative; }
 html[data-theme="light"] .lq-seg-ind {
   position: absolute;
