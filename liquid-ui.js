@@ -375,12 +375,90 @@
     if (isPhoneInput(e.target)) applyPhoneMask(e.target);
   });
 
+  /* ════════════════ 4. DİL SEÇİCİ (cam açılır liste) ════════════════
+     Eski TR/EN segment pill'i yerine bayraklı cam açılır liste.
+     SADECE tr/en var — i18n.js sözlüğü bu iki dili kapsıyor; olmayan
+     dilleri listelemek boş/çeviri­siz seçenek üretirdi.
+     #langToggleMount içeriğini uygulamanın init'i sonradan
+     I18N.renderToggleButton() ile dolduruyor, bu yüzden MutationObserver
+     ile üzerine yeniden yazıyoruz. */
+
+  var LANGS = [
+    { code: 'tr', label: 'Türkçe',  flag: 'TR' },
+    { code: 'en', label: 'English', flag: 'EN' }
+  ];
+
+  function enhanceLangSwitcher() {
+    var mount = document.getElementById('langToggleMount');
+    if (!mount || typeof window.I18N === 'undefined') return;
+
+    function build() {
+      var cur = window.I18N.getLang() === 'en' ? LANGS[1] : LANGS[0];
+      var html =
+        '<div class="lang-dd">' +
+          '<button type="button" class="lang-trigger" aria-haspopup="listbox" aria-expanded="false">' +
+            '<span class="lang-code">' + cur.flag + '</span>' +
+            '<span class="lang-name">' + cur.label + '</span>' +
+            '<svg class="lang-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg>' +
+          '</button>' +
+          '<div class="lang-menu" role="listbox">' +
+            LANGS.map(function (l, i) {
+              return '<button type="button" class="lang-item' + (l.code === cur.code ? ' lang-on' : '') +
+                '" data-code="' + l.code + '" role="option" style="--i:' + i + '">' +
+                '<span class="lang-code">' + l.flag + '</span>' +
+                '<span class="lang-name">' + l.label + '</span>' +
+                '<svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' +
+                '</button>';
+            }).join('') +
+          '</div>' +
+        '</div>';
+      mount.innerHTML = html;
+
+      var dd = mount.querySelector('.lang-dd');
+      var trig = dd.querySelector('.lang-trigger');
+      trig.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var isOpen = dd.classList.toggle('lang-open');
+        trig.setAttribute('aria-expanded', String(isOpen));
+      });
+      dd.querySelectorAll('.lang-item').forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          dd.classList.remove('lang-open');
+          window.I18N.setLangAndReload(b.dataset.code);
+        });
+      });
+    }
+
+    build();
+    // Uygulamanın init'i mount'u kendi butonuyla doldurursa geri al
+    new MutationObserver(function () {
+      if (!mount.querySelector('.lang-dd')) build();
+    }).observe(mount, { childList: true });
+
+    // Dışarı tıklama / Esc — açılır listelerle aynı capture mekanizması
+    document.addEventListener('mousedown', function (e) {
+      if (e.target.closest && e.target.closest('.lang-dd')) return;
+      document.querySelectorAll('.lang-dd.lang-open').forEach(function (d) {
+        d.classList.remove('lang-open');
+        var t = d.querySelector('.lang-trigger');
+        if (t) t.setAttribute('aria-expanded', 'false');
+      });
+    }, true);
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      document.querySelectorAll('.lang-dd.lang-open').forEach(function (d) { d.classList.remove('lang-open'); });
+    });
+  }
+
   /* ════════════════ Başlatma ════════════════ */
 
   function init() {
     if (!isLight()) return;   // koyu tema birebir orijinal kalır
     enhanceSelects();
     enhanceSegments();
+    enhanceLangSwitcher();
 
     // Sonradan DOM'a eklenen select'ler (modal içerikleri, yeniden render)
     new MutationObserver(function (muts) {

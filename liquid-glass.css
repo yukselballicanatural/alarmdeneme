@@ -1574,3 +1574,128 @@ html[data-theme="light"] .lg-theme-toggle { border-radius: 999px !important; }
   .cine-burst .cine-p2,
   .cine-burst .cine-p3 { animation: none; }
 }
+
+/* ═════════════════════════════════════════════════════════════════════
+   31. DİL SEÇİCİ — bayraklı cam açılır liste
+   React bileşeninin vanilla portu. Ölçü, tema kutucuğu ve sidebar'ın
+   diğer kontrolleriyle (11px yazı) hizalı. Liste YUKARI açılır: kontrol
+   sidebar'ın altında duruyor.
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] .lang-dd { position: relative; display: block; }
+
+html[data-theme="light"] .lang-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--ink-2);
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 2px 8px rgba(23, 43, 99, 0.07);
+  transition: background .22s var(--ease), color .2s var(--ease), transform .3s var(--spring);
+}
+html[data-theme="light"] .lang-trigger:hover {
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--ink);
+}
+html[data-theme="light"] .lang-trigger:active { transform: scale(.975); }
+html[data-theme="light"] .lang-dd.lang-open .lang-trigger {
+  background: rgba(255, 255, 255, 0.84);
+  border-color: rgba(13, 148, 136, 0.55);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.13);
+  color: var(--ink);
+}
+
+html[data-theme="light"] .lang-code {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 23px; padding: 2px 5px;
+  border-radius: 6px;
+  font-size: 8.5px; font-weight: 800; letter-spacing: .06em;
+  background: rgba(13, 148, 136, 0.18);
+  color: #0f766e;
+  border: 1px solid rgba(13, 148, 136, 0.30);
+}
+html[data-theme="light"] .lang-item.lang-on .lang-code {
+  background: rgba(255, 255, 255, 0.92);
+  color: #12141a;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+html[data-theme="light"] .lang-name { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-theme="light"] .lang-chev {
+  width: 11px; height: 11px; flex-shrink: 0;
+  color: var(--ink-3);
+  transition: transform .38s var(--spring), color .2s var(--ease);
+}
+html[data-theme="light"] .lang-dd.lang-open .lang-chev { transform: rotate(180deg); color: var(--accent); }
+
+/* Menü — yukarı açılır, cam, kademeli süzülme */
+html[data-theme="light"] .lang-menu {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 400;
+  display: none;
+  padding: 6px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.80);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  box-shadow: 0 8px 24px rgba(23, 43, 99, 0.14),
+              0 24px 60px -14px rgba(23, 43, 99, 0.28),
+              inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transform-origin: bottom center;
+}
+html[data-theme="light"] .lang-dd.lang-open .lang-menu {
+  display: block;
+  animation: langFadeIn .38s cubic-bezier(.34, 1.4, .56, 1);
+}
+/* İstenen fade-in, cam dile uyarlanmış hâli */
+@keyframes langFadeIn {
+  0%   { opacity: 0; transform: translateY(6px) scale(.94); filter: blur(6px); }
+  55%  { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+
+html[data-theme="light"] .lang-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 11px;
+  background: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: background .16s ease, color .16s ease, transform .25s var(--spring);
+  animation: lqOptIn .32s var(--ease) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+html[data-theme="light"] .lang-item:hover { background: rgba(18, 22, 34, 0.10); }
+html[data-theme="light"] .lang-item:active { transform: scale(.975); }
+html[data-theme="light"] .lang-item.lang-on {
+  background: rgba(18, 22, 34, 0.62);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+html[data-theme="light"] .lang-item.lang-on:hover { background: rgba(18, 22, 34, 0.72); }
+html[data-theme="light"] .lang-check {
+  width: 12px; height: 12px; flex-shrink: 0;
+  opacity: 0;
+  color: #5eead4;
+  transition: opacity .2s ease;
+}
+html[data-theme="light"] .lang-item.lang-on .lang-check { opacity: 1; }
