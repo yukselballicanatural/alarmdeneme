@@ -1431,3 +1431,29 @@ html[data-theme="dark"] input.filter-select:focus {
   box-shadow: 0 0 0 4px rgba(45, 212, 191, .13) !important;
   outline: none !important;
 }
+
+/* ── 21e. Admin: sidebar adasi golgesi + modal kaydirma cubugu (koyu)
+   Geometri (yaricap/bosluk/yukseklik) acik tema dosyasinda TEMADAN
+   BAGIMSIZ yazildi; burada sadece renkli kisimlar var. */
+html[data-theme="dark"] aside { box-shadow: var(--d-sh-2), var(--d-sheen) !important; }
+html[data-theme="dark"] .modal-panel {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-gutter: stable;
+  padding-right: 18px !important;
+}
+html[data-theme="dark"] .modal-panel::-webkit-scrollbar { width: 7px; }
+html[data-theme="dark"] .modal-panel::-webkit-scrollbar-track { background: transparent; margin: 16px 0; }
+html[data-theme="dark"] .modal-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+html[data-theme="dark"] aside { scrollbar-width: thin; scrollbar-gutter: stable; }
+html[data-theme="dark"] aside::-webkit-scrollbar { width: 5px; }
+html[data-theme="dark"] aside::-webkit-scrollbar-track { background: transparent; }
+html[data-theme="dark"] aside::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16); border-radius: 99px;
+}

@@ -303,26 +303,26 @@
       </div>
 
       <div class="flex flex-col gap-1">
-        <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider pl-1">Navigation</span>
+        <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider pl-1">Menü</span>
         <button onclick="switchView('deals')" class="nav-btn active" id="nav-deals">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          All Deals
+          Tüm Deal'ler
         </button>
         <button onclick="switchView('summary')" class="nav-btn" id="nav-summary">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-          Analytics
+          Analitik
         </button>
         <button onclick="switchView('users')" class="nav-btn" id="nav-users">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-          Users
+          Kullanıcılar
         </button>
         <button onclick="switchView('logs')" class="nav-btn" id="nav-logs">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-          System Logs
+          Sistem Kayıtları
         </button>
 <button onclick="switchView('alarms-monitor')" class="nav-btn" id="nav-alarms-monitor">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-          Alarm Monitoring
+          Alarm İzleme
           <span id="adminAlarmBadge" style="display:none;margin-left:auto;background:#dc2626;color:#fff;border-radius:9999px;font-size:9px;font-weight:800;padding:1px 6px;min-width:20px;text-align:center">0</span>
         </button>
         <button onclick="switchView('today')" class="nav-btn" id="nav-today">
@@ -365,23 +365,23 @@
       </div>
 
       <div class="space-y-2 pt-3 border-t border-gray-800">
-        <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">System KPIs</div>
+        <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Sistem Özeti</div>
         <div class="grid grid-cols-2 gap-2" id="sidebarKpiRow">
           <div class="bg-gray-800/60 rounded-lg p-2 text-center">
             <div class="text-lg font-bold text-white leading-tight" id="sKpi1">0</div>
-            <div class="text-[9px] text-slate-400 mt-0.5">Total</div>
+            <div class="text-[9px] text-slate-400 mt-0.5">Toplam</div>
           </div>
           <div class="bg-indigo-900/30 rounded-lg p-2 text-center border border-indigo-800/30">
             <div class="text-sm font-bold text-indigo-300 leading-tight truncate" id="sKpi2">€0</div>
-            <div class="text-[9px] text-slate-400 mt-0.5">Deal Amt</div>
+            <div class="text-[9px] text-slate-400 mt-0.5">Tutar</div>
           </div>
           <div class="bg-emerald-900/20 rounded-lg p-2 text-center border border-emerald-800/20">
             <div class="text-sm font-bold text-emerald-400 leading-tight truncate" id="sKpi3">€0</div>
-            <div class="text-[9px] text-slate-400 mt-0.5">Paid</div>
+            <div class="text-[9px] text-slate-400 mt-0.5">Ödenen</div>
           </div>
           <div class="bg-red-900/20 rounded-lg p-2 text-center border border-red-800/20">
             <div class="text-sm font-bold text-red-400 leading-tight truncate" id="sKpi4">€0</div>
-            <div class="text-[9px] text-slate-400 mt-0.5">Unpaid</div>
+            <div class="text-[9px] text-slate-400 mt-0.5">Ödenmemiş</div>
           </div>
         </div>
       </div>
@@ -451,55 +451,59 @@
     <div id="view-deals">
       <div class="flex items-center justify-between mb-4">
         <div>
-          <h2 class="text-xl font-bold text-white">All Deals</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Complete dataset from Supabase</p>
+          <h2 class="text-xl font-bold text-white">Tüm Deal'ler</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Supabase'deki tüm veri</p>
         </div>
-        <div class="flex gap-2 items-center">
+        <div class="flex gap-2 items-center nc-deals-actions">
+          <!-- Guncelleme zamani segmentin SOLUNDA (istek) -->
+          <span class="text-xs text-slate-500" id="lastRefresh">—</span>
           <div style="display:flex;background:#111827;border:1px solid #374151;border-radius:8px;padding:2px;gap:2px">
             <button onclick="setDealsView('table')" id="dealsViewBtnTable" class="px-2.5 py-1.5 text-[11px] font-bold rounded-md" style="background:#4f46e5;color:#fff;transition:all .15s">☰ Tablo</button>
             <button onclick="setDealsView('kanban')" id="dealsViewBtnKanban" class="px-2.5 py-1.5 text-[11px] font-bold rounded-md" style="background:transparent;color:#94a3b8;transition:all .15s">▦ Kanban</button>
           </div>
-          <span class="text-xs text-slate-500" id="lastRefresh">—</span>
-          <button onclick="loadDeals(true)" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg font-semibold">↻ Refresh</button>
+          <!-- Takim liderindeki Yenile ile BIREBIR ayni: satir ici turkuaz,
+               10px yaricap, 8px 14px dolgu, 11px kalin yazi. Boylece cam
+               katmanindaki ayni kural (birincil buton) ikisine de uyuyor. -->
+          <button onclick="loadDeals(true)" style="padding:8px 14px;background:#0d9488;border:none;border-radius:10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">↻ Yenile</button>
           <span id="dealsExportMount"></span>
         </div>
       </div>
 
       <!-- KPI Row -->
       <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-4" id="dealKpiRow">
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Total</div><div class="text-lg font-bold text-white leading-tight kpi-val" id="k1">0</div></div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Deal Amt</div><div class="text-lg font-bold text-blue-400 leading-tight kpi-val" id="k2">€0</div></div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Paid</div><div class="text-lg font-bold text-emerald-400 leading-tight kpi-val" id="k3">€0</div></div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Unpaid</div><div class="text-lg font-bold text-red-400 leading-tight kpi-val" id="k4">€0</div></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Toplam</div><div class="text-lg font-bold text-white leading-tight kpi-val" id="k1">0</div></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Tutar</div><div class="text-lg font-bold text-blue-400 leading-tight kpi-val" id="k2">€0</div></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Ödenen</div><div class="text-lg font-bold text-emerald-400 leading-tight kpi-val" id="k3">€0</div></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Ödenmemiş</div><div class="text-lg font-bold text-red-400 leading-tight kpi-val" id="k4">€0</div></div>
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Won</div><div class="text-lg font-bold text-emerald-300 leading-tight kpi-val" id="k5">0</div></div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Cancelled</div><div class="text-lg font-bold text-red-400 leading-tight kpi-val" id="k6">0</div></div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Unlock Req.</div><div class="text-lg font-bold text-amber-400 leading-tight kpi-val" id="k7">0</div></div>
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">No Result</div><div class="text-lg font-bold text-rose-400 leading-tight kpi-val" id="k8">0</div></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">İptal</div><div class="text-lg font-bold text-red-400 leading-tight kpi-val" id="k6">0</div></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Kilit Talebi</div><div class="text-lg font-bold text-amber-400 leading-tight kpi-val" id="k7">0</div></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 overflow-hidden"><div class="text-[9px] text-slate-400 uppercase font-semibold">Sonuçsuz</div><div class="text-lg font-bold text-rose-400 leading-tight kpi-val" id="k8">0</div></div>
       </div>
 
       <!-- Filters -->
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-4 space-y-3">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Filters</span>
-          <button onclick="resetFilters()" class="text-[10px] text-indigo-400 font-semibold hover:text-indigo-300">Clear All</button>
+          <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Filtreler</span>
+          <button onclick="resetFilters()" class="text-[10px] text-indigo-400 font-semibold hover:text-indigo-300">Tümünü Temizle</button>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Team</label>
-            <select id="fTeam" class="filter-select" onchange="applyFilters()"><option value="">All Teams</option></select></div>
-          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Agent</label>
-            <select id="fAgent" class="filter-select" onchange="applyFilters()"><option value="">All Agents</option></select></div>
+          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Takım</label>
+            <select id="fTeam" class="filter-select" onchange="applyFilters()"><option value="">Tüm Takımlar</option></select></div>
+          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Danışman</label>
+            <select id="fAgent" class="filter-select" onchange="applyFilters()"><option value="">Tüm Danışmanlar</option></select></div>
           <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Stage</label>
-            <select id="fStage" class="filter-select" onchange="applyFilters()"><option value="">All Stages</option></select></div>
-          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Payment</label>
+            <select id="fStage" class="filter-select" onchange="applyFilters()"><option value="">Tüm Stage'ler</option></select></div>
+          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Ödeme</label>
             <select id="fPayment" class="filter-select" onchange="applyFilters()">
-              <option value="">All</option><option value="Paid">Paid</option><option value="Unpaid">Unpaid</option><option value="Partial">Partial</option></select></div>
-          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Language</label>
-            <select id="fLang" class="filter-select" onchange="applyFilters()"><option value="">All Languages</option></select></div>
-          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Result</label>
+              <option value="">Tümü</option><option value="Paid">Ödenen</option><option value="Unpaid">Ödenmemiş</option><option value="Partial">Kısmi</option></select></div>
+          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Dil</label>
+            <select id="fLang" class="filter-select" onchange="applyFilters()"><option value="">Tüm Diller</option></select></div>
+          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Sonuç</label>
             <select id="fResult" class="filter-select" onchange="applyFilters()">
-              <option value="">All</option><option value="pending">No Result</option><option value="locked">Has Result</option><option value="unlock">Unlock Req.</option></select></div>
-          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Search</label>
-            <input id="fSearch" class="filter-input" placeholder="Name, ID, result..." oninput="_dbApplyFilters()"></div>
+              <option value="">Tümü</option><option value="pending">Sonuçsuz</option><option value="locked">Sonuçlu</option><option value="unlock">Kilit Talebi</option></select></div>
+          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Ara</label>
+            <input id="fSearch" class="filter-input" placeholder="Hasta, Deal ID veya sonuç ara..." oninput="_dbApplyFilters()"></div>
         </div>
         <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;padding-top:8px">
           <div>
@@ -511,7 +515,7 @@
             </div>
           </div>
           <div style="border-left:1px solid #1e293b;padding-left:16px">
-            <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Created Time</label>
+            <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Oluşturma Tarihi</label>
             <div style="display:flex;align-items:center;gap:6px">
               <input type="date" id="createdDateFrom" onchange="applyFilters()">
               <span class="text-slate-500 text-xs">—</span>
@@ -523,54 +527,54 @@
 
       <!-- Summary Stats Bar -->
       <div class="flex flex-wrap gap-x-5 gap-y-1.5 px-4 py-2.5 bg-gray-900 border border-gray-800 rounded-xl text-xs text-slate-400 mb-4">
-        <span>All Data: <strong class="text-white font-bold" id="statFull">0</strong></span>
+        <span>Tüm Veri: <strong class="text-white font-bold" id="statFull">0</strong></span>
         <span class="text-gray-700">|</span>
-        <span>Past Arrival: <strong class="text-amber-400 font-bold" id="statArrival">0</strong></span>
-        <span>Past Visit 1: <strong class="text-amber-400 font-bold" id="statV1">0</strong></span>
-        <span>Past Visit 2: <strong class="text-amber-400 font-bold" id="statV2">0</strong></span>
-        <span>Past Visit 3: <strong class="text-amber-400 font-bold" id="statV3">0</strong></span>
+        <span>Geçmiş Arrival: <strong class="text-amber-400 font-bold" id="statArrival">0</strong></span>
+        <span>Geçmiş Ziyaret 1: <strong class="text-amber-400 font-bold" id="statV1">0</strong></span>
+        <span>Geçmiş Ziyaret 2: <strong class="text-amber-400 font-bold" id="statV2">0</strong></span>
+        <span>Geçmiş Ziyaret 3: <strong class="text-amber-400 font-bold" id="statV3">0</strong></span>
         <span class="text-gray-700">|</span>
-        <span>Cancelled: <strong class="text-red-400 font-bold" id="statCancelled">0</strong></span>
+        <span>İptal: <strong class="text-red-400 font-bold" id="statCancelled">0</strong></span>
         <span class="text-gray-700">|</span>
-        <span>Unlock Req: <strong class="text-amber-300 font-bold" id="statUnlock">0</strong></span>
+        <span>Kilit Talebi: <strong class="text-amber-300 font-bold" id="statUnlock">0</strong></span>
       </div>
 
       <!-- Tab Navigation -->
       <div class="border-b border-gray-800 flex flex-wrap gap-1.5 pb-2 mb-4" id="dealTabNav">
         <button onclick="switchTab('all')" id="tab-all" class="px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white flex items-center gap-1.5 transition-all">
-          All Data <span id="badge-all" class="tab-badge bg-indigo-800 text-white">0</span>
+          Tüm Veri <span id="badge-all" class="tab-badge bg-indigo-800 text-white">0</span>
         </button>
         <button onclick="switchTab('arrival')" id="tab-arrival" class="px-3 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition-all">
           Arrival Date <span id="badge-arrival" class="tab-badge bg-gray-800 text-slate-400">0</span>
         </button>
         <button onclick="switchTab('visit1')" id="tab-visit1" class="px-3 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition-all">
-          Visit Date 1 <span id="badge-visit1" class="tab-badge bg-gray-800 text-slate-400">0</span>
+          Ziyaret Tarihi 1 <span id="badge-visit1" class="tab-badge bg-gray-800 text-slate-400">0</span>
         </button>
         <button onclick="switchTab('visit2')" id="tab-visit2" class="px-3 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition-all">
-          Visit Date 2 <span id="badge-visit2" class="tab-badge bg-gray-800 text-slate-400">0</span>
+          Ziyaret Tarihi 2 <span id="badge-visit2" class="tab-badge bg-gray-800 text-slate-400">0</span>
         </button>
         <button onclick="switchTab('visit3')" id="tab-visit3" class="px-3 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition-all">
-          Visit Date 3 <span id="badge-visit3" class="tab-badge bg-gray-800 text-slate-400">0</span>
+          Ziyaret Tarihi 3 <span id="badge-visit3" class="tab-badge bg-gray-800 text-slate-400">0</span>
         </button>
         <button onclick="switchTab('cancelled')" id="tab-cancelled" class="px-3 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 transition-all">
-          Cancelled <span id="badge-cancelled" class="tab-badge bg-gray-800 text-slate-400">0</span>
+          İptal <span id="badge-cancelled" class="tab-badge bg-gray-800 text-slate-400">0</span>
         </button>
       </div>
 
       <!-- Loading/Error -->
       <div id="loadingState" class="flex flex-col items-center justify-center py-20 gap-4">
         <div class="spinner-anim"></div>
-        <p class="text-slate-400 text-sm">Loading all data from Supabase...</p>
+        <p class="text-slate-400 text-sm">Supabase'den tüm veri yükleniyor...</p>
       </div>
       <div id="errorState" class="hidden bg-red-900/20 border border-red-800/40 rounded-xl p-6 text-center">
-        <p class="text-red-400 font-semibold text-sm" id="errorMsg">Error</p>
-        <button onclick="loadDeals(true)" class="mt-3 px-4 py-2 bg-red-900/40 text-red-300 text-xs rounded-lg font-bold">Retry</button>
+        <p class="text-red-400 font-semibold text-sm" id="errorMsg">Hata</p>
+        <button onclick="loadDeals(true)" class="mt-3 px-4 py-2 bg-red-900/40 text-red-300 text-xs rounded-lg font-bold">Tekrar Dene</button>
       </div>
 
       <!-- Table -->
       <div id="cardsContainer" class="hidden">
         <div class="flex justify-between items-center mb-2 flex-wrap gap-2">
-          <span class="text-xs text-slate-400" id="resultInfo">0 deals shown</span>
+          <span class="text-xs text-slate-400" id="resultInfo">0 deal gösteriliyor</span>
           <div class="flex items-center gap-2">
             <select id="dealPageSizeSel" class="filter-select" onchange="dealChangePageSize()" style="width:110px">
               <option value="100" selected>100 / sayfa</option>
@@ -591,30 +595,30 @@
               <thead>
                 <tr>
                   <th style="width:36px">#</th>
-                  <th data-sort="name"    onclick="sortBy('name')"    style="cursor:pointer;user-select:none">Deal Name<span class="sarrow" style="color:#475569"> ↕</span></th>
+                  <th data-sort="name"    onclick="sortBy('name')"    style="cursor:pointer;user-select:none">Hasta / Deal<span class="sarrow" style="color:#475569"> ↕</span></th>
                   <th data-sort="id"      onclick="sortBy('id')"      style="cursor:pointer;user-select:none">Deal ID<span class="sarrow" style="color:#475569"> ↕</span></th>
-                  <th data-sort="team"    onclick="sortBy('team')"    style="cursor:pointer;user-select:none">Team<span class="sarrow" style="color:#475569"> ↕</span></th>
-                  <th data-sort="agent"   onclick="sortBy('agent')"   style="cursor:pointer;user-select:none">Agent<span class="sarrow" style="color:#475569"> ↕</span></th>
+                  <th data-sort="team"    onclick="sortBy('team')"    style="cursor:pointer;user-select:none">Takım<span class="sarrow" style="color:#475569"> ↕</span></th>
+                  <th data-sort="agent"   onclick="sortBy('agent')"   style="cursor:pointer;user-select:none">Danışman<span class="sarrow" style="color:#475569"> ↕</span></th>
                   <th data-sort="stage"   onclick="sortBy('stage')"   style="cursor:pointer;user-select:none">Stage<span class="sarrow" style="color:#475569"> ↕</span></th>
                   <th data-sort="arrival" onclick="sortBy('arrival')" style="cursor:pointer;user-select:none">Arrival Date<span class="sarrow" style="color:#475569"> ↕</span></th>
-                  <th data-sort="created" onclick="sortBy('created')" style="cursor:pointer;user-select:none">Created<span class="sarrow" style="color:#475569"> ↕</span></th>
-                  <th data-sort="lang"    onclick="sortBy('lang')"    style="cursor:pointer;user-select:none">Language<span class="sarrow" style="color:#475569"> ↕</span></th>
-                  <th data-sort="amount"  onclick="sortBy('amount')"  style="cursor:pointer;user-select:none">Deal Amt<span class="sarrow" style="color:#475569"> ↕</span></th>
-                  <th data-sort="paid"    onclick="sortBy('paid')"    style="cursor:pointer;user-select:none">Paid<span class="sarrow" style="color:#475569"> ↕</span></th>
+                  <th data-sort="created" onclick="sortBy('created')" style="cursor:pointer;user-select:none">Oluşturma<span class="sarrow" style="color:#475569"> ↕</span></th>
+                  <th data-sort="lang"    onclick="sortBy('lang')"    style="cursor:pointer;user-select:none">Dil<span class="sarrow" style="color:#475569"> ↕</span></th>
+                  <th data-sort="amount"  onclick="sortBy('amount')"  style="cursor:pointer;user-select:none">Tutar<span class="sarrow" style="color:#475569"> ↕</span></th>
+                  <th data-sort="paid"    onclick="sortBy('paid')"    style="cursor:pointer;user-select:none">Ödenen<span class="sarrow" style="color:#475569"> ↕</span></th>
                   <th data-sort="remaining" onclick="sortBy('remaining')" style="cursor:pointer;user-select:none">Kalan<span class="sarrow" style="color:#475569"> ↕</span></th>
-                  <th data-sort="payment" onclick="sortBy('payment')" style="cursor:pointer;user-select:none">Pay Status<span class="sarrow" style="color:#475569"> ↕</span></th>
-                  <th data-sort="result"  onclick="sortBy('result')"  style="cursor:pointer;user-select:none">Result Code<span class="sarrow" style="color:#475569"> ↕</span></th>
-                  <th data-sort="sub"     onclick="sortBy('sub')"     style="cursor:pointer;user-select:none">Sub Code<span class="sarrow" style="color:#475569"> ↕</span></th>
+                  <th data-sort="payment" onclick="sortBy('payment')" style="cursor:pointer;user-select:none">Ödeme Durumu<span class="sarrow" style="color:#475569"> ↕</span></th>
+                  <th data-sort="result"  onclick="sortBy('result')"  style="cursor:pointer;user-select:none">Sonuç Kodu<span class="sarrow" style="color:#475569"> ↕</span></th>
+                  <th data-sort="sub"     onclick="sortBy('sub')"     style="cursor:pointer;user-select:none">Alt Kod<span class="sarrow" style="color:#475569"> ↕</span></th>
                 </tr>
               </thead>
               <tbody id="dealsBody"></tbody>
             </table>
-            <div id="emptyState" class="hidden text-center py-16 text-slate-500 text-sm">No deals match filters.</div>
+            <div id="emptyState" class="hidden text-center py-16 text-slate-500 text-sm">Filtrelere uyan deal bulunamadı.</div>
           </div>
         </div>
         <div id="dealsKanbanView" class="hidden">
           <div id="kanbanBoard" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;align-items:flex-start"></div>
-          <div id="kanbanEmpty" class="hidden text-center py-16 text-slate-500 text-sm">No deals match filters.</div>
+          <div id="kanbanEmpty" class="hidden text-center py-16 text-slate-500 text-sm">Filtrelere uyan deal bulunamadı.</div>
         </div>
       </div>
     </div>
@@ -7089,8 +7093,8 @@
       const pageData  = data.slice(pageStart, pageEnd);
 
       document.getElementById('resultInfo').textContent = data.length
-        ? `${pageStart+1}–${pageEnd} / ${data.length} deals shown`
-        : '0 deals shown';
+        ? `${pageStart+1}–${pageEnd} / ${data.length} ${I18N.t('deal gösteriliyor')}`
+        : '0 ' + I18N.t('deal gösteriliyor');
       if (pager) {
         pager.style.display = (data.length > dealPageSize && _dealsViewMode === 'table') ? 'flex' : 'none';
         document.getElementById('dealPageLbl').textContent = `${I18N.t('Sayfa')} ${dealCurrentPage+1} / ${maxPage+1}`;

@@ -2525,3 +2525,87 @@ html[data-theme="light"] [class~="hover:bg-slate-700"]:hover {
 /* Zemini gerçekten koyu/renkli kalan yerlerde beyaz hover DOĞRU */
 html[data-theme="light"] .bg-indigo-600[class~="hover:text-white"]:hover,
 html[data-theme="light"] .am-btn-primary[class~="hover:text-white"]:hover { color: #fff !important; }
+
+/* ═════════════════════════════════════════════════════════════════════
+   40e. ADMIN — takım lideriyle BİREBİR eşitleme
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ── 1) Sidebar: tam yükseklik köşeli panel değil, YÜZEN CAM ADA ──────
+   Takım liderindeki #sidebarFull ile aynı ölçüler (26px yarıçap, 10px
+   boşluk, 100vh-20px yükseklik). Admin'in Tailwind sınıfları buna karşı
+   çalışıyor: `lg:min-h-screen` min-height:100vh, satır içi
+   `max-height:100vh` ve `sticky top-0` — üçünü de ezmek gerekiyor. */
+@media (min-width: 1024px) {
+  html[data-theme="light"] aside,
+  html[data-theme="dark"] aside {
+    border-radius: 26px !important;
+    margin: 10px 0 10px 10px !important;
+    min-height: 0 !important;
+    max-height: calc(100vh - 20px) !important;
+    height: calc(100vh - 20px) !important;
+    top: 10px !important;
+    border-width: 1px !important;
+    border-style: solid !important;
+  }
+}
+@media (max-width: 1023px) {
+  html[data-theme="light"] aside,
+  html[data-theme="dark"] aside {
+    border-radius: 20px !important;
+    margin: 10px !important;
+    border-width: 1px !important;
+    border-style: solid !important;
+  }
+}
+html[data-theme="light"] aside { box-shadow: var(--sh-2), var(--sheen) !important; }
+/* Ada olduğu için ana içerik soldan biraz nefes alsın */
+@media (min-width: 1024px) {
+  html[data-theme="light"] body > main,
+  html[data-theme="dark"] body > main { padding-left: 18px !important; }
+}
+
+/* ── 2c) Export menüsü tablonun ARKASINDA kalıyordu ───────────────────
+   Aynı sınıf hata: başlık satırı DOM'da tablodan ÖNCE, tablo sarmalayıcısı
+   backdrop-filter ile kendi yığın bağlamını kuruyor ve üste biniyor.
+   Çözüm takım liderindekiyle aynı: menüyü taşıyan satırı yukarı kaldır,
+   tablo sarmalayıcılarını 1'e sabitle. */
+html[data-theme="light"] .nc-deals-actions,
+html[data-theme="dark"]  .nc-deals-actions,
+html[data-theme="light"] div:has(> [id$="ExportMount"]),
+html[data-theme="dark"]  div:has(> [id$="ExportMount"]) {
+  position: relative;
+  z-index: 70;
+}
+html[data-theme="light"] .am-table-wrap,
+html[data-theme="dark"]  .am-table-wrap,
+html[data-theme="light"] .am-panel:has(table),
+html[data-theme="dark"]  .am-panel:has(table) { position: relative; z-index: 1; }
+html[data-theme="light"] .nc-export-menu,
+html[data-theme="dark"]  .nc-export-menu { z-index: 400 !important; }
+
+/* ── 3) Deal detay modalı: kaydırma çubuğu yuvarlak köşeden taşmasın ──
+   Takım liderindeki .modal-box ile aynı çözüm. */
+html[data-theme="light"] .modal-panel {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(23, 43, 99, 0.22) transparent;
+  scrollbar-gutter: stable;
+  padding-right: 18px !important;
+}
+html[data-theme="light"] .modal-panel::-webkit-scrollbar { width: 7px; }
+html[data-theme="light"] .modal-panel::-webkit-scrollbar-track { background: transparent; margin: 16px 0; }
+html[data-theme="light"] .modal-panel::-webkit-scrollbar-thumb {
+  background: rgba(23, 43, 99, 0.18);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+html[data-theme="light"] .modal-panel::-webkit-scrollbar-thumb:hover { background: rgba(23, 43, 99, 0.3); background-clip: content-box; }
+
+/* Sidebar kaydırma çubuğu — ada görünümünde kalın çubuk kenarı bozuyor
+   (takım liderindeki #sidebarFull ile aynı çözüm) */
+html[data-theme="light"] aside { scrollbar-width: thin; scrollbar-gutter: stable; }
+html[data-theme="light"] aside::-webkit-scrollbar { width: 5px; }
+html[data-theme="light"] aside::-webkit-scrollbar-track { background: transparent; }
+html[data-theme="light"] aside::-webkit-scrollbar-thumb {
+  background: rgba(23, 43, 99, 0.16); border-radius: 99px;
+}
