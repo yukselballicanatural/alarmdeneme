@@ -151,6 +151,7 @@
     'Filtreye uyan kullanıcı yok.': 'No users match your filter.',
     'Ad, kullanıcı adı, takım veya rol ara…': 'Search name, username, team, role…',
     'Kullanıcı adı (giriş)': 'Username (login)',
+    'Kullanıcı adı...': 'Username...',
     'Takım seçin veya yazın...': 'Select or type a team...',
     'Takım ara...': 'Search team...',
     'Üret': 'Generate',
