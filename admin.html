@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -268,6 +268,19 @@
     textarea.aam-note { background:#111827; border:1px solid #374151; color:#e2e8f0; border-radius:10px; padding:10px 12px; font-size:12px; width:100%; resize:vertical; min-height:120px; box-sizing:border-box; }
     textarea.aam-note:focus { outline:none; border-color:#0d9488; }
   </style>
+  <!-- Paylasilan Liquid Glass katmani — takim lideri paneliyle AYNI dosyalar.
+       Inline <style>'dan SONRA yukleniyor ki esit ozgullukteki catismalarda
+       cam kurallari kazansin. -->
+  <link rel="stylesheet" href="liquid-glass.css">
+  <link rel="stylesheet" href="liquid-glass-dark.css">
+  <script>
+    // Tema ilk boyamadan ONCE uygulanmali, yoksa yanlis temada bir kare
+    // gorunup "flas" oluyor. Tum paneller ayni localStorage anahtarini okur.
+    (function () {
+      var saved = localStorage.getItem('nc_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
 </head>
 <body class="min-h-screen text-slate-100 flex flex-col lg:flex-row">
 
@@ -397,6 +410,28 @@
     </div>
 
     <div class="mt-6 pt-4 border-t border-gray-800 space-y-2">
+      <!-- Sinematik tema anahtari — panellerdekiyle AYNI bilesen
+           (liquid-glass.css 30. bolum, tema kapsami disinda tanimli) -->
+      <button id="themeSwitch" class="cine-box mb-2" onclick="toggleThemeMode()" role="switch" aria-checked="false" aria-label="Tema degistir" title="Acik / Koyu tema">
+        <span class="cine-box-label" id="themeToggleLabel">Görünüm</span>
+        <span class="cine-switch" aria-hidden="true">
+          <span class="cine-groove"></span>
+          <span class="cine-gloss"></span>
+          <span class="cine-ao"></span>
+          <span class="cine-bg-icons">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+          </span>
+          <span class="cine-thumb">
+            <span class="cine-thumb-gloss"></span>
+            <span class="cine-particle cine-p1"></span>
+            <span class="cine-particle cine-p2"></span>
+            <span class="cine-particle cine-p3"></span>
+            <svg class="cine-thumb-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <svg class="cine-thumb-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+          </span>
+        </span>
+      </button>
       <div id="langToggleMount" class="mb-2"></div>
       <button onclick="window.location.href='apps.html'" class="w-full py-2 bg-slate-800 hover:bg-sky-900/40 border border-slate-700 hover:border-sky-700 text-slate-300 hover:text-sky-300 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2">
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -8984,5 +9019,28 @@
     }
   </script>
 
+<script>
+  // Panellerdeki toggleThemeMode ile birebir ayni davranis: secim
+  // localStorage'da (tum sayfalar ayni anahtari okur), sayfa YENILENMEZ.
+  function toggleThemeMode() {
+    var cur  = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    var next = cur === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('nc_theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+    var sw = document.getElementById('themeSwitch');
+    if (sw) {
+      sw.setAttribute('aria-checked', String(next === 'dark'));
+      sw.classList.remove('cine-burst'); void sw.offsetWidth; sw.classList.add('cine-burst');
+    }
+    // Grafikler/tablolar yeniden olcsun
+    window.dispatchEvent(new Event('resize'));
+  }
+  (function () {
+    var sw = document.getElementById('themeSwitch');
+    if (sw) sw.setAttribute('aria-checked', String(document.documentElement.getAttribute('data-theme') === 'dark'));
+  })();
+</script>
+<!-- Cam acilir listeler, kayan segment gostergesi, dil listesi -->
+<script src="liquid-ui.js"></script>
 </body>
 </html>

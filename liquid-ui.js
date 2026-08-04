@@ -36,6 +36,11 @@
 
   var openInstance = null;
 
+  // Panellerin select sinif adlari FARKLI: takim lideri .filter-sel,
+  // admin .filter-select kullaniyor. Tek yerde tutuluyor ki bir panele
+  // eklerken digeri atlanmasin.
+  var LQ_SEL_MATCH = 'select.filter-sel, select.dep-att-sel, select.filter-select';
+
   function LiquidSelect(sel) {
     if (sel.__lq) return sel.__lq;
     var self = this;
@@ -286,7 +291,7 @@
   window.addEventListener('scroll', function () { if (openInstance) openInstance.position(); }, true);
 
   function enhanceSelects(root) {
-    (root || document).querySelectorAll('select.filter-sel, select.dep-att-sel').forEach(function (s) {
+    (root || document).querySelectorAll(LQ_SEL_MATCH).forEach(function (s) {
       if (!s.__lq) new LiquidSelect(s);
     });
   }
@@ -516,8 +521,8 @@
       var found = false;
       muts.forEach(function (m) {
         m.addedNodes && m.addedNodes.forEach(function (n) {
-          if (n.nodeType === 1 && (n.matches && n.matches('select.filter-sel, select.dep-att-sel') ||
-              n.querySelector && n.querySelector('select.filter-sel, select.dep-att-sel'))) found = true;
+          if (n.nodeType === 1 && (n.matches && n.matches(LQ_SEL_MATCH) ||
+              n.querySelector && n.querySelector(LQ_SEL_MATCH))) found = true;
         });
       });
       if (found) enhanceSelects();

@@ -1150,3 +1150,246 @@ html[data-theme="dark"] .lq-trigger-label { font-weight: 600; }
 html[data-theme="dark"] .lq-trigger-label.lq-label-raw { font-style: italic; }
 html[data-theme="dark"] #tlcaDealOwner,
 html[data-theme="dark"] #wrDealOwner { color: #2dd4bf !important; }
+
+/* ═════════════════════════════════════════════════════════════════════
+   21. ADMIN / BÖLGE MÜDÜRÜ PANELİ — açık temanın 40. bölümünün koyu ikizi
+   Aynı gerekçe: bu panel Tailwind yardımcı sınıflarıyla kurulu, satır-içi
+   hex eşlemeleri buraya değmiyor. Koyu temada dosya başındaki kural
+   geçerli: SADECE zeminler camlaşır, renk dili korunur.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* Zemin mesh'i paylaşılan katmandan; am-page ışıması korunuyor (koyuda iyi
+   duruyor, açık temada çamur yaptığı için orada kapatılmıştı) */
+
+/* ── Sidebar ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] aside {
+  background: var(--d-1) !important;
+  -webkit-backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  border-color: var(--d-edge-soft) !important;
+  box-shadow: var(--d-sh-1), var(--d-sheen);
+}
+
+/* ── Tailwind koyu yüzeyler → ışık camı ────────────────────────────── */
+html[data-theme="dark"] .bg-gray-900,
+html[data-theme="dark"] .bg-gray-950,
+html[data-theme="dark"] .bg-slate-900 {
+  background-color: var(--d-1) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(22px) saturate(170%);
+}
+html[data-theme="dark"] .bg-gray-800,
+html[data-theme="dark"] .bg-slate-800 {
+  background-color: var(--d-2) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(165%);
+  backdrop-filter: blur(18px) saturate(165%);
+}
+html[data-theme="dark"] .bg-gray-700,
+html[data-theme="dark"] .bg-slate-700 { background-color: var(--d-3) !important; }
+
+html[data-theme="dark"] .border-gray-800,
+html[data-theme="dark"] .border-gray-700,
+html[data-theme="dark"] .border-slate-700,
+html[data-theme="dark"] .border-slate-500,
+html[data-theme="dark"] .border-slate-600 { border-color: var(--d-edge-soft) !important; }
+
+/* ── am-* bileşenleri ──────────────────────────────────────────────── */
+html[data-theme="dark"] .am-topbar,
+html[data-theme="dark"] .am-panel,
+html[data-theme="dark"] .am-region-card {
+  background: var(--d-1) !important;
+  -webkit-backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  border: 1px solid var(--d-edge-soft) !important;
+  box-shadow: var(--d-sh-1), var(--d-sheen) !important;
+}
+html[data-theme="dark"] .am-kpi {
+  background: var(--d-1) !important;
+  -webkit-backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  border: 1px solid var(--d-edge-soft) !important;
+  border-top: 2.5px solid color-mix(in srgb, var(--am-glow, #6366f1) 60%, transparent) !important;
+  box-shadow: var(--d-sh-1), var(--d-sheen);
+  transition: transform .42s var(--d-spring), box-shadow .3s var(--d-ease) !important;
+}
+html[data-theme="dark"] .am-kpi:hover {
+  transform: translateY(-4px) scale(1.015) !important;
+  box-shadow: var(--d-sh-3), var(--d-sheen) !important;
+}
+html[data-theme="dark"] .am-region-bar { background: rgba(255, 255, 255, 0.07) !important; }
+
+html[data-theme="dark"] .am-btn {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: 999px !important;
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  transition: background .2s var(--d-ease), color .2s var(--d-ease),
+              transform .3s var(--d-spring) !important;
+}
+html[data-theme="dark"] .am-btn:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  transform: translateY(-1px);
+}
+html[data-theme="dark"] .am-btn:active { transform: scale(.97); }
+html[data-theme="dark"] .am-btn-primary,
+html[data-theme="dark"] .am-btn-primary:hover {
+  background: linear-gradient(150deg, #17c1ad, #0d9488 55%, #0891b2) !important;
+  border-color: transparent !important;
+  box-shadow: 0 8px 22px -6px rgba(13, 148, 136, .6),
+              inset 0 1px 0 rgba(255, 255, 255, .28) !important;
+}
+html[data-theme="dark"] .am-day-chip {
+  border-radius: 999px !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  transition: background .2s var(--d-ease), transform .3s var(--d-spring) !important;
+}
+
+/* ── Tablolar ──────────────────────────────────────────────────────── */
+html[data-theme="dark"] .deal-tbl th,
+html[data-theme="dark"] .tbl th {
+  background: rgba(20, 26, 42, 0.88) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  border-bottom: 1px solid var(--d-edge-soft) !important;
+}
+html[data-theme="dark"] .am-th { border-bottom: 1px solid var(--d-edge-soft) !important; }
+html[data-theme="dark"] .deal-tbl td,
+html[data-theme="dark"] .tbl td { border-bottom: 1px solid rgba(255, 255, 255, 0.055) !important; }
+html[data-theme="dark"] .deal-tbl tbody tr:hover td,
+html[data-theme="dark"] .tbl tr:hover td { background: rgba(255, 255, 255, 0.075) !important; }
+html[data-theme="dark"] .am-table-wrap { border-radius: var(--d-r-sm); }
+
+/* ── Kanban ────────────────────────────────────────────────────────── */
+html[data-theme="dark"] .kanban-col {
+  background: var(--d-2) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(165%);
+  backdrop-filter: blur(20px) saturate(165%);
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: var(--d-r-sm) !important;
+}
+html[data-theme="dark"] .kanban-col-head {
+  background: rgba(20, 26, 42, 0.82) !important;
+  border-bottom: 1px solid var(--d-edge-soft) !important;
+}
+html[data-theme="dark"] .kanban-card {
+  background: rgba(255, 255, 255, 0.055) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: 12px !important;
+  transition: border-color .2s var(--d-ease), transform .3s var(--d-spring),
+              box-shadow .25s var(--d-ease) !important;
+}
+html[data-theme="dark"] .kanban-card:hover {
+  background: rgba(255, 255, 255, 0.11) !important;
+  border-color: rgba(99, 102, 241, 0.55) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: var(--d-sh-2);
+}
+
+/* ── Modal ─────────────────────────────────────────────────────────── */
+html[data-theme="dark"] .modal-backdrop {
+  background: rgba(3, 6, 14, 0.66) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+html[data-theme="dark"] .modal-panel {
+  background: var(--d-strong) !important;
+  -webkit-backdrop-filter: blur(44px) saturate(190%);
+  backdrop-filter: blur(44px) saturate(190%);
+  border: 1px solid var(--d-edge) !important;
+  border-radius: 24px !important;
+  box-shadow: var(--d-sh-3), var(--d-sheen) !important;
+  animation: lgModalIn .46s var(--d-spring);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-gutter: stable;
+}
+html[data-theme="dark"] .modal-panel::-webkit-scrollbar { width: 7px; }
+html[data-theme="dark"] .modal-panel::-webkit-scrollbar-track { background: transparent; margin: 14px 0; }
+html[data-theme="dark"] .modal-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2); border-radius: 99px;
+  border: 2px solid transparent; background-clip: content-box;
+}
+
+/* ── Stage rozetleri: renk dili korunur, cam dokusu eklenir ────────── */
+html[data-theme="dark"] .stage-pill { -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+html[data-theme="dark"] .stage-Won        { background: rgba(34, 197, 94, 0.16) !important; }
+html[data-theme="dark"] .stage-Cancelled  { background: rgba(239, 68, 68, 0.16) !important; }
+html[data-theme="dark"] .stage-Appointment{ background: rgba(59, 130, 246, 0.18) !important; }
+html[data-theme="dark"] .stage-Reservation{ background: rgba(249, 115, 22, 0.18) !important; }
+html[data-theme="dark"] .stage-Waiting    { background: rgba(132, 204, 22, 0.16) !important; }
+html[data-theme="dark"] .stage-default    { background: rgba(255, 255, 255, 0.08) !important; }
+
+/* ── Günlük ekip girişi (admin sürümü) ─────────────────────────────── */
+html[data-theme="dark"] .ade-input {
+  background: var(--d-3) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: 9px !important;
+}
+
+/* ── Kaydırma çubukları ────────────────────────────────────────────── */
+html[data-theme="dark"] ::-webkit-scrollbar-track { background: transparent; }
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18) !important; border-radius: 99px;
+}
+
+html[data-theme="dark"] aside #langToggleMount .lang-menu { bottom: calc(100% + 6px); }
+
+/* ── 21b. Tailwind opaklık türevleri (koyu) + kaçan girdiler ──────────
+   Gerekçe açık temadaki 40b ile aynı: `bg-gray-800/60` ayrı bir sınıf.
+   Koyuda yalnızca zemin camlaşır, renk dili korunur. */
+html[data-theme="dark"] [class*="bg-gray-900/"],
+html[data-theme="dark"] [class*="bg-gray-950/"],
+html[data-theme="dark"] [class*="bg-slate-900/"] {
+  background-color: var(--d-1) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(165%);
+  backdrop-filter: blur(20px) saturate(165%);
+}
+html[data-theme="dark"] [class*="bg-gray-800/"],
+html[data-theme="dark"] [class*="bg-slate-800/"],
+html[data-theme="dark"] [class*="bg-gray-700/"],
+html[data-theme="dark"] [class*="bg-slate-700/"] {
+  background-color: var(--d-2) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+html[data-theme="dark"] [class*="border-gray-800/"],
+html[data-theme="dark"] [class*="border-gray-700/"],
+html[data-theme="dark"] [class*="border-slate-700/"],
+html[data-theme="dark"] [class*="border-slate-500/"] { border-color: var(--d-edge-soft) !important; }
+
+html[data-theme="dark"] input.filter-input,
+html[data-theme="dark"] textarea.filter-input {
+  background: var(--d-3) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  color: var(--d-ink) !important;
+  border-radius: 12px !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+}
+html[data-theme="dark"] input.filter-input:focus,
+html[data-theme="dark"] textarea.filter-input:focus {
+  border-color: rgba(45, 212, 191, .6) !important;
+  box-shadow: 0 0 0 4px rgba(45, 212, 191, .13) !important;
+  outline: none !important;
+}
+html[data-theme="dark"] div:has(> #dealsViewBtnTable2),
+html[data-theme="dark"] div:has(> #amViewBtnTable) {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  border-radius: 12px !important;
+  -webkit-backdrop-filter: blur(16px) saturate(165%);
+  backdrop-filter: blur(16px) saturate(165%);
+}
+
+/* Ham input[type=date] güvenlik ağı (bkz. açık tema) */
+html[data-theme="dark"] input[type="date"] {
+  background: var(--d-3) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  color: var(--d-ink) !important;
+  border-radius: 10px !important;
+  padding: 6px 10px !important;
+  color-scheme: dark;
+}
