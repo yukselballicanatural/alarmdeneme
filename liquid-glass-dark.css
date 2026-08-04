@@ -855,3 +855,206 @@ html[data-theme="dark"] img[src*="beyaz" i] { filter: none; }
   html[data-theme="dark"] .nc-export-menu button { animation: none !important; }
   html[data-theme="dark"] .lq-seg-ind { transition: opacity .2s ease !important; }
 }
+
+/* ═════════════════════════════════════════════════════════════════════
+   20. SON GEÇİŞ — KASITLI OLARAK DOSYANIN SONUNDA
+   DİKKAT: Yukarıdaki 19. bölümdeki genel [style*="background:#0f172a"] /
+   ["#111827"] eşlemeleri, Tablo/Kanban ve Bugün/Dün segment KAPLARINI da
+   yakalıyor. Açık temada o eşlemeler segment kurallarından ÖNCE geldiği
+   için sorun yoktu; koyu temada SONRA geliyordu ve kapların yarıçapı
+   (14px) + 30px bulanıklığı segmentin üstüne yazılıp görünüm bozuluyordu.
+   Çözüm: kap kurallarını en sona alıp kaskadı kesin biçimde kazanmak.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ── Tablo / Kanban ve Bugün / Dün segment KAPLARI ─────────────────── */
+html[data-theme="dark"] div:has(> #alarmsViewBtnTable),
+html[data-theme="dark"] div:has(> #dealsViewBtnTable),
+html[data-theme="dark"] div:has(> .dep-quick-btn) {
+  position: relative;
+  background: rgba(255, 255, 255, 0.05) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(165%) !important;
+  backdrop-filter: blur(18px) saturate(165%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09),
+              0 2px 10px rgba(0, 0, 0, 0.28) !important;
+  overflow: visible;
+}
+html[data-theme="dark"] div:has(> #alarmsViewBtnTable),
+html[data-theme="dark"] div:has(> #dealsViewBtnTable) {
+  border-radius: 12px !important;
+  padding: 3px !important;
+  gap: 3px !important;
+}
+html[data-theme="dark"] div:has(> .dep-quick-btn) {
+  border-radius: 999px !important;
+  padding: 4px !important;
+  gap: 4px !important;
+}
+/* Kayan gösterge — kap içi, düğmelerin ALTINDA */
+html[data-theme="dark"] div:has(> #alarmsViewBtnTable) .lq-seg-ind,
+html[data-theme="dark"] div:has(> #dealsViewBtnTable) .lq-seg-ind { border-radius: 9px !important; }
+html[data-theme="dark"] div:has(> .dep-quick-btn) .lq-seg-ind { border-radius: 999px !important; }
+/* Düğmeler her zaman göstergenin ÜSTÜNDE ve zeminsiz */
+html[data-theme="dark"] #alarmsViewBtnTable,
+html[data-theme="dark"] #alarmsViewBtnKanban,
+html[data-theme="dark"] #dealsViewBtnTable,
+html[data-theme="dark"] #dealsViewBtnKanban,
+html[data-theme="dark"] .dep-quick-btn {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+/* Aktif düğme: hem hex hem normalize rgb() biçimi listelenir — JS
+   style.background yazdığında tarayıcı style özniteliğini yeniden
+   serialize ediyor. Dört kimliğin tamamı olmalı; Kanban'lar eksikti. */
+html[data-theme="dark"] #alarmsViewBtnTable[style*="rgb(79, 70, 229)" i],
+html[data-theme="dark"] #alarmsViewBtnKanban[style*="rgb(79, 70, 229)" i],
+html[data-theme="dark"] #dealsViewBtnTable[style*="rgb(79, 70, 229)" i],
+html[data-theme="dark"] #dealsViewBtnKanban[style*="rgb(79, 70, 229)" i],
+html[data-theme="dark"] #alarmsViewBtnTable[style*="background:#4f46e5" i],
+html[data-theme="dark"] #alarmsViewBtnKanban[style*="background:#4f46e5" i],
+html[data-theme="dark"] #dealsViewBtnTable[style*="background:#4f46e5" i],
+html[data-theme="dark"] #dealsViewBtnKanban[style*="background:#4f46e5" i],
+html[data-theme="dark"] .dep-quick-btn.dep-quick-active,
+html[data-theme="dark"] .dep-quick-btn.dep-quick-active:hover {
+  background: transparent !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+html[data-theme="dark"] #alarmsViewBtnTable:hover,
+html[data-theme="dark"] #alarmsViewBtnKanban:hover,
+html[data-theme="dark"] #dealsViewBtnTable:hover,
+html[data-theme="dark"] #dealsViewBtnKanban:hover { color: var(--d-ink) !important; }
+
+/* ── Sonuç popup'ı (Hasta Geldi / Muayene / İşlemlerde / Gelemedi) ─── */
+html[data-theme="dark"] .nc-out-modal .nc-out-bg {
+  background: rgba(2, 6, 23, 0.60) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  backdrop-filter: blur(14px) saturate(130%);
+  animation: ncOutBgIn .3s var(--d-ease);
+}
+html[data-theme="dark"] .nc-out-modal .nc-out-box {
+  background: var(--d-strong) !important;
+  -webkit-backdrop-filter: blur(46px) saturate(190%);
+  backdrop-filter: blur(46px) saturate(190%);
+  border: 1px solid var(--d-edge) !important;
+  border-radius: 22px !important;
+  box-shadow: var(--d-sheen),
+              0 18px 40px rgba(0, 0, 0, 0.5),
+              0 50px 100px -24px rgba(0, 0, 0, 0.72) !important;
+}
+html[data-theme="dark"] .nc-out-modal .nc-out-title { color: var(--d-ink) !important; }
+html[data-theme="dark"] .nc-out-modal button.nc-out-cancel {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid var(--d-edge) !important;
+  color: var(--d-ink-2) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+html[data-theme="dark"] .nc-out-modal button.nc-out-cancel:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: var(--d-ink) !important;
+}
+html[data-theme="dark"] .nc-out-modal button.nc-out-ok {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 6px 18px rgba(13, 148, 136, 0.34) !important;
+}
+
+/* ── Takımımdaki Kişiler — açık temadaki kartın koyu ikizi ─────────── */
+html[data-theme="dark"] #tmTableWrap {
+  background: var(--d-1) !important;
+  -webkit-backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: var(--d-r-md) !important;
+  box-shadow: var(--d-sh-2), var(--d-sheen);
+  padding: 2px;
+  overflow: hidden auto;
+  max-height: 74vh;
+}
+html[data-theme="dark"] #tmTable { border-spacing: 0; }
+html[data-theme="dark"] #tmTable thead th {
+  background: rgba(20, 26, 42, 0.86) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  color: var(--d-ink-3) !important;
+  border-bottom: 1px solid var(--d-edge-soft) !important;
+  padding: 11px 13px !important;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+html[data-theme="dark"] #tmTable thead th:first-child { border-top-left-radius: 16px; }
+html[data-theme="dark"] #tmTable thead th:last-child  { border-top-right-radius: 16px; }
+html[data-theme="dark"] #tmTable tbody td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055) !important;
+  padding: 9px 13px !important;
+  vertical-align: middle;
+}
+html[data-theme="dark"] #tmTable tbody tr:last-child td { border-bottom: none !important; }
+html[data-theme="dark"] #tmTable tbody td:first-child {
+  font-variant-numeric: tabular-nums;
+  color: var(--d-ink-3) !important;
+  font-weight: 700;
+}
+html[data-theme="dark"] #tmTable tbody tr { transition: background .2s var(--d-ease); }
+/* Zebra: satır içi background:#0a1120 tek satırlarda — camın üstünde ince ton */
+html[data-theme="dark"] #tmTable tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.028) !important; }
+html[data-theme="dark"] #tmTable tbody tr:hover td { background: rgba(255, 255, 255, 0.075) !important; }
+html[data-theme="dark"] #tmTable tbody td input,
+html[data-theme="dark"] #tmTable tbody td .lq-sel,
+html[data-theme="dark"] #tmTable tbody td button { animation: lqCellIn .4s var(--d-spring) backwards; }
+html[data-theme="dark"] input[id^="tmPhone-"],
+html[data-theme="dark"] #waPhoneInput {
+  width: 160px !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+  font-weight: 600;
+  padding: 7px 13px !important;
+  border-radius: 999px !important;
+}
+html[data-theme="dark"] #tmTable td button[id^="tmEditBtn-"] {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: 999px !important;
+  color: var(--d-ink-2) !important;
+  padding: 5px 13px !important;
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  transition: background .2s var(--d-ease), color .2s var(--d-ease), transform .3s var(--d-spring);
+}
+html[data-theme="dark"] #tmTable td button[id^="tmEditBtn-"]:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: var(--d-ink) !important;
+  transform: translateY(-1px);
+}
+html[data-theme="dark"] #tmTable td button[onclick^="openMemberWhatsApp"] {
+  background: rgba(34, 197, 94, 0.20) !important;
+  border: 1px solid rgba(34, 197, 94, 0.36) !important;
+  border-radius: 999px !important;
+  color: #6ee7a2 !important;
+  padding: 5px 12px !important;
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  transition: background .2s var(--d-ease), transform .3s var(--d-spring);
+}
+html[data-theme="dark"] #tmTable td button[onclick^="openMemberWhatsApp"]:hover {
+  background: rgba(34, 197, 94, 0.34) !important;
+  transform: translateY(-1px) scale(1.04);
+}
+html[data-theme="dark"] #tmTable tbody td span[style*="background:#1e293b" i],
+html[data-theme="dark"] #tmTable tbody td span[style*="background: rgb(30, 41, 59)" i] {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--d-edge-soft) !important;
+  border-radius: 999px !important;
+  padding: 2px 9px !important;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

@@ -1144,15 +1144,19 @@
 </main>
 
 <!-- ════════════════ NO-SHOW REASON MODAL ════════════════ -->
-<div id="noshowModal" style="display:none;position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center">
-  <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(3px)" onclick="closeNoshowModal()"></div>
-  <div style="position:relative;background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:24px;width:100%;max-width:420px;margin:16px;box-shadow:0 25px 60px rgba(0,0,0,0.6)">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-      <div id="noshowIconWrap" style="width:32px;height:32px;border-radius:8px;background:#450a0a;border:1px solid #7f1d1d;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+<div id="noshowModal" class="nc-out-modal" style="display:none;position:fixed;inset:0;z-index:9000;align-items:center;justify-content:center">
+  <div class="nc-out-bg" style="position:absolute;inset:0;background:rgba(2,6,23,0.62);backdrop-filter:blur(6px)" onclick="closeNoshowModal()"></div>
+  <div class="nc-out-box" style="position:relative;background:#0f172a;border:1px solid #1e293b;border-radius:18px;padding:22px;width:100%;max-width:420px;margin:16px;box-shadow:0 25px 60px rgba(0,0,0,0.6)">
+    <!-- Kapatma (×) — daha önce yoktu, kullanıcı arıyordu -->
+    <button type="button" class="nc-out-x" onclick="closeNoshowModal()" aria-label="Kapat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:16px;padding-right:26px">
+      <div id="noshowIconWrap" class="nc-out-ico" style="width:34px;height:34px;border-radius:11px;background:#450a0a;border:1px solid #7f1d1d;display:flex;align-items:center;justify-content:center;flex-shrink:0">
         <svg id="noshowIcon" style="width:16px;height:16px;color:#f87171" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
       </div>
       <div>
-        <div id="noshowTitle" style="font-size:14px;font-weight:700;color:#f1f5f9">Gelemedi — Açıklama</div>
+        <div id="noshowTitle" class="nc-out-title" style="font-size:14.5px;font-weight:800;color:#f1f5f9;letter-spacing:-0.01em">Gelemedi — Açıklama</div>
         <div style="font-size:11px;color:#64748b" id="noshowPatientName"></div>
       </div>
     </div>
@@ -1160,8 +1164,8 @@
     <textarea id="noshowNote" rows="3" maxlength="200" placeholder="Kısa not (isteğe bağlı)…" class="filter-inp" style="width:100%;box-sizing:border-box;resize:none;font-size:12px" oninput="document.getElementById('noshowNoteCount').textContent=this.value.length+' / 200'"></textarea>
     <div style="text-align:right;font-size:10px;color:#475569;margin-top:3px;margin-bottom:16px"><span id="noshowNoteCount">0 / 200</span></div>
     <div style="display:flex;gap:8px">
-      <button onclick="closeNoshowModal()" style="flex:1;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:9px;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer">İptal</button>
-      <button id="noshowConfirmBtn" onclick="confirmNoshow()" style="flex:1;padding:10px;background:#0d9488;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Kaydet</button>
+      <button onclick="closeNoshowModal()" class="nc-out-cancel" style="flex:1;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:11px;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer">İptal</button>
+      <button id="noshowConfirmBtn" onclick="confirmNoshow()" class="nc-out-ok" style="flex:1;padding:10px;background:#0d9488;border:none;border-radius:11px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Kaydet</button>
     </div>
   </div>
 </div>
@@ -3244,6 +3248,15 @@
     _noshowPendingId = null;
     _noshowPendingStatus = null;
   }
+
+  // Esc ile kapanma — × ve zemine tıklamanın yanında üçüncü çıkış yolu.
+  // Ctrl+Enter ile kaydet (metin alanında Enter satır atlıyor, o yüzden).
+  document.addEventListener('keydown', function (e) {
+    var m = document.getElementById('noshowModal');
+    if (!m || m.style.display === 'none' || !_noshowPendingId) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeNoshowModal(); }
+    else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); confirmNoshow(); }
+  });
 
   function confirmNoshow() {
     if (!_noshowPendingId) return;
