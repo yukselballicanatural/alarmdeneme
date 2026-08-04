@@ -13,6 +13,9 @@
   <script src="export-util.js"></script>
   <script src="attach-util.js"></script>
   <script src="deals-live.js"></script>
+  <!-- Analitik ekranının SVG grafikleri — tek kaynak, iki render yolu da
+       (RPC özeti + istemci hesabı) buradan çiziyor. -->
+  <script src="analytics-charts.js"></script>
   <!-- PDF export için (xlsx zaten yukarıda cdn.sheetjs.com'dan yükleniyor) -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -452,7 +455,6 @@
       <div class="flex items-center justify-between mb-4">
         <div>
           <h2 class="text-xl font-bold text-white">Tüm Deal'ler</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Supabase'deki tüm veri</p>
         </div>
         <div class="flex gap-2 items-center nc-deals-actions">
           <!-- Guncelleme zamani segmentin SOLUNDA (istek) -->
@@ -633,8 +635,7 @@
     <div id="view-summary" class="hidden space-y-5">
       <div class="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h2 class="text-xl font-bold text-white">Analytics & Summary</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Deals tablosundaki canlı verilere göre otomatik hesaplanır.</p>
+          <h2 class="text-xl font-bold text-white">Analitik &amp; Özet</h2>
         </div>
         <div class="flex items-center gap-2 text-[11px] text-slate-400">
           <span class="relative flex h-2 w-2">
@@ -701,9 +702,25 @@
         </div>
       </div>
 
+      <!-- Huni + tahsilat göstergesi: "kaç deal geldi" değil "nerede
+           kaybediyoruz" sorusunu yanıtlayan iki analiz. -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 lg:col-span-2">
+          <h3 class="text-sm font-bold text-white mb-1">Dönüşüm Hunisi</h3>
+          <p class="text-[10px] text-slate-500 mb-4">Her adımın bir öncekine göre dönüşüm oranı — üzerine gelin.</p>
+          <div id="funnelChart"></div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col">
+          <h3 class="text-sm font-bold text-white mb-1">Tahsilat Oranı</h3>
+          <p class="text-[10px] text-slate-500 mb-3">Toplam ciroya göre tahsil edilen tutar.</p>
+          <div id="collectGauge" class="flex-1 flex items-center justify-center"></div>
+        </div>
+      </div>
+
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-        <h3 class="text-sm font-bold text-white mb-3">Aylık Deal & Ciro Trendi (Arrival Date)</h3>
-        <div id="trendChart" class="flex items-end gap-2 overflow-x-auto pb-2" style="min-height:160px"></div>
+        <h3 class="text-sm font-bold text-white mb-1">Aylık Deal & Ciro Trendi (Arrival Date)</h3>
+        <p class="text-[10px] text-slate-500 mb-3">Grafiğin üzerinde gezinerek aylık değerleri görebilirsiniz.</p>
+        <div id="trendChart"></div>
       </div>
 
       <!-- Result Code Breakdown -->
@@ -766,32 +783,39 @@
         </div>
       </div>
 
+      <!-- Dil Dağılımı: eskiden her dil için bir kutucuktan oluşan ızgaraydı;
+           15+ dilde ekranı kaplıyor ve PAYI hiç göstermiyordu. Halka payı tek
+           bakışta verir, küçükler "Diğer"de toplanır (dökümü ipucunda). -->
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-        <h3 class="text-sm font-bold text-white mb-3">Dil Dağılımı</h3>
-        <div id="langChart" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3"></div>
+        <h3 class="text-sm font-bold text-white mb-1">Dil Dağılımı</h3>
+        <p class="text-[10px] text-slate-500 mb-4">Bir dilin üzerine gelin — halkada o dilim öne çıkar.</p>
+        <div id="langChart"></div>
       </div>
     </div>
 
     <!-- ===== TEAM MANAGEMENT VIEW ===== -->
     <div id="view-users" class="hidden">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 class="text-xl font-bold text-white">Team Management</h2>
+        <h2 class="text-xl font-bold text-white">Kullanıcılar</h2>
         <div class="flex gap-2 flex-wrap items-center">
           <span id="usersExportMount"></span>
-          <button onclick="loadUsers()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-slate-300 text-xs rounded-lg font-semibold border border-gray-700">↻ Refresh</button>
-          <button onclick="openUserModal(null)" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg font-semibold">+ Add User</button>
+          <!-- Yenile/Ekle: takim liderindeki basli butonlarla BIREBIR ayni
+               satir ici tanim (8px 14px · 11px · r10) — cam katmanindaki tek
+               birincil/ikincil buton kurali ikisine de uyuyor. -->
+          <button onclick="loadUsers()" style="padding:8px 14px;background:#1e293b;border:1px solid #334155;border-radius:10px;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">↻ Yenile</button>
+          <button onclick="openUserModal(null)" style="padding:8px 14px;background:#0d9488;border:none;border-radius:10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">+ Kullanıcı Ekle</button>
         </div>
       </div>
       <!-- Team filter bar -->
       <div class="flex flex-wrap gap-2 mb-3" id="teamFilterBar"></div>
       <!-- Search -->
       <div class="mb-4">
-        <input type="text" id="userSearch" oninput="_dbRenderUsersTable()" placeholder="Search name, username, team, role…" class="filter-input" style="max-width:320px" />
+        <input type="text" id="userSearch" oninput="_dbRenderUsersTable()" placeholder="Ad, kullanıcı adı, takım veya rol ara…" class="filter-input" style="max-width:320px" />
       </div>
       <!-- Loading -->
       <div id="usersLoadingState" class="flex flex-col items-center py-16 gap-4">
         <div class="spinner-anim"></div>
-        <p class="text-slate-400 text-sm">Loading users…</p>
+        <p class="text-slate-400 text-sm">Kullanıcılar yükleniyor…</p>
       </div>
       <!-- Table -->
       <div id="usersContent" class="hidden overflow-auto rounded-xl border border-gray-800">
@@ -799,18 +823,18 @@
           <thead>
             <tr class="text-slate-400">
               <th style="width:36px">#</th>
-              <th>Full Name</th>
-              <th>Username</th>
-              <th>Password</th>
-              <th>Role</th>
-              <th>Team</th>
-              <th style="width:80px">Actions</th>
+              <th>Ad Soyad</th>
+              <th>Kullanıcı Adı</th>
+              <th>Şifre</th>
+              <th>Rol</th>
+              <th>Takım</th>
+              <th style="width:110px">İşlemler</th>
             </tr>
           </thead>
           <tbody id="usersBody"></tbody>
         </table>
       </div>
-      <div id="usersEmpty" class="hidden text-center py-12 text-slate-500 text-sm">No users match your filter.</div>
+      <div id="usersEmpty" class="hidden text-center py-12 text-slate-500 text-sm">Filtreye uyan kullanıcı yok.</div>
     </div>
 
     <!-- ===== TAKIMIMDAKI KISILER VIEW (admin/super-admin: tüm takımlar, RM: kendi bölgesi) ===== -->
@@ -1033,21 +1057,32 @@
         <input type="hidden" id="umUserId" />
         <input type="hidden" id="umOriginalUsername" />
         <div>
-          <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Full Name</label>
-          <input type="text" id="umFullName" class="filter-input w-full" placeholder="Full name" />
+          <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Ad Soyad</label>
+          <input type="text" id="umFullName" class="filter-input w-full" placeholder="Ad Soyad" />
         </div>
         <div>
-          <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Username</label>
-          <input type="text" id="umUsername" class="filter-input w-full" placeholder="Username (login)" />
+          <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Kullanıcı Adı</label>
+          <input type="text" id="umUsername" class="filter-input w-full" placeholder="Kullanıcı adı (giriş)" />
         </div>
         <div>
-          <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Password</label>
-          <input type="text" id="umPassword" class="filter-input w-full" placeholder="Password" autocomplete="off" />
+          <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Şifre</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" id="umPassword" class="filter-input" style="flex:1;min-width:0" placeholder="Şifre" autocomplete="off" />
+            <button type="button" onclick="_umGenPassword()" class="am-btn" style="white-space:nowrap;flex-shrink:0" title="Güçlü bir şifre üret ve kutuya yaz">Üret</button>
+          </div>
+          <!-- Mevcut sifre GOSTERILEMEZ: veritabaninda bcrypt ile
+               hash'lenmis duruyor ve api/admin-users.js listelemede
+               Password alanini siliyor. Hash tek yonlu, geri cevrilemez.
+               Yapilabilecek olan yeni bir sifre ATAMAK — yazilan deger
+               burada acik gorunur, boylece kullaniciya iletilebilir. -->
+          <p id="umPassHint" class="text-[10px] text-slate-500 mt-1" style="line-height:1.45"></p>
         </div>
         <div>
-          <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Role</label>
+          <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Rol</label>
+          <!-- "Agent" secenegi KALDIRILDI: danismanlarin panele girisi yok
+               (agent.html yapilmayacak), yeni danisman olusturmak da bu
+               ekranin isi degil. -->
           <select id="umRole" class="filter-select w-full">
-            <option value="Agent">Agent</option>
             <option value="Team Leader">Team Leader</option>
             <option value="Regional Manager">Regional Manager</option>
             <option value="Admin">Admin</option>
@@ -1055,7 +1090,7 @@
           </select>
         </div>
         <div style="position:relative">
-          <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Team</label>
+          <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Takım</label>
           <div id="umTeamBox" onclick="toggleTeamDropdown()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 12px;color:#f1f5f9;font-size:0.82rem;user-select:none;min-height:38px">
             <span id="umTeamDisplay" style="color:#64748b">Takım seçin veya yazın...</span>
             <svg style="width:14px;height:14px;color:#64748b;flex-shrink:0;transition:transform 0.2s" id="umTeamChevron" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -1070,8 +1105,8 @@
         </div>
         <div id="umError" style="display:none;color:#f87171;font-size:0.75rem;font-weight:600;padding:8px 12px;background:#450a0a;border:1px solid #7f1d1d;border-radius:6px"></div>
         <div class="flex gap-2 pt-1">
-          <button onclick="closeUserModal()" class="flex-1 py-2 bg-gray-800 text-slate-300 text-sm rounded-lg font-semibold border border-gray-700">Cancel</button>
-          <button onclick="saveUser()" id="umSaveBtn" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg font-bold transition-all">Save</button>
+          <button onclick="closeUserModal()" class="flex-1 py-2 bg-gray-800 text-slate-300 text-sm rounded-lg font-semibold border border-gray-700">İptal</button>
+          <button onclick="saveUser()" id="umSaveBtn" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg font-bold transition-all">Kaydet</button>
         </div>
       </div>
     </div>
@@ -7032,15 +7067,46 @@
       applyFilters();
     }
 
+    // Aktif gorunumu yeniden cizer. Sayfalama islemleri DOGRUDAN
+    // renderDeals() cagiriyordu; kanban acikken bu tabloyu ciziyor,
+    // sayfalayiciyi da gizliyordu — dugmeler kayboluyor, pano hic
+    // degismiyordu. Tek giris noktasi bu yuzden var.
+    function _dealsRenderActive() {
+      if (_dealsViewMode === 'kanban') renderKanban(filteredDeals);
+      else renderDeals(filteredDeals);
+    }
+
+    // Sayfalama satirinin gorunurlugu. Kanban TUM filtreli seti stage'lere
+    // gore grupluyor (kolon basina KANBAN_CARDS_PER_COL siniriyla), yani
+    // sayfa kavrami orada yok — sayfalayici da, "100/sayfa" secimi de
+    // gizlenir. Yoksa isleyisi olmayan dugmeler ekranda kaliyor.
+    function _syncDealPagerUI(total) {
+      const pager = document.getElementById('dealPager');
+      const sizeSel = document.getElementById('dealPageSizeSel');
+      const kanban = _dealsViewMode === 'kanban';
+      if (sizeSel) {
+        // LiquidSelect select'i sarmaladigi icin gorunur oge sarmalayici
+        const box = sizeSel.closest('.lq-sel') || sizeSel;
+        box.style.display = kanban ? 'none' : '';
+      }
+      if (!pager) return;
+      if (kanban) { pager.style.display = 'none'; return; }
+      const maxPage = Math.max(0, Math.ceil(total / dealPageSize) - 1);
+      pager.style.display = total > dealPageSize ? 'flex' : 'none';
+      document.getElementById('dealPageLbl').textContent = `${I18N.t('Sayfa')} ${dealCurrentPage + 1} / ${maxPage + 1}`;
+      document.getElementById('btnDealPrev').disabled = dealCurrentPage === 0;
+      document.getElementById('btnDealNext').disabled = dealCurrentPage >= maxPage;
+    }
+
     function dealChangePage(dir) {
       const maxPage = Math.max(0, Math.ceil(filteredDeals.length / dealPageSize) - 1);
       dealCurrentPage = Math.max(0, Math.min(maxPage, dealCurrentPage + dir));
-      renderDeals(filteredDeals);
+      _dealsRenderActive();
     }
     function dealChangePageSize() {
       dealPageSize = parseInt(document.getElementById('dealPageSizeSel').value) || 500;
       dealCurrentPage = 0;
-      renderDeals(filteredDeals);
+      _dealsRenderActive();
     }
 
     // ── Deal Listesi: Tablo / Kanban görünüm anahtarı ──────────────────
@@ -7067,6 +7133,12 @@
     function renderKanban(data) {
       const board = document.getElementById('kanbanBoard');
       const empty = document.getElementById('kanbanEmpty');
+      // Kanban sayfalamiyor: sayfalayici satiri her kosulda senkronlanmali,
+      // yoksa tablodan gecerken orada kalmis dugmeler gorunur duruyor.
+      _syncDealPagerUI(data.length);
+      document.getElementById('resultInfo').textContent = data.length
+        ? `${data.length} ${I18N.t('deal gösteriliyor')}`
+        : '0 ' + I18N.t('deal gösteriliyor');
       if (!data.length) { board.innerHTML = ''; empty.classList.remove('hidden'); return; }
       empty.classList.add('hidden');
 
@@ -7120,7 +7192,6 @@
     function renderDeals(data) {
       const tbody = document.getElementById('dealsBody');
       const empty = document.getElementById('emptyState');
-      const pager = document.getElementById('dealPager');
 
       const maxPage = Math.max(0, Math.ceil(data.length / dealPageSize) - 1);
       dealCurrentPage = Math.min(dealCurrentPage, maxPage);
@@ -7131,12 +7202,7 @@
       document.getElementById('resultInfo').textContent = data.length
         ? `${pageStart+1}–${pageEnd} / ${data.length} ${I18N.t('deal gösteriliyor')}`
         : '0 ' + I18N.t('deal gösteriliyor');
-      if (pager) {
-        pager.style.display = (data.length > dealPageSize && _dealsViewMode === 'table') ? 'flex' : 'none';
-        document.getElementById('dealPageLbl').textContent = `${I18N.t('Sayfa')} ${dealCurrentPage+1} / ${maxPage+1}`;
-        document.getElementById('btnDealPrev').disabled = dealCurrentPage === 0;
-        document.getElementById('btnDealNext').disabled = dealCurrentPage >= maxPage;
-      }
+      _syncDealPagerUI(data.length);
 
       if (!data.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
       empty.classList.add('hidden');
@@ -7621,6 +7687,87 @@
     // (loadAnalyticsSummary) yönlendirir; aksi halde client-side hesaplar.
     function renderSummary() { loadAnalyticsSummary(); }
 
+    // ═══════════════════════════════════════════════════════════════
+    // Analitik grafikleri — TEK render noktası
+    // Daha önce her grafiğin HTML'i renderSummaryFromRPC() ve
+    // _renderSummaryClientSide() icinde AYRI AYRI yaziliydi; biri
+    // guncellenip digeri atlandiginda iki yol sessizce ayrisiyordu
+    // (ayni ekran, veri kaynagina gore farkli gorunuyordu). Iki yol da
+    // artik ayni normalize modeli uretip burayi cagiriyor.
+    // model: { total, sumAmount, sumPaid, payment[], stages[], regions[],
+    //          months[], funnel{total,visited,won,wonPaid} }
+    // ═══════════════════════════════════════════════════════════════
+    const AN_PAY_COLORS = { Paid: '#22c55e', Partial: '#f59e0b', Unpaid: '#ef4444' };
+
+    function _anRenderCharts(m) {
+      if (!window.NCCharts) return;   // betik yuklenmediyse sayfayi patlatma
+      const empty = { emptyText: I18N.t('Veri yok.') };
+      const gid = id => document.getElementById(id);
+
+      NCCharts.bars(gid('paymentChart'), (m.payment || []).map(p => ({
+        label: payStatusLabel(p.key), value: p.value, color: AN_PAY_COLORS[p.key] || '#6366f1',
+      })), empty);
+
+      NCCharts.bars(gid('stageChart'), (m.stages || []).map(s => ({
+        label: s.key, value: s.value,
+      })), empty);
+
+      NCCharts.bars(gid('regionChart'), (m.regions || []).map(r => ({
+        label: r.key, value: r.value, color: '#38bdf8',
+      })), empty);
+
+      NCCharts.area(gid('trendChart'), m.months || [], {
+        emptyText: I18N.t('Arrival date verisi yok.'),
+        singleText: I18N.t('Eğilim çizmek için en az iki ay gerekli.'),
+        countLabel: I18N.t('Deal adedi'),
+        amountLabel: I18N.t('Ciro'),
+        moneyFmt: fmtMoney,
+      });
+
+      // Huni: Toplam → Ziyaret Edildi → Won → Ödemesi Tamamlanan
+      const f = m.funnel || {};
+      NCCharts.funnel(gid('funnelChart'), [
+        { label: I18N.t('Toplam Deal'),      value: f.total   || 0, color: '#6366f1' },
+        { label: I18N.t('Ziyaret Edildi'),   value: f.visited || 0, color: '#38bdf8' },
+        { label: I18N.t('Won'),              value: f.won     || 0, color: '#22c55e' },
+        { label: I18N.t('Ödemesi Tamamlanan'), value: f.wonPaid || 0, color: '#0d9488' },
+      ], {
+        emptyText: I18N.t('Veri yok.'),
+        convText: I18N.t('dönüşüm'),
+        ofTotalText: I18N.t('toplamın'),
+      });
+
+      const rate = m.sumAmount ? (m.sumPaid / m.sumAmount * 100) : 0;
+      NCCharts.gauge(gid('collectGauge'), rate, {
+        label: I18N.t('tahsil edildi'),
+        sub: fmtMoney(m.sumPaid) + ' / ' + fmtMoney(m.sumAmount),
+        color: rate >= 75 ? '#22c55e' : rate >= 45 ? '#f59e0b' : '#ef4444',
+        tip: '<b>' + I18N.t('Tahsilat Oranı') + '</b><br>' +
+             I18N.t('Tahsil Edilen') + ': ' + fmtMoney(m.sumPaid) + '<br>' +
+             I18N.t('Toplam Ciro') + ': ' + fmtMoney(m.sumAmount),
+      });
+    }
+
+    // Dil halkasi ayri: dil dokumu filtreden BAGIMSIZ, tembel yukleniyor
+    // ve geldiginde yalnizca kendi grafigini gunceller.
+    function _anRenderLangDonut(langs) {
+      const host = document.getElementById('langChart');
+      if (!host || !window.NCCharts) return;
+      NCCharts.donut(host, (langs || []).map(l => ({
+        label: languageLabel(l.lang), value: l.cnt,
+      })), {
+        centerLabel: I18N.t('deal'),
+        restLabel: I18N.t('Diğer'),
+        emptyText: I18N.t('Veri yok.'),
+        topN: 8,
+      });
+    }
+
+    // Sıralı [key,value] cifti uret — grafikler kendi icinde siraliyor
+    function _anPairs(map) {
+      return Object.entries(map).map(([k, v]) => ({ key: k, value: v }));
+    }
+
     function _renderSummaryClientSide() {
       const data = _anFilterDealsClientSide(allDeals);
       // ── KPI Strip ────────────────────────────────────────────
@@ -7649,25 +7796,10 @@
       // Payment status
       const payMap = {};
       data.forEach(d => { const p = d['Payment Status']||I18N.t('Bilinmiyor'); payMap[p] = (payMap[p]||0)+1; });
-      const maxPay = Math.max(...Object.values(payMap), 1);
-      const payColors = { Paid:'bg-emerald-500', Partial:'bg-amber-500', Unpaid:'bg-rose-500' };
-      document.getElementById('paymentChart').innerHTML =
-        Object.entries(payMap).sort((a,b) => b[1]-a[1]).map(([p,c]) => `
-          <div class="group cursor-default" title="${payStatusLabel(p)}: ${c} deal (${(c/total*100).toFixed(1)}%)">
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-300 group-hover:text-white transition-colors">${payStatusLabel(p)}</span><span class="text-slate-400 group-hover:text-white transition-colors">${c}</span></div>
-            <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div class="h-2 ${payColors[p]||'bg-indigo-500'} rounded-full transition-all duration-700 ease-out group-hover:brightness-125" style="width:${(c/maxPay*100).toFixed(1)}%"></div></div>
-          </div>`).join('');
 
       // Region distribution
       const regionMap = {};
       data.forEach(d => { const r = d['Region']||I18N.t('Bilinmiyor'); regionMap[r] = (regionMap[r]||0)+1; });
-      const maxR = Math.max(...Object.values(regionMap), 1);
-      document.getElementById('regionChart').innerHTML =
-        Object.entries(regionMap).sort((a,b) => b[1]-a[1]).map(([r,c]) => `
-          <div class="group cursor-default" title="${fmt(r)}: ${c} deal (${(c/total*100).toFixed(1)}%)">
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-300 group-hover:text-white transition-colors">${fmt(r)}</span><span class="text-slate-400 group-hover:text-white transition-colors">${c}</span></div>
-            <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div class="h-2 bg-sky-500 rounded-full transition-all duration-700 ease-out group-hover:brightness-125" style="width:${(c/maxR*100).toFixed(1)}%"></div></div>
-          </div>`).join('');
 
       // Monthly trend (by Arrival Date)
       const trendMap = {};
@@ -7680,18 +7812,6 @@
         trendMap[ym].amount += (Number(d['Deal Amount'])||0);
       });
       const months = Object.keys(trendMap).sort().slice(-12);
-      const maxCount = Math.max(...months.map(m => trendMap[m].count), 1);
-      document.getElementById('trendChart').innerHTML = months.length ? months.map(m => {
-        const v = trendMap[m];
-        const h = Math.max(6, (v.count/maxCount*130));
-        return `
-          <div class="group flex flex-col items-center gap-1 flex-shrink-0 cursor-default" style="width:64px" title="${m}: ${v.count} deal · ${fmtMoney(v.amount)}">
-            <div class="text-[10px] text-slate-400 group-hover:text-white transition-colors">${v.count}</div>
-            <div class="w-6 bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-t transition-all duration-700 ease-out group-hover:from-indigo-500 group-hover:to-indigo-300 group-hover:scale-x-125" style="height:${h.toFixed(0)}px"></div>
-            <div class="text-[9px] text-slate-500 group-hover:text-slate-300 transition-colors">${m}</div>
-            <div class="text-[9px] font-bold text-emerald-400 group-hover:text-emerald-300 transition-colors">${fmtCompact(v.amount)}</div>
-          </div>`;
-      }).join('') : `<div class="text-xs text-slate-600 py-8 mx-auto">${I18N.t("Arrival date verisi yok.")}</div>`;
 
       // Result codes breakdown
       const rcMap = {};
@@ -7720,13 +7840,6 @@
       // Stages
       const stageMap = {};
       data.forEach(d => { const s = d['Stage']||I18N.t('Bilinmiyor'); stageMap[s] = (stageMap[s]||0)+1; });
-      const maxS = Math.max(...Object.values(stageMap), 1);
-      document.getElementById('stageChart').innerHTML =
-        Object.entries(stageMap).sort((a,b) => b[1]-a[1]).map(([s,c]) => `
-          <div class="group cursor-default" title="${fmt(s)}: ${c} deal (${(c/total*100).toFixed(1)}%)">
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-300 group-hover:text-white transition-colors">${fmt(s)}</span><span class="text-slate-400 group-hover:text-white transition-colors">${c}</span></div>
-            <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div class="h-2 bg-indigo-500 rounded-full transition-all duration-700 ease-out group-hover:brightness-125" style="width:${(c/maxS*100).toFixed(1)}%"></div></div>
-          </div>`).join('');
 
       // Agents
       const agentMap = {};
@@ -7746,12 +7859,24 @@
       // Languages
       const langMap = {};
       data.forEach(d => { const l = d['Language']||I18N.t('Bilinmiyor'); langMap[l] = (langMap[l]||0)+1; });
-      document.getElementById('langChart').innerHTML =
-        Object.entries(langMap).sort((a,b) => b[1]-a[1]).map(([l,c]) => `
-          <div class="bg-gray-800/50 border border-gray-700/40 rounded-xl p-3 text-center hover:border-indigo-500/60 hover:bg-gray-800 hover:-translate-y-0.5 transition-all duration-300 cursor-default" title="${fmt(languageLabel(l))}: ${(c/total*100).toFixed(1)}%">
-            <div class="text-lg font-bold text-indigo-400">${c}</div>
-            <div class="text-xs text-slate-400 mt-1">${fmt(languageLabel(l))}</div>
-          </div>`).join('');
+      _anRenderLangDonut(Object.entries(langMap).map(([lang, cnt]) => ({ lang, cnt })));
+
+      // Odemesi tamamlanan: Stage Won VE odenen >= tutar (agentMap ile ayni olcut)
+      const wonPaid = data.filter(d => {
+        const amt = Number(d['Deal Amount'])||0, pd = Number(d['Paid Amount'])||0;
+        return (d['Stage']||'').toLowerCase().includes('won') && amt > 0 && pd >= amt;
+      }).length;
+
+      _anRenderCharts({
+        total: total,
+        sumAmount: totalAmount,
+        sumPaid: totalPaid,
+        payment: _anPairs(payMap),
+        stages: _anPairs(stageMap),
+        regions: _anPairs(regionMap),
+        months: months.map(m => ({ label: m, count: trendMap[m].count, amount: trendMap[m].amount })),
+        funnel: { total: total, visited: visited, won: won, wonPaid: wonPaid },
+      });
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -7896,40 +8021,9 @@
       const lu = document.getElementById('analyticsLastUpdate');
       if (lu) lu.textContent = new Date().toLocaleTimeString('tr-TR');
 
-      // Payment status
-      const payColors = { Paid:'bg-emerald-500', Partial:'bg-amber-500', Unpaid:'bg-rose-500' };
-      const payArr = (s.by_payment||[]).slice().sort((a,b) => b.cnt-a.cnt);
-      const maxPay = Math.max(...payArr.map(p => p.cnt), 1);
-      document.getElementById('paymentChart').innerHTML = payArr.map(p => `
-          <div class="group cursor-default" title="${payStatusLabel(p.status)}: ${p.cnt} deal (${(p.cnt/total*100).toFixed(1)}%)">
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-300 group-hover:text-white transition-colors">${payStatusLabel(p.status)}</span><span class="text-slate-400 group-hover:text-white transition-colors">${p.cnt}</span></div>
-            <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div class="h-2 ${payColors[p.status]||'bg-indigo-500'} rounded-full transition-all duration-700 ease-out group-hover:brightness-125" style="width:${(p.cnt/maxPay*100).toFixed(1)}%"></div></div>
-          </div>`).join('');
-
-      // Region distribution (ham takımdan TeamMap ile türet)
+      // Bolge: RPC bolge dokumu tasimiyor, ham takim adindan TeamMap ile turetilir
       const regionMap = {};
       (s.by_team||[]).forEach(t => { const r = (window.TeamMap ? TeamMap.regionForTeam(t.team) : '') || I18N.t('Bilinmiyor'); regionMap[r] = (regionMap[r]||0) + t.deals; });
-      const maxR = Math.max(...Object.values(regionMap), 1);
-      document.getElementById('regionChart').innerHTML =
-        Object.entries(regionMap).sort((a,b) => b[1]-a[1]).map(([r,c]) => `
-          <div class="group cursor-default" title="${fmt(r)}: ${c} deal (${(c/total*100).toFixed(1)}%)">
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-300 group-hover:text-white transition-colors">${fmt(r)}</span><span class="text-slate-400 group-hover:text-white transition-colors">${c}</span></div>
-            <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div class="h-2 bg-sky-500 rounded-full transition-all duration-700 ease-out group-hover:brightness-125" style="width:${(c/maxR*100).toFixed(1)}%"></div></div>
-          </div>`).join('');
-
-      // Monthly trend (arrival date) — son 12 ay
-      const months = (s.by_month||[]).slice(-12);
-      const maxCount = Math.max(...months.map(m => m.cnt), 1);
-      document.getElementById('trendChart').innerHTML = months.length ? months.map(m => {
-        const h = Math.max(6, (m.cnt/maxCount*130));
-        return `
-          <div class="group flex flex-col items-center gap-1 flex-shrink-0 cursor-default" style="width:64px" title="${m.ym}: ${m.cnt} deal · ${fmtMoney(m.amount)}">
-            <div class="text-[10px] text-slate-400 group-hover:text-white transition-colors">${m.cnt}</div>
-            <div class="w-6 bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-t transition-all duration-700 ease-out group-hover:from-indigo-500 group-hover:to-indigo-300 group-hover:scale-x-125" style="height:${h.toFixed(0)}px"></div>
-            <div class="text-[9px] text-slate-500 group-hover:text-slate-300 transition-colors">${m.ym}</div>
-            <div class="text-[9px] font-bold text-emerald-400 group-hover:text-emerald-300 transition-colors">${fmtCompact(m.amount)}</div>
-          </div>`;
-      }).join('') : `<div class="text-xs text-slate-600 py-8 mx-auto">${I18N.t("Arrival date verisi yok.")}</div>`;
 
       // Result codes breakdown
       _resultCodeRows = (s.by_result||[]).map(r => ({ code: r.code, sub: '—', count: r.cnt, agents: r.agents }));
@@ -7945,19 +8039,24 @@
       _teamSummaryRows = Object.entries(teamMap).map(([t,v]) => ({ team:t, deals:v.deals, paid:v.paid, unpaid:v.unpaid, total:v.paid+v.unpaid, won:v.won }));
       renderTeamSummaryTable();
 
-      // Stages
-      const stageArr = (s.by_stage||[]).slice().sort((a,b) => b.cnt-a.cnt);
-      const maxS = Math.max(...stageArr.map(x => x.cnt), 1);
-      document.getElementById('stageChart').innerHTML =
-        stageArr.map(x => `
-          <div class="group cursor-default" title="${fmt(x.stage)}: ${x.cnt} deal (${(x.cnt/total*100).toFixed(1)}%)">
-            <div class="flex justify-between text-xs mb-1"><span class="text-slate-300 group-hover:text-white transition-colors">${fmt(x.stage)}</span><span class="text-slate-400 group-hover:text-white transition-colors">${x.cnt}</span></div>
-            <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div class="h-2 bg-indigo-500 rounded-full transition-all duration-700 ease-out group-hover:brightness-125" style="width:${(x.cnt/maxS*100).toFixed(1)}%"></div></div>
-          </div>`).join('');
-
       // Agents (ham deal_owner)
       _agentSummaryRows = (s.by_owner||[]).map(o => ({ agent: o.owner || I18N.t('Bilinmiyor'), deals:o.deals, paid:o.paid, results:o.results, wonPaid: o.won_paid || 0 }));
       renderAgentSummaryTable();
+
+      // Grafikler — istemci yoluyla AYNI fonksiyon (bkz. _anRenderCharts).
+      // "Odemesi tamamlanan" ozet RPC'sinde tek alan olarak yok; danisman
+      // dokumundeki won_paid toplanarak elde edilir.
+      const wonPaid = (s.by_owner||[]).reduce((a, o) => a + (o.won_paid || 0), 0);
+      _anRenderCharts({
+        total: total,
+        sumAmount: Number(s.sum_amount) || 0,
+        sumPaid: Number(s.sum_paid) || 0,
+        payment: (s.by_payment||[]).map(p => ({ key: p.status, value: p.cnt })),
+        stages: (s.by_stage||[]).map(x => ({ key: x.stage, value: x.cnt })),
+        regions: _anPairs(regionMap),
+        months: (s.by_month||[]).slice(-12).map(m => ({ label: m.ym, count: m.cnt, amount: Number(m.amount) || 0 })),
+        funnel: { total: total, visited: s.visited || 0, won: s.won || 0, wonPaid: wonPaid },
+      });
 
       // Languages — ayrı, tembel çekilen veri (admin_language_breakdown),
       // filtre-bağımsız global cache'ten. Analytics filtresi değişse bile
@@ -7971,18 +8070,10 @@
       }
     }
 
+    // Ham dil adı RPC'den geliyor (dil filtresi dropdown'ı hâlâ 'Unknown' gibi
+    // ham değerleri karşılaştırıyor) — sadece ekrandaki etiket Türkçeleşiyor.
     function _renderLangChartOnly(langs) {
-      const el = document.getElementById('langChart');
-      if (!el) return;
-      if (!langs.length) { el.innerHTML = `<div class="text-xs text-slate-600 py-8 mx-auto">${I18N.t('Veri yok.')}</div>`; return; }
-      const grandTotal = langs.reduce((sum,l) => sum + (l.cnt||0), 0) || 1;
-      // Ham dil adı RPC'den geliyor (dil filtresi dropdown'ı hâlâ 'Unknown' gibi
-      // ham değerleri karşılaştırıyor) — sadece ekrandaki etiketi Türkçeleştiriyoruz.
-      el.innerHTML = langs.slice().sort((a,b) => b.cnt-a.cnt).map(l => `
-          <div class="bg-gray-800/50 border border-gray-700/40 rounded-xl p-3 text-center hover:border-indigo-500/60 hover:bg-gray-800 hover:-translate-y-0.5 transition-all duration-300 cursor-default" title="${fmt(languageLabel(l.lang))}: ${(l.cnt/grandTotal*100).toFixed(1)}%">
-            <div class="text-lg font-bold text-indigo-400">${l.cnt}</div>
-            <div class="text-xs text-slate-400 mt-1">${fmt(languageLabel(l.lang))}</div>
-          </div>`).join('');
+      _anRenderLangDonut(langs);
     }
 
     async function _loadLanguageBreakdownIfNeeded() {
@@ -8080,13 +8171,18 @@
     function uId(u)    { return String(u['Id'] || u['id'] || ''); }
 
     function buildTeamFilterBar() {
-      const teams = [...new Set(allUsers.map(uTeam).filter(Boolean))].sort();
+      // Danismanlar listede olmadigi icin sayilar ve takim listesi de onlari
+      // saymamali — yoksa "Takim X: 12" yaziyor ama tabloda 2 satir cikiyor
+      // ve yalnizca danismandan olusan takimlar bos filtre olarak duruyor.
+      const rows = allUsers.filter(u => !_isAgentRole(u['Role']));
+      const teams = [...new Set(rows.map(uTeam).filter(Boolean))].sort();
       const bar = document.getElementById('teamFilterBar');
       const btn = (label, val) => {
         const active = activeTeamFilter === val;
-        return `<button onclick="filterByTeam('${_jsStrAttr(val)}')" class="px-3 py-1.5 text-xs rounded-lg font-semibold transition-all ${active ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-slate-400 hover:text-white border border-gray-700'}">${fmt(label)} <span class="ml-1 text-[10px] opacity-70">${val === '' ? allUsers.length : allUsers.filter(u=>uTeam(u)===val).length}</span></button>`;
+        return `<button onclick="filterByTeam('${_jsStrAttr(val)}')" class="px-3 py-1.5 text-xs rounded-lg font-semibold transition-all ${active ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-slate-400 hover:text-white border border-gray-700'}">${fmt(label)} <span class="ml-1 text-[10px] opacity-70">${val === '' ? rows.length : rows.filter(u=>uTeam(u)===val).length}</span></button>`;
       };
-      bar.innerHTML = btn('All Teams', '') + teams.map(t => btn(t, t)).join('');
+      bar.innerHTML = btn('Tüm Takımlar', '') + teams.map(t => btn(t, t)).join('');
+      I18N.translateDOM(bar);
     }
 
     function filterByTeam(team) {
@@ -8096,9 +8192,22 @@
     }
 
     // Filtre mantığı ayrı: tablo da export da bunu kullanıyor (tek kaynak).
+    // Rol adi Users tablosunda serbest metin; ayni rol icin farkli yazimlar
+    // var. Tek yerde karar verilsin ki liste, takim filtresi ve rol sayimlari
+    // ayrisamasin.
+    function _isAgentRole(role) {
+      const r = (role || '').toLowerCase().trim();
+      return r === 'agent' || r === 'agents' || r === 'danışman' || r === 'danisman';
+    }
+
     function _usersFilteredRows() {
       const search = (document.getElementById('userSearch')?.value || '').toLowerCase();
-      let list = allUsers;
+      // Danismanlar (agent) panele giris yapmiyor — agent.html yapilmayacak,
+      // dolayisiyla burada yonetilecek bir sey yok. Listede yalnizca giris
+      // yetkisi olan roller kalir: takim lideri, bolge muduru, admin,
+      // super admin. Rol adi veride serbest yazilmis olabildigi icin
+      // (Agent / agent / Danışman) eslesme genis tutuldu.
+      let list = allUsers.filter(u => !_isAgentRole(u['Role']));
       if (activeTeamFilter) list = list.filter(u => uTeam(u) === activeTeamFilter);
       if (search) list = list.filter(u =>
         [uName(u), u['Username'], u['Role'], uTeam(u)].join(' ').toLowerCase().includes(search)
@@ -8135,7 +8244,7 @@
             <td class="py-2 text-slate-300 text-sm">${fmt(uTeam(u))}</td>
             <td class="py-2 text-center">
               <div class="flex gap-1.5 justify-center">
-                <button onclick="event.stopPropagation();openUserModal('${id}')" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-slate-300 hover:text-white text-[11px] rounded-lg font-semibold border border-gray-700 transition-all">Edit</button>
+                <button onclick="event.stopPropagation();openUserModal('${id}')" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-slate-300 hover:text-white text-[11px] rounded-lg font-semibold border border-gray-700 transition-all">${I18N.t('Düzenle')}</button>
                 ${(() => {
                   const uRole = (u['Role']||'').toLowerCase();
                   const isPrivileged = uRole === 'admin' || uRole === 'super-admin' || uRole === 'super admin';
@@ -8186,9 +8295,32 @@
       );
     }
 
+    // Guclu bir sifre uretir. Karistirilabilen karakterler (O/0, l/1, I)
+    // disarida: sifre kullaniciya elle/WhatsApp'la iletiliyor.
+    function _umGenPassword() {
+      const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ', a = 'abcdefghijkmnpqrstuvwxyz',
+            n = '23456789', s = '!?*-+';
+      const pool = A + a + n + s;
+      const rnd = k => { const b = new Uint32Array(1); crypto.getRandomValues(b); return k[b[0] % k.length]; };
+      // Her sinifdan en az bir karakter garanti, sonrasi rastgele
+      let out = [rnd(A), rnd(a), rnd(n), rnd(s)];
+      while (out.length < 12) out.push(rnd(pool));
+      // Fisher-Yates: garanti karakterler hep bastan gelmesin
+      for (let i = out.length - 1; i > 0; i--) {
+        const b = new Uint32Array(1); crypto.getRandomValues(b);
+        const j = b[0] % (i + 1);
+        [out[i], out[j]] = [out[j], out[i]];
+      }
+      const el = document.getElementById('umPassword');
+      el.value = out.join('');
+      el.focus();
+      el.select();
+    }
+
     function openUserModal(userId) {
       const u = userId ? allUsers.find(x => uId(x) === String(userId)) : null;
-      document.getElementById('userModalTitle').textContent = u ? 'Edit User' : 'Add New User';
+      document.getElementById('userModalTitle').textContent =
+        u ? I18N.t('Kullanıcıyı Düzenle') : I18N.t('Yeni Kullanıcı Ekle');
       document.getElementById('umUserId').value          = u ? uId(u) : '';
       document.getElementById('umOriginalUsername').value = u ? (u['Username'] || '') : '';
       document.getElementById('umFullName').value = u ? uName(u) : '';
@@ -8196,8 +8328,19 @@
       // Şifreler artık hashleniyor ve API'den hiç dönmüyor — düzenlerken alan
       // boş başlar; boş bırakılırsa mevcut şifre değişmeden kalır (bkz. saveUser).
       document.getElementById('umPassword').value = '';
-      document.getElementById('umPassword').placeholder = u ? 'Leave blank to keep current password' : 'Password';
-      document.getElementById('umRole').value     = u ? (u['Role'] || 'Agent') : 'Agent';
+      document.getElementById('umPassword').placeholder = u
+        ? I18N.t('Değiştirmek istemiyorsan boş bırak')
+        : I18N.t('Şifre');
+      const hintEl = document.getElementById('umPassHint');
+      if (hintEl) {
+        hintEl.textContent = u
+          ? I18N.t('Mevcut şifre gösterilemez (veritabanında geri çevrilemez şekilde şifrelenmiş). Buraya yazdığın yeni şifre kaydedilir; boş bırakırsan eski şifre değişmez.')
+          : I18N.t('Şifre burada açık görünür — kullanıcıya iletmen için.');
+      }
+      // Rol varsayilani artik "Agent" degil: danismanlar bu ekranda
+      // yonetilmiyor, secenek de kaldirildi. Bos birakilsa select'in
+      // selectedIndex'i -1 olup kaydederken bos rol gidiyordu.
+      document.getElementById('umRole').value     = u ? (u['Role'] || 'Team Leader') : 'Team Leader';
       document.getElementById('umError').style.display = 'none';
       // Super Admin seçeneğini sadece super-admin görebilir
       const saOpt = document.getElementById('umRoleSuperAdminOpt');
@@ -8235,7 +8378,7 @@
       // şifre değişmeden kalır (bkz. api/admin-users.js PATCH — boş Password
       // alanı hiç gönderilmiyor).
       if (!fullName || !username || (!isEdit && !password)) {
-        errEl.textContent = 'Full name, username and password are required.';
+        errEl.textContent = I18N.t('Ad soyad, kullanıcı adı ve şifre zorunludur.');
         errEl.style.display = 'block'; return;
       }
       errEl.style.display = 'none';

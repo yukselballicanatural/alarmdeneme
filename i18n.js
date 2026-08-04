@@ -115,6 +115,52 @@
     'Sistem Özeti': 'System KPIs',
     'Analitik': 'Analytics',
     'Kullanıcılar': 'Users',
+    // Analitik ekranının yeni grafikleri (analytics-charts.js)
+    'Analitik & Özet': 'Analytics & Summary',
+    'Dönüşüm Hunisi': 'Conversion Funnel',
+    'Her adımın bir öncekine göre dönüşüm oranı — üzerine gelin.':
+      'Each step’s conversion rate against the previous one — hover for detail.',
+    'Tahsilat Oranı': 'Collection Rate',
+    'Toplam ciroya göre tahsil edilen tutar.': 'Amount collected against total revenue.',
+    'Grafiğin üzerinde gezinerek aylık değerleri görebilirsiniz.':
+      'Hover the chart to read monthly values.',
+    'Bir dilin üzerine gelin — halkada o dilim öne çıkar.':
+      'Hover a language to highlight its slice.',
+    'Ziyaret Edildi': 'Visited',
+    'Ödemesi Tamamlanan': 'Fully Paid',
+    'dönüşüm': 'conversion',
+    'toplamın': 'of total',
+    'Diğer': 'Other',
+    'Deal adedi': 'Deal count',
+    'Ciro': 'Revenue',
+    'tahsil edildi': 'collected',
+    'deal': 'deals',
+    'Eğilim çizmek için en az iki ay gerekli.': 'At least two months are needed to draw a trend.',
+    // Kullanıcılar ekranı (eski "Team Management") — kaynak metin
+    // Türkçeleştirildiği için İngilizce karşılıkları buradan geliyor
+    // translateDOM TAM metin esler (yalnizca bastaki/sondaki bosluk kirpilir),
+    // yani simge de anahtarin parcasi olmak zorunda: '+ Kullanıcı Ekle'
+    // ayri bir girdi, 'Kullanıcı Ekle' bunu yakalamaz.
+    '+ Kullanıcı Ekle': '+ Add User',
+    'Şifre': 'Password',
+    'İşlemler': 'Actions',
+    'Düzenle': 'Edit',
+    'Kullanıcıyı Düzenle': 'Edit User',
+    'Yeni Kullanıcı Ekle': 'Add New User',
+    'Kullanıcılar yükleniyor…': 'Loading users…',
+    'Filtreye uyan kullanıcı yok.': 'No users match your filter.',
+    'Ad, kullanıcı adı, takım veya rol ara…': 'Search name, username, team, role…',
+    'Kullanıcı adı (giriş)': 'Username (login)',
+    'Takım seçin veya yazın...': 'Select or type a team...',
+    'Takım ara...': 'Search team...',
+    'Üret': 'Generate',
+    'Güçlü bir şifre üret ve kutuya yaz': 'Generate a strong password into the field',
+    'Değiştirmek istemiyorsan boş bırak': 'Leave blank to keep current password',
+    'Şifre burada açık görünür — kullanıcıya iletmen için.':
+      'The password is shown in plain text here so you can pass it on.',
+    'Mevcut şifre gösterilemez (veritabanında geri çevrilemez şekilde şifrelenmiş). Buraya yazdığın yeni şifre kaydedilir; boş bırakırsan eski şifre değişmez.':
+      'The current password cannot be shown (it is irreversibly hashed in the database). A new password typed here will be saved; leave it blank to keep the old one.',
+    'Ad soyad, kullanıcı adı ve şifre zorunludur.': 'Full name, username and password are required.',
     'Sistem Kayıtları': 'System Logs',
     'Alarm İzleme': 'Alarm Monitoring',
     'MENÜ': 'NAVIGATION',
