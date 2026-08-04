@@ -147,23 +147,91 @@ window.NCExport = (function () {
   }
 
   // ── Açılır menü (dropdown) yönetimi ──────────────────────────────
+  //
+  // MENÜ AÇILIRKEN <body>'YE TAŞINIR ("portal") ve position:fixed olur.
+  // Neden: menü sarmalayıcının içinde absolute dururken, üstünde kalması
+  // z-index yarışını kazanmasına bağlıydı ve bu yarış her sayfada
+  // kaybedilebiliyordu. Üç ayrı sebep vardı ve z-index bunların yalnızca
+  // birini çözüyor:
+  //   1) Cam yüzeyler backdrop-filter kullanıyor; backdrop-filter YENİ BİR
+  //      YIĞIN BAĞLAMI kurar ve içindeki z-index dışarıya çıkamaz.
+  //   2) Tablo sarmalayıcılarında overflow:hidden/auto var — menü z-index'i
+  //      ne olursa olsun KIRPILIR.
+  //   3) 18 export noktası farklı DOM derinliklerinde; "şu kabı yukarı al"
+  //      biçimindeki kurallar hepsini yakalayamıyor.
+  // body'ye taşınan fixed bir öğe her üçünden de kurtulur. Aynı çözümü
+  // LiquidSelect paneli ve not popup'ı da kullanıyor.
   let _openMenuId = null;
+
+  function _anchorMenu(el) {
+    const btn = el.__ncBtn;
+    if (!btn || !btn.isConnected) return;
+    const M = 8;
+    const r = btn.getBoundingClientRect();
+    // Ölçüden önce sıfırla: önceki konum genişliği etkilemesin
+    el.style.left = '0px';
+    el.style.top = '0px';
+    const w = el.offsetWidth, h = el.offsetHeight;
+    // Varsayılan sağa hizalı (butonun sağ kenarıyla), align:'left' ise sola
+    let left = el.__ncAlignLeft ? r.left : r.right - w;
+    left = Math.min(left, window.innerWidth - w - M);
+    left = Math.max(M, left);
+    let top = r.bottom + 4;
+    if (top + h > window.innerHeight - M) {
+      const above = r.top - 4 - h;                // sığmıyorsa butonun üstüne
+      top = above >= M ? above : Math.max(M, window.innerHeight - h - M);
+    }
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+  }
+
   function toggleMenu(id) {
     const el = document.getElementById(id);
     if (!el) return;
     const willOpen = el.style.display !== 'block';
     closeAllMenus();
-    if (willOpen) { el.style.display = 'block'; _openMenuId = id; }
+    if (!willOpen) return;
+
+    // İlk açılışta butonu hatırla ve body'ye taşı (bir kez yeterli)
+    if (!el.__ncPortaled) {
+      const wrap = el.closest('.nc-export-wrap');
+      el.__ncBtn = wrap ? wrap.querySelector('button') : null;
+      el.__ncAlignLeft = /(^|;)\s*left\s*:\s*0/.test(el.getAttribute('style') || '');
+      document.body.appendChild(el);
+      el.style.position = 'fixed';
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+      el.__ncPortaled = true;
+    }
+    el.style.display = 'block';
+    _openMenuId = id;
+    _anchorMenu(el);
   }
+
   function closeAllMenus() {
     document.querySelectorAll('.nc-export-menu').forEach(m => { m.style.display = 'none'; });
     _openMenuId = null;
   }
+
   document.addEventListener('click', function (e) {
     if (!_openMenuId) return;
-    const wrap = e.target.closest('.nc-export-wrap');
-    if (!wrap) closeAllMenus();
+    // Menü artık body'nin çocuğu: içine yapılan tıklama .nc-export-wrap
+    // ataşı BULAMAZ. İkisini de kabul etmezsek menü kendi düğmesine
+    // basıldığında dışarı tıklanmış sayılırdı.
+    if (!e.target.closest('.nc-export-wrap') && !e.target.closest('.nc-export-menu')) {
+      closeAllMenus();
+    }
   });
+
+  // Açıkken sayfa kaydırılır/boyut değişirse menü butonuyla birlikte gitmeli
+  // (fixed olduğu için kendiliğinden takip etmez).
+  function _reanchorOpen() {
+    if (!_openMenuId) return;
+    const el = document.getElementById(_openMenuId);
+    if (el && el.style.display === 'block') _anchorMenu(el);
+  }
+  window.addEventListener('scroll', _reanchorOpen, true);
+  window.addEventListener('resize', _reanchorOpen);
 
   // Ortak "Export" butonu + menü HTML'i — her sayfa kendi menuId'sini ve
   // export fonksiyon adını verir (fnName('csv'|'xlsx'|'pdf'|'html') şeklinde çağrılır).
@@ -229,6 +297,11 @@ window.NCExport = (function () {
       const el = document.getElementById(mountId);
       if (!el) continue;
       const o = (cfg && typeof cfg === 'object') ? cfg : { fn: cfg };
+      // Bu mount daha önce doldurulup menüsü body'ye taşınmışsa o menü
+      // innerHTML ile silinmez (artık burada değil) ve aynı id'den iki
+      // öğe kalırdı — eskisini elle temizliyoruz.
+      const orphan = document.getElementById(mountId + 'Menu');
+      if (orphan && orphan.parentElement === document.body) orphan.remove();
       el.style.display = 'inline-flex';
       el.style.alignItems = 'center';
       el.innerHTML = renderButton(mountId + 'Menu', o.fn, { label: o.label, align: o.align, size: o.size });
