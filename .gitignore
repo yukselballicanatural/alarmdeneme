@@ -7,3 +7,8 @@ node_modules
 
 .vercel
 .env*
+
+# Demo/test verisi kurulum betigi — canli depoya girmemesi icin haric tutuldu
+# (icinde calisan bir test hesabi sifresi var). Yerelde durur, SQL Editor'de
+# elle calistirilir. Gecmisten de temizlendi: bkz. backup-before-publish dali.
+demo_team_leader_seed.sql
