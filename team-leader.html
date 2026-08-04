@@ -1352,6 +1352,15 @@
         <svg style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
+    <!-- Kayıtlı sonuç kartı. DİKKAT: _wrRefreshReasonCard() bu kutuyu
+         (#wrReasonText) baştan beri arıyordu ama DOM'da HİÇ YOKTU —
+         `if (rt)` koruması yüzünden sessizce atlanıyor ve kaydedilen
+         sonuç kodu hiçbir yerde görünmüyordu. Kutu eklendi; İptal
+         modalındaki (#tlcaReasonText) kartın aynısı. -->
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:14px">
+      <div style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase;margin-bottom:4px">Kayıtlı Sonuç</div>
+      <div style="font-size:12px;color:#cbd5e1" id="wrReasonText">—</div>
+    </div>
     <div style="margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <label style="font-size:9px;color:#475569;font-weight:700;text-transform:uppercase">Sonuç Kodu <span style="color:#f87171">*</span></label>
@@ -1432,22 +1441,50 @@
   }
 </script>
 <script>
+  // Not popup'ı ARTIK SABİT KONUMDA: ekranın ortasında açılır, hangi
+  // satırdaki ünleme basıldığından bağımsız olarak her zaman aynı yerde.
+  // Konumu CSS sahipleniyor (#notePopup.nc-note-open) — burada top/left
+  // HESAPLANMAZ. Eskiden butonun rect'ine göre konumlanıyordu ve her not
+  // başka bir yerde açılıyordu.
+  function hideNoteTip() {
+    const el = document.getElementById('notePopup');
+    if (!el) return;
+    el.classList.remove('nc-note-open');
+    el.style.display = 'none';
+    el._src = null;
+  }
+
   function showNoteTip(ev, text) {
     ev.stopPropagation();
     const el = document.getElementById('notePopup');
-    if (el.style.display === 'block' && el._src === ev.currentTarget) { el.style.display = 'none'; el._src = null; return; }
+    const src = ev.currentTarget;
+    // Aynı ünleme tekrar basmak kapatır
+    if (el._src === src && el.classList.contains('nc-note-open')) { hideNoteTip(); return; }
+    // Başka bir not açıksa o kapanır (tek popup olduğu için içerik değişimi
+    // yeterli), ama açık cam katmanları da toplayalım: seçim listeleri,
+    // dil listesi ve takvim aynı anda açık kalmasın.
+    document.querySelectorAll('.lq-panel.lq-open').forEach(p => p.classList.remove('lq-open'));
+    document.querySelectorAll('.lq-sel.lq-open').forEach(p => p.classList.remove('lq-open'));
+    document.querySelectorAll('.lang-dd.lang-open').forEach(p => p.classList.remove('lang-open'));
+
     el.textContent = text;
-    el._src = ev.currentTarget;
-    const r = ev.currentTarget.getBoundingClientRect();
+    el._src = src;
+    // Eski satır içi konumlardan arta kalan varsa temizle
+    el.style.top = ''; el.style.left = '';
     el.style.display = 'block';
-    el.style.top = (r.bottom + 6) + 'px';
-    let left = r.left;
-    if (left + 280 > window.innerWidth) left = window.innerWidth - 290;
-    el.style.left = Math.max(8, left) + 'px';
+    // Aynı popup yeniden açılırken giriş animasyonu tekrar oynasın
+    el.classList.remove('nc-note-open');
+    void el.offsetWidth;
+    el.classList.add('nc-note-open');
   }
+
   document.addEventListener('click', (ev) => {
     const el = document.getElementById('notePopup');
-    if (el.style.display === 'block' && ev.target !== el && !el.contains(ev.target)) { el.style.display = 'none'; el._src = null; }
+    if (!el || !el.classList.contains('nc-note-open')) return;
+    if (ev.target !== el && !el.contains(ev.target)) hideNoteTip();
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') hideNoteTip();
   });
 </script>
 

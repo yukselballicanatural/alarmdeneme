@@ -1103,3 +1103,38 @@ html[data-theme="dark"] #alarmTabsRow .tab-pill:not(.active) {
 html[data-theme="dark"] #alarmTabsRow .tab-pill:not(.active):hover {
   background: rgba(255, 255, 255, 0.10) !important;
 }
+
+/* ── "Sonuç Kodunu Sil" — koyu temada da sert kırmızı kutu yerine cam çip
+   Koyu temada okunuyordu (#f87171 / #450a0a) ama tek sert renkli kutu
+   olarak duruyordu; açık temayla aynı dile getirildi. */
+html[data-theme="dark"] #tlcaDeleteResultBtn,
+html[data-theme="dark"] #wrDeleteResultBtn {
+  background: rgba(239, 68, 68, 0.18) !important;
+  border: 1px solid rgba(239, 68, 68, 0.38) !important;
+  color: #fca5a5 !important;
+  border-radius: 999px !important;
+  padding: 3px 11px !important;
+  font-size: 9.5px !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: background .2s var(--d-ease), color .2s var(--d-ease),
+              transform .3s var(--d-spring);
+}
+html[data-theme="dark"] #tlcaDeleteResultBtn:hover,
+html[data-theme="dark"] #wrDeleteResultBtn:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+html[data-theme="dark"] #tlcaDeleteResultBtn:active,
+html[data-theme="dark"] #wrDeleteResultBtn:active { transform: scale(.955); }
+
+/* Kaydedilen sonuç kodu metni */
+html[data-theme="dark"] #tlcaReasonText,
+html[data-theme="dark"] #wrReasonText {
+  color: var(--d-ink) !important;
+  line-height: 1.55;
+}
+html[data-theme="dark"] #tlcaReasonText strong,
+html[data-theme="dark"] #wrReasonText strong { color: #5eead4 !important; }
