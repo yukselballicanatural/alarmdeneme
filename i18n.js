@@ -110,6 +110,7 @@
     'Süper Admin': 'Super Admin',
     'Bölge Müdürü': 'Regional Manager',
     'Uygulamalarınız': 'Your Applications',
+    'Görünüm': 'Appearance',
     'Devam etmek için bir uygulama seçin': 'Choose an application to continue',
     'İç Sistemler Portalı': 'Internal Systems Portal',
     'Aktif': 'Active',
