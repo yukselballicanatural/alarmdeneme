@@ -1073,3 +1073,33 @@ html[data-theme="dark"] #tmTable tbody td span[style*="background: rgb(30, 41, 5
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
+
+/* ── Alarm hızlı filtreleri — açık temanın 36. bölümünün koyu ikizi ───
+   Gerekçe orada anlatıldı: gösterge çalışıyordu ama aktif olmayan
+   pill'lerin zemini yüzünden yol boyunca görünmüyordu. display'e
+   dokunulmaz (Kanban'da JS none yazıyor). */
+html[data-theme="dark"] #alarmTabsRow {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px !important;
+  padding: 4px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(165%);
+  backdrop-filter: blur(18px) saturate(165%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09),
+              0 2px 10px rgba(0, 0, 0, 0.28);
+}
+html[data-theme="dark"] #alarmTabsRow .lq-seg-ind { border-radius: 999px !important; }
+html[data-theme="dark"] #alarmTabsRow .tab-pill:not(.active) {
+  background: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-theme="dark"] #alarmTabsRow .tab-pill:not(.active):hover {
+  background: rgba(255, 255, 255, 0.10) !important;
+}

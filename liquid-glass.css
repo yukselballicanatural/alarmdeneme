@@ -1899,3 +1899,43 @@ html[data-theme="light"] .dep-quick-btn {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
+
+/* ═════════════════════════════════════════════════════════════════════
+   36. ALARM HIZLI FİLTRELERİ (Açık / Bugün / Yaklaşan / …) — kayan kap
+   Kayan gösterge baştan beri ÇALIŞIYORDU, ama görünmüyordu: bu satır tek
+   segment olup KAP muamelesi almamıştı ve aktif olmayan pill'lerin kendi
+   cam zemini vardı. Gösterge A'dan C'ye giderken B'nin ARKASINDAN geçip
+   kayboluyor, hareket "kayma" değil "zıplama" gibi okunuyordu.
+   Çözüm: tek cam yol + zemini şeffaf pill'ler (iOS segmented control).
+
+   DİKKAT: display'e DOKUNULMAZ. setAlarmsViewMode() Kanban'da
+   tabsRow.style.display='none' yazıyor; buraya `display:...!important`
+   koysam satır Kanban'da da görünür kalırdı. Daralt­mayı width ile
+   yapıyoruz.
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] #alarmTabsRow {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px !important;
+  padding: 4px !important;
+  border-radius: 999px !important;
+  background: var(--g-2) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(175%);
+  backdrop-filter: blur(18px) saturate(175%);
+  border: 1px solid var(--edge-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65),
+              0 2px 8px rgba(23, 43, 99, 0.07);
+}
+html[data-theme="light"] #alarmTabsRow .lq-seg-ind { border-radius: 999px !important; }
+/* Yol boyunca gösterge görünür kalsın: zeminler şeffaf */
+html[data-theme="light"] #alarmTabsRow .tab-pill:not(.active) {
+  background: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-theme="light"] #alarmTabsRow .tab-pill:not(.active):hover {
+  background: rgba(18, 22, 34, 0.10) !important;
+}
