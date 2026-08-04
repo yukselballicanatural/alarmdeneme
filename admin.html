@@ -6106,7 +6106,7 @@
       // dönmüyor ve zaten dosyaya yazılacak bir bilgi değil.
       const headers = ['Ad Soyad','Kullanıcı Adı','Rol','Takım'];
       const rows = data.map(u => [uName(u), u['Username'], u['Role'], uTeam(u)]);
-      NCExport.download(format || 'csv', headers, rows, 'kullanicilar', 'Team Management');
+      NCExport.download(format || 'csv', headers, rows, 'kullanicilar', I18N.t('Kullanıcılar'));
     }
 
     function exportActivityAdmin(format) {
