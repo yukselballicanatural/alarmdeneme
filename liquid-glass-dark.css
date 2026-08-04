@@ -1602,3 +1602,30 @@ html[data-theme="dark"] .am-totals {
 }
 html[data-theme="dark"] .am-totals-count { color: #a9b4c8; }
 html[data-theme="dark"] .am-total i { color: #7d8ba3; }
+
+/* ═════════════════════════════════════════════════════════════════════
+   24b. ALARM LİSTESİ TABLOSU — 43b'nin koyu ikizi.
+   Aynı gerekçe: satır içi #0f172a ayırıcı kaldırıldı, ayrım yüzeyle.
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="dark"] .am-alarm-tbl tbody td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045) !important;
+}
+html[data-theme="dark"] .am-alarm-tbl tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.018);
+}
+html[data-theme="dark"] .am-alarm-row:hover td {
+  background: rgba(45, 212, 191, 0.10) !important;
+  border-bottom-color: rgba(45, 212, 191, 0.18) !important;
+}
+html[data-theme="dark"] .am-row-overdue td {
+  background: rgba(239, 68, 68, 0.10) !important;
+}
+html[data-theme="dark"] .am-row-overdue:hover td {
+  background: rgba(239, 68, 68, 0.17) !important;
+}
+html[data-theme="dark"] .am-alarm-tbl thead th {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.11) !important;
+  padding: 10px 10px !important;
+  font-size: 9.5px !important;
+  letter-spacing: .06em;
+}

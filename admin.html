@@ -1341,6 +1341,17 @@
           </div>
         </div>
       </div>
+      <!-- Toplamlar tablonun USTUNDE: altta kalinca uzun listelerde ekranin
+           dibine dusup hic gorunmuyordu. Eskiden aralarinda basibos bir "|"
+           olan bir metin satiriydi; simdi kendi cam seridi. -->
+      <div class="am-totals">
+        <span class="am-totals-count" id="adminAlarmCount"></span>
+        <div class="am-totals-figs">
+          <span class="am-total"><i>Toplam Tutar</i><strong class="text-blue-400" id="amTotalAmount">€0</strong></span>
+          <span class="am-total"><i>Toplam Ödenen</i><strong class="text-emerald-400" id="amTotalPaid">€0</strong></span>
+          <span class="am-total"><i>Toplam Kalan</i><strong class="text-red-400" id="amTotalRemaining">€0</strong></span>
+        </div>
+      </div>
       <!-- Tablo: 14 kolon var, bu yuzden hem yatay hem dikey kaydirma ve
            YAPISKAN baslik satiri sart — yoksa asagi kayinca hangi kolona
            bakildigi kayboluyor. Satir ici koyu zemin (#0f172a) kaldirildi:
@@ -1368,17 +1379,6 @@
           <tbody id="adminAlarmTbody"></tbody>
         </table>
         <div id="adminAlarmEmpty" style="display:none;text-align:center;padding:40px 16px;color:#475569;font-size:13px">Alarm bulunamadı.</div>
-      </div>
-      <!-- Toplamlar: eskiden tablonun hemen altinda, aralarinda basibos bir
-           "|" olan bir metin satiriydi. Simdi kendi cam seridi; sayilar
-           etiketlerinden ayrilmis okunur bir dizilimde. -->
-      <div class="am-totals">
-        <span class="am-totals-count" id="adminAlarmCount"></span>
-        <div class="am-totals-figs">
-          <span class="am-total"><i>Toplam Tutar</i><strong class="text-blue-400" id="amTotalAmount">€0</strong></span>
-          <span class="am-total"><i>Toplam Ödenen</i><strong class="text-emerald-400" id="amTotalPaid">€0</strong></span>
-          <span class="am-total"><i>Toplam Kalan</i><strong class="text-red-400" id="amTotalRemaining">€0</strong></span>
-        </div>
       </div>
       <div id="adminAlarmPager" style="display:none;align-items:center;justify-content:center;gap:12px;margin-top:10px;flex-wrap:wrap">
         <button id="adminAlarmPrevBtn" onclick="_aaChangePage(-1)" class="am-btn" style="padding:4px 14px">‹ Önceki</button>
@@ -4711,7 +4711,11 @@
         document.getElementById('adminAlarmNextBtn').disabled = _aaPage >= maxPage;
       }
 
-      const td = 'padding:8px 10px;border-bottom:1px solid #0f172a';
+      // Ayirici cizgi ARTIK BURADA DEGIL: satir ici 'border-bottom:1px solid
+      // #0f172a' acik temada neredeyse siyah bir cizgi cikariyordu (tema
+      // eslemesi border rengine dokunmuyor). Cizgiyi .am-alarm-tbl kurallari
+      // temaya gore ciziyor; burada yalnizca dolgu kaliyor.
+      const td = 'padding:9px 10px';
       tbody.innerHTML = pageData.map((a, _pi) => {
         const i = pageStart + _pi;
         const sm  = _amStatusMeta(a.status);
@@ -4719,7 +4723,11 @@
         const overdue = _amIsOverdue(a);
         const tm  = _amTypeMeta(a.alarm_type, overdue);
         const daysTxt = days === null ? '—' : days < 0 ? `<span style="color:#f87171;font-weight:700">${Math.abs(days)}g ${I18N.t('GEÇ')}</span>` : days === 0 ? `<span style="color:#4ade80;font-weight:800">${I18N.t('BUGÜN')}</span>` : days <= 3 ? `<span style="color:#f87171">${days}g</span>` : days <= 7 ? `<span style="color:#fb923c">${days}g</span>` : `<span style="color:#60a5fa">${days}g</span>`;
-        const rowBg = overdue ? 'rgba(127,29,29,0.12)' : '';
+        // Gecikmis satir vurgusu satir ici renk yerine SINIF: satir ici
+        // rgba(127,29,29,.12) acik temada camurlu koyu kirmizi cikiyordu ve
+        // tema eslemesi satir ici background'a yetismiyordu (JS style'a
+        // dokununca deger yeniden serialize oluyor, hex/rgb eslemeleri kaciyor).
+        const rowCls = overdue ? ' am-row-overdue' : '';
         // Alarmın deal'inin gerçek verisi (kısa Deal ID referansı, stage,
         // tutar, ödenen, sonuç kodu) allDeals'tan lookup — a.deal_id UZUN
         // sayısal id (Zoho linkinde bu kullanılır), gösterilen kısa ref ise
@@ -4733,7 +4741,7 @@
         const amountTxt = (info.amount || info.amount === 0) ? fmtMoney(info.amount) : '—';
         const paidTxt   = (info.paid || info.paid === 0) ? fmtMoney(info.paid) : '—';
         const resultTxt = info.resultCode ? `<span style="font-size:9px;color:#a5b4fc">${fmt(info.resultCode)}</span>` : '<span style="color:#334155">—</span>';
-        return `<tr style="cursor:pointer;${rowBg?'background:'+rowBg:''}" onclick="openAdminAlarmModal('${a.id}')">
+        return `<tr class="am-alarm-row${rowCls}" style="cursor:pointer" onclick="openAdminAlarmModal('${a.id}')">
           <td style="${td};font-size:10px;color:#475569">${i+1}</td>
           <td style="${td}">
             <div style="font-size:11px;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${fmt(a.deal_name)}</div>
