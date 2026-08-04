@@ -115,6 +115,10 @@
     'Sistem Özeti': 'System KPIs',
     'Analitik': 'Analytics',
     'Kullanıcılar': 'Users',
+    // Alarm İzleme — Turkceleştirilen filtre etiketleri ve toplamlar şeridi
+    'Ödeme / Bilet': 'Payment / Ticket',
+    'Toplam Ödenen': 'Total Paid',
+    'Toplam Kalan': 'Total Remaining',
     // Analitik ekranının yeni grafikleri (analytics-charts.js)
     'Analitik & Özet': 'Analytics & Summary',
     'Dönüşüm Hunisi': 'Conversion Funnel',

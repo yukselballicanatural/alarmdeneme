@@ -1124,14 +1124,18 @@
     <div class="am-topbar mb-6">
       <div>
         <div class="flex items-center gap-2.5">
-          <h2 class="text-[26px] font-bold text-white tracking-tight">Alarm Monitoring</h2>
+          <!-- Menude "Alarm Izleme" yaziyordu, baslikta "Alarm Monitoring" —
+               ayni sayfa icin iki ad; menuyle hizalandi. -->
+          <h2 class="text-[26px] font-bold text-white tracking-tight">Alarm İzleme</h2>
           <span class="am-live-dot"></span>
           <span class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Canlı</span>
         </div>
         <p class="text-xs text-slate-500 mt-1.5">Tüm bölgeler — sistem geneli alarm durumu · <span id="amLastRefresh">—</span> güncellendi · <span id="adminEngineStatus" class="text-slate-500"></span></p>
       </div>
       <div class="flex items-center gap-4 flex-wrap">
-        <div class="am-clock text-3xl font-bold text-white bg-black/30 border border-white/10 rounded-2xl px-5 py-2" id="amClock">--:--:--</div>
+        <!-- Saat: bg-black/30 acik temada koyu gri bir blok olarak duruyordu
+             (cam degil). Gorunum artik .am-clock uzerinden tema katmaninda. -->
+        <div class="am-clock" id="amClock">--:--:--</div>
         <div class="am-topbar-actions">
           <button onclick="adminRunEngine()" id="adminBtnEngine" class="am-btn am-btn-primary">
             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -1211,8 +1215,9 @@
       </div>
     </div>
 
-    <!-- Tüm Alarmlar Listesi -->
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+    <!-- Tüm Alarmlar Listesi — .am-panel: sayfanin geri kalaniyla ayni cam
+         yuzey (bg-gray-900 genel Tailwind eslemesine dusuyordu). -->
+    <div class="am-panel p-5">
       <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h3 class="text-sm font-bold text-white">Alarm Listesi</h3>
       </div>
@@ -1222,7 +1227,12 @@
           <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Filtreler</span>
           <button onclick="_amResetFilters()" class="text-[10px] text-indigo-400 font-semibold hover:text-indigo-300">Tümünü Temizle</button>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
+        <!-- TEK grid, 5 kolon: 10 kontrol tam iki sira olur. Eskiden iki ayri
+             6-kolonluk grid vardi ve ikincisinde col-span-2 hilesiyle tarih
+             ciftleri duruyordu — siralar ragged kaliyor, sayfa "karisik"
+             gorunuyordu. Tarih araliklari artik altta, Tum Deal'ler
+             ekranindaki DUZENIN AYNISI (tek etiket + iki kutu + ayirici). -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <div>
             <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Ara</label>
             <input id="amSearch" type="text" placeholder="Hasta, danışman..." oninput="_dbAmScopeFilterChange()" class="filter-select">
@@ -1236,15 +1246,15 @@
             </select>
           </div>
           <div>
-            <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Team Leader</label>
+            <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Takım Lideri</label>
             <select id="amFilterTeam" onchange="_amOnScopeFilterChange()" class="filter-select">
-              <option value="">Tüm Team Leader'lar</option>
+              <option value="">Tüm Takım Liderleri</option>
             </select>
           </div>
           <div>
-            <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Deal Owner</label>
+            <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Danışman</label>
             <select id="amFilterOwner" onchange="_amOnScopeFilterChange()" class="filter-select">
-              <option value="">Tüm Deal Owner'lar</option>
+              <option value="">Tüm Danışmanlar</option>
             </select>
           </div>
           <div>
@@ -1269,8 +1279,6 @@
               <option value="closed">Kapatıldı</option>
             </select>
           </div>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div>
             <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Stage</label>
             <select id="amFilterStage" onchange="_amOnScopeFilterChange()" class="filter-select">
@@ -1287,7 +1295,7 @@
             </select>
           </div>
           <div>
-            <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Payment / Ticket</label>
+            <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Ödeme / Bilet</label>
             <select id="amFilterPft" onchange="_amOnScopeFilterChange()" class="filter-select">
               <option value="">Tümü</option>
               <option value="Payment">Payment</option>
@@ -1305,27 +1313,42 @@
               <option value="3">±3 gün</option>
             </select>
           </div>
-          <div class="flex items-end gap-2 col-span-2">
-            <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Arrival (baş.)</label><input type="date" id="amDateFrom" onchange="_amOnDateFilterChange()"></div>
-            <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Arrival (bit.)</label><input type="date" id="amDateTo" onchange="_amOnDateFilterChange()"></div>
+          <div>
+            <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Yıl</label>
+            <select id="amCreatedYearFilter" class="filter-select" onchange="_amOnYearChange()">
+              <!-- seçenekler _amPopulateYearOptions() ile dinamik doldurulur -->
+            </select>
           </div>
-          <div class="flex items-end gap-2 col-span-2">
-            <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Created (baş.)</label><input type="date" id="amCreatedFrom" onchange="_amOnDateFilterChange()"></div>
-            <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Created (bit.)</label><input type="date" id="amCreatedTo" onchange="_amOnDateFilterChange()"></div>
+        </div>
+        <!-- Tarih araliklari: dort ayri etiket yerine iki aralik, her biri tek
+             etiket + iki kutu. Tum Deal'ler ekranindaki duzenin aynisi. -->
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;padding-top:10px">
+          <div>
+            <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Arrival Date</label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input type="date" id="amDateFrom" onchange="_amOnDateFilterChange()">
+              <span class="text-slate-500 text-xs">—</span>
+              <input type="date" id="amDateTo" onchange="_amOnDateFilterChange()">
+            </div>
           </div>
-          <div class="flex items-end gap-2">
-            <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Yıl (dinamik)</label>
-              <select id="amCreatedYearFilter" class="filter-select" onchange="_amOnYearChange()" style="width:100px">
-                <!-- seçenekler _amPopulateYearOptions() ile dinamik doldurulur -->
-              </select>
+          <div style="border-left:1px solid #1e293b;padding-left:16px">
+            <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Created Time</label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input type="date" id="amCreatedFrom" onchange="_amOnDateFilterChange()">
+              <span class="text-slate-500 text-xs">—</span>
+              <input type="date" id="amCreatedTo" onchange="_amOnDateFilterChange()">
             </div>
           </div>
         </div>
       </div>
-      <div class="am-table-wrap" style="overflow-x:auto;border-radius:10px;border:1px solid #1e293b">
-        <table style="width:100%;border-collapse:collapse">
+      <!-- Tablo: 14 kolon var, bu yuzden hem yatay hem dikey kaydirma ve
+           YAPISKAN baslik satiri sart — yoksa asagi kayinca hangi kolona
+           bakildigi kayboluyor. Satir ici koyu zemin (#0f172a) kaldirildi:
+           basligin cam gorunumu .am-th uzerinden tema katmanindan geliyor. -->
+      <div class="am-table-wrap am-alarm-wrap">
+        <table class="am-alarm-tbl">
           <thead>
-            <tr style="background:#0f172a" id="adminAlarmHead">
+            <tr id="adminAlarmHead">
               <th class="am-th">#</th>
               <th class="am-th am-sort" data-col="name"   onclick="_aaSortBy('name')">Hasta<span class="am-sarrow"></span></th>
               <th class="am-th am-sort" data-col="ref"    onclick="_aaSortBy('ref')">Deal ID<span class="am-sarrow"></span></th>
@@ -1346,12 +1369,16 @@
         </table>
         <div id="adminAlarmEmpty" style="display:none;text-align:center;padding:40px 16px;color:#475569;font-size:13px">Alarm bulunamadı.</div>
       </div>
-      <div class="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-500">
-        <span id="adminAlarmCount"></span>
-        <span class="text-gray-700">|</span>
-        <span>Toplam Tutar: <strong class="text-blue-400 font-bold" id="amTotalAmount">€0</strong></span>
-        <span>Toplam Ödenen: <strong class="text-emerald-400 font-bold" id="amTotalPaid">€0</strong></span>
-        <span>Toplam Kalan: <strong class="text-red-400 font-bold" id="amTotalRemaining">€0</strong></span>
+      <!-- Toplamlar: eskiden tablonun hemen altinda, aralarinda basibos bir
+           "|" olan bir metin satiriydi. Simdi kendi cam seridi; sayilar
+           etiketlerinden ayrilmis okunur bir dizilimde. -->
+      <div class="am-totals">
+        <span class="am-totals-count" id="adminAlarmCount"></span>
+        <div class="am-totals-figs">
+          <span class="am-total"><i>Toplam Tutar</i><strong class="text-blue-400" id="amTotalAmount">€0</strong></span>
+          <span class="am-total"><i>Toplam Ödenen</i><strong class="text-emerald-400" id="amTotalPaid">€0</strong></span>
+          <span class="am-total"><i>Toplam Kalan</i><strong class="text-red-400" id="amTotalRemaining">€0</strong></span>
+        </div>
       </div>
       <div id="adminAlarmPager" style="display:none;align-items:center;justify-content:center;gap:12px;margin-top:10px;flex-wrap:wrap">
         <button id="adminAlarmPrevBtn" onclick="_aaChangePage(-1)" class="am-btn" style="padding:4px 14px">‹ Önceki</button>

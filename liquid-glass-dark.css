@@ -1557,3 +1557,48 @@ html[data-theme="dark"] .ac-legend-on { background: rgba(255, 255, 255, 0.07); }
 html[data-theme="dark"] .ac-grid { stroke: rgba(255, 255, 255, 0.075); }
 html[data-theme="dark"] .ac-guide { stroke: rgba(255, 255, 255, 0.42); }
 html[data-theme="dark"] .ac-key { color: #b5c1d4; }
+
+/* ═════════════════════════════════════════════════════════════════════
+   24. ALARM İZLEME — 43. bölümün koyu ikizi.
+   Geometri paylaşılan katmanda temadan bağımsız; burada SADECE renk.
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="dark"] .am-clock {
+  background: rgba(255, 255, 255, 0.05) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border: 1px solid var(--d-edge-soft) !important;
+  color: #f1f5f9 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .am-alarm-wrap {
+  border: 1px solid var(--d-edge-soft);
+  background: rgba(255, 255, 255, 0.018);
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+/* Yapiskan baslik opak-ish olmali, yoksa altindan satirlar okunuyor */
+html[data-theme="dark"] .am-alarm-tbl thead th {
+  background: rgba(16, 22, 38, 0.97) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border-bottom: 1px solid var(--d-edge) !important;
+}
+html[data-theme="dark"] .am-alarm-tbl tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.022);
+}
+html[data-theme="dark"] .am-alarm-tbl tbody tr:hover td {
+  background: rgba(45, 212, 191, 0.09);
+}
+html[data-theme="dark"] .am-alarm-tbl tbody td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+html[data-theme="dark"] .am-totals {
+  background: rgba(255, 255, 255, 0.045);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border: 1px solid var(--d-edge-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+html[data-theme="dark"] .am-totals-count { color: #a9b4c8; }
+html[data-theme="dark"] .am-total i { color: #7d8ba3; }

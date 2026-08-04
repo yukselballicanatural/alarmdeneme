@@ -2888,3 +2888,132 @@ html[data-theme="light"] .ac-legend-on { background: rgba(23, 43, 99, 0.06); }
 html[data-theme="light"] .ac-grid { stroke: rgba(23, 43, 99, 0.09); }
 html[data-theme="light"] .ac-guide { stroke: rgba(23, 43, 99, 0.4); }
 html[data-theme="light"] .ac-key { color: var(--ink-2); }
+
+/* ═════════════════════════════════════════════════════════════════════
+   43. ALARM İZLEME — düzen ve tablo
+   Sayfanın "karışık" görünmesinin üç kaynağı vardı ve üçü de yapısal:
+   filtrelerin ragged ızgarası (HTML'de düzeltildi), 14 kolonlu tablonun
+   sabitlenmemiş başlığı, ve saat/KPI'ların temaya uymayan yüzeyleri.
+   Geometri TEMADAN BAĞIMSIZ; renkler tema katmanlarında.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ── Saat ──────────────────────────────────────────────────────────── */
+.am-clock {
+  font-family: 'Outfit', sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .01em;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 11px 18px;
+  border-radius: 16px;
+  white-space: nowrap;
+}
+
+/* ── Alarm tablosu ─────────────────────────────────────────────────── */
+.am-alarm-wrap {
+  overflow: auto;
+  max-height: 68vh;              /* dikey kaydirma: baslik yapisik kalsin */
+  border-radius: 14px;
+  scrollbar-width: thin;
+}
+.am-alarm-tbl { width: 100%; border-collapse: separate; border-spacing: 0; }
+/* Yapiskan baslik — 14 kolonda asagi kayarken kolon adlari kaybolmasin.
+   position:sticky th'de calisir ama border-collapse:collapse ile kenarlik
+   kayboluyor; bu yuzden tablo separate + kenarlik hucrede. */
+.am-alarm-tbl thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  white-space: nowrap;
+}
+.am-alarm-tbl tbody td { vertical-align: middle; }
+
+/* ── Toplamlar şeridi ──────────────────────────────────────────────── */
+.am-totals {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-top: 12px;
+  padding: 10px 16px;
+  border-radius: 14px;
+}
+.am-totals-count { font-size: 11.5px; font-weight: 650; }
+.am-totals-figs { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.am-total { display: inline-flex; flex-direction: column; line-height: 1.25; }
+.am-total i {
+  font-style: normal; font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+}
+.am-total strong { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ═══ Açık tema renkleri ═══ */
+html[data-theme="light"] .am-clock {
+  background: var(--g-2) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(175%);
+  backdrop-filter: blur(18px) saturate(175%);
+  border: 1px solid var(--edge-soft) !important;
+  color: var(--ink) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65),
+              0 2px 8px rgba(23, 43, 99, 0.07);
+}
+
+html[data-theme="light"] .am-alarm-wrap {
+  border: 1px solid var(--edge-soft);
+  background: rgba(255, 255, 255, 0.34);
+  scrollbar-color: rgba(23, 43, 99, 0.16) transparent;
+}
+/* Yapiskan basligin ALTINDAN satirlar gorunmesin: yuzey opak-ish olmali */
+html[data-theme="light"] .am-alarm-tbl thead th {
+  background: rgba(244, 247, 255, 0.96) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  border-bottom: 1px solid var(--edge) !important;
+}
+html[data-theme="light"] .am-alarm-tbl tbody tr:nth-child(even) td {
+  background: rgba(23, 43, 99, 0.022);
+}
+html[data-theme="light"] .am-alarm-tbl tbody tr:hover td {
+  background: rgba(13, 148, 136, 0.075);
+}
+html[data-theme="light"] .am-alarm-tbl tbody td {
+  border-bottom: 1px solid rgba(23, 43, 99, 0.055);
+}
+
+html[data-theme="light"] .am-totals {
+  background: var(--g-2);
+  -webkit-backdrop-filter: blur(18px) saturate(175%);
+  backdrop-filter: blur(18px) saturate(175%);
+  border: 1px solid var(--edge-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+html[data-theme="light"] .am-totals-count { color: var(--ink-2); }
+html[data-theme="light"] .am-total i { color: var(--ink-3); }
+
+/* ── KPI kartı: köşedeki ışıma açık camda leke gibi duruyordu ───────
+   Koyu temada iyi çalışıyor (orada dokunulmadı); burada yumuşatılıp
+   üst kenar çizgisine devredildi. */
+html[data-theme="light"] .am-kpi::after {
+  opacity: .16 !important;
+  filter: blur(26px) !important;
+  width: 58px !important;
+  height: 58px !important;
+}
+/* Kritik kartın yanıp sönen metin gölgesi açık zeminde kirli görünüyor */
+html[data-theme="light"] .am-kpi.am-critical .am-kpi-val { animation: none !important; }
+html[data-theme="light"] .am-kpi-icon {
+  background: color-mix(in srgb, var(--am-glow, #6366f1) 15%, transparent) !important;
+  border-color: color-mix(in srgb, var(--am-glow, #6366f1) 30%, transparent) !important;
+}
+
+/* Bölge oran çubuğu — veri yokken boş gri bir çizgi gibi durmasın */
+html[data-theme="light"] .am-region-bar { background: rgba(23, 43, 99, 0.07) !important; }
+
+/* Ust bar sarinca (dar ekran / cok dugme) sagdaki grup sola yapisip sagda
+   buyuk bir bosluk birakiyordu — space-between yalnizca AYNI satirda
+   hizalar. margin-left:auto sarilmis satirda da sagda tutar.
+   Tema bagimsiz: bu bir olcu karari. */
+html[data-theme="light"] .am-topbar > div:last-child,
+html[data-theme="dark"]  .am-topbar > div:last-child { margin-left: auto; }
