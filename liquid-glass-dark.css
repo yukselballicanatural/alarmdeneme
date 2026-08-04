@@ -1138,3 +1138,15 @@ html[data-theme="dark"] #wrReasonText {
 }
 html[data-theme="dark"] #tlcaReasonText strong,
 html[data-theme="dark"] #wrReasonText strong { color: #5eead4 !important; }
+
+/* ── Modal okunurluğu — açık temanın 39. bölümünün koyu ikizi
+   Ölçüm: 9px büyük-harf etiketler koyu temada 2.60:1 (#475569, cam kart
+   üzerinde). Kapsam .modal-box; tablolardaki soluk metinler ellenmiyor. */
+html[data-theme="dark"] .modal-box [style*="color:#475569" i],
+html[data-theme="dark"] .modal-box [style*="color: rgb(71, 85, 105)" i] {
+  color: var(--d-ink-3) !important;
+}
+html[data-theme="dark"] .lq-trigger-label { font-weight: 600; }
+html[data-theme="dark"] .lq-trigger-label.lq-label-raw { font-style: italic; }
+html[data-theme="dark"] #tlcaDealOwner,
+html[data-theme="dark"] #wrDealOwner { color: #2dd4bf !important; }

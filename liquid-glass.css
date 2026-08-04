@@ -2014,3 +2014,23 @@ html[data-theme="light"] #wrReasonText {
 }
 html[data-theme="light"] #tlcaReasonText strong,
 html[data-theme="light"] #wrReasonText strong { color: #0d5f57 !important; }
+
+/* ═════════════════════════════════════════════════════════════════════
+   39. MODAL OKUNURLUĞU — ölçülmüş düşük kontrastlar
+   Kontrast taramasıyla bulundu (İptal Sonuç Kodu modalı):
+     9px büyük-harf etiketler ("İPTAL SONUÇ KODU", "STAGE", "AÇIKLAMA"…)
+     açık temada 2.73:1, koyu temada 2.60:1 → 9px için fazla soluk.
+   Kapsam bilinçli olarak .modal-box: tablolardaki soluk yardımcı metinler
+   olduğu gibi kalsın, okunması gereken form etiketleri güçlensin.
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] .modal-box [style*="color:#475569" i],
+html[data-theme="light"] .modal-box [style*="color: rgb(71, 85, 105)" i] {
+  color: var(--ink-2) !important;
+}
+/* Seçili değer bir DEĞER gibi okunsun (placeholder gibi değil) */
+html[data-theme="light"] .lq-trigger-label { font-weight: 600; }
+/* Listede olmayan kayıtlı değer — gösteriliyor ama "listeden değil" işareti */
+html[data-theme="light"] .lq-trigger-label.lq-label-raw { font-style: italic; }
+/* Deal sahibi: turkuaz açık cam üzerinde 2.72:1 çıkıyordu */
+html[data-theme="light"] #tlcaDealOwner,
+html[data-theme="light"] #wrDealOwner { color: #0b6b62 !important; }

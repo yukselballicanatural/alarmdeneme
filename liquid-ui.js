@@ -85,7 +85,34 @@
       Object.defineProperty(sel, 'value', {
         configurable: true,
         get: function () { return desc.get.call(this); },
-        set: function (v) { desc.set.call(this, v); self.syncLabel(); }
+        set: function (v) {
+          var vNew = (v == null) ? '' : String(v);
+          // Önceki deal'den kalan enjekte seçenekleri temizle — yoksa her
+          // modal açılışında listeye bir kalıntı daha eklenir ve liste şişer.
+          var stale = this.querySelectorAll
+            ? this.querySelectorAll('option[data-lq-injected="1"]') : [];
+          for (var k = stale.length - 1; k >= 0; k--) {
+            if (stale[k].value !== vNew) stale[k].parentNode.removeChild(stale[k]);
+          }
+          desc.set.call(this, v);
+          // KRİTİK: kayıtlı değer seçenek listesinde yoksa tarayıcı
+          // selectedIndex'i -1 yapar ve select.value BOŞ döner. Sonuç:
+          // (1) kutu bomboş görünür, (2) daha kötüsü Kaydet'e basınca
+          // uygulama boş değer okuyup KAYITLI KODU SİLER. Değeri gerçek bir
+          // seçenek olarak ekleyip yeniden atıyoruz; böylece hem görünüyor
+          // hem de mevcut kaydet mantığı doğru değeri okuyor.
+          // (İptal Sonuç Kodu'nda sub_code serbest metin olabiliyor.)
+          var v2 = (v == null) ? '' : String(v);
+          if (this.selectedIndex === -1 && v2 !== '') {
+            var o = document.createElement('option');
+            o.value = v2;
+            o.textContent = v2;
+            o.setAttribute('data-lq-injected', '1');
+            this.appendChild(o);
+            desc.set.call(this, v2);
+          }
+          self.syncLabel();
+        }
       });
     } catch (err) { /* tarayıcı izin vermezse etiket 'change' ile güncellenir */ }
 
@@ -102,7 +129,14 @@
 
   LiquidSelect.prototype.syncLabel = function () {
     var opt = this.sel.options[this.sel.selectedIndex];
-    this.label.textContent = opt ? opt.textContent : '';
+    var txt = opt ? opt.textContent : '';
+    this.label.textContent = txt;
+    // Listede olmayıp sonradan eklenen kayıtlı değer italik gösterilir —
+    // "bu seçenek listesinden gelmiyor, kayıtta böyle duruyor" işareti.
+    this.label.classList.toggle('lq-label-raw',
+      !!(opt && opt.getAttribute && opt.getAttribute('data-lq-injected') === '1'));
+    if (txt) this.trigger.setAttribute('title', txt);
+    else this.trigger.removeAttribute('title');
     this.trigger.disabled = this.sel.disabled;
     this.wrap.classList.toggle('lq-disabled', !!this.sel.disabled);
     // Günlük Ekip Girişi'ndeki devam durumu (Çalışıyor / İzinli) anlamsal
