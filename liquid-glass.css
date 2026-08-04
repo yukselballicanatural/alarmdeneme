@@ -1699,3 +1699,35 @@ html[data-theme="light"] .lang-check {
   transition: opacity .2s ease;
 }
 html[data-theme="light"] .lang-item.lang-on .lang-check { opacity: 1; }
+
+/* ═════════════════════════════════════════════════════════════════════
+   32. MODAL KAYDIRMA ÇUBUĞU
+   .modal-box hem overflow-y:auto hem border-radius:28px taşıyor; varsayılan
+   kalın gri çubuk yuvarlak köşenin dışına taşıp kutudan çıkmış gibi
+   duruyordu. Çubuk ince cam hâline getirilir, kanal şeffaflaşır ve
+   scrollbar-gutter:stable ile çubuk çıkıp kaybolurken içerik zıplamaz.
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] .modal-box {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(23, 43, 99, 0.22) transparent;
+  scrollbar-gutter: stable;
+  /* Çubuk yuvarlak köşeye yapışmasın */
+  padding-right: 18px !important;
+}
+html[data-theme="light"] .modal-box::-webkit-scrollbar { width: 7px; }
+html[data-theme="light"] .modal-box::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 14px 0;   /* üst/alt yuvarlak köşelerde çubuk görünmesin */
+}
+html[data-theme="light"] .modal-box::-webkit-scrollbar-thumb {
+  background: rgba(23, 43, 99, 0.18);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+html[data-theme="light"] .modal-box:hover::-webkit-scrollbar-thumb { background: rgba(23, 43, 99, 0.32); background-clip: content-box; }
+
+/* Modal içindeki kaydırılabilir alt bloklar da aynı dilde olsun */
+html[data-theme="light"] .modal-box *::-webkit-scrollbar { width: 5px; height: 5px; }
+html[data-theme="light"] .modal-box *::-webkit-scrollbar-track { background: transparent; }
+html[data-theme="light"] .modal-box *::-webkit-scrollbar-thumb { background: rgba(23, 43, 99, 0.16); border-radius: 99px; }
