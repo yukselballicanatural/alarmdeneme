@@ -1365,200 +1365,204 @@ html[data-theme="light"] .lq-trigger.lq-att-off:hover { background: rgba(239, 68
 html[data-theme="light"] .lq-att .lq-trigger-chev { width: 10px; height: 10px; }
 
 /* ═════════════════════════════════════════════════════════════════════
-   30. SİNEMATİK TEMA ANAHTARI
+   30. SİNEMATİK TEMA ANAHTARI (kompakt kutucuk)
    React/Tailwind bileşeninin vanilla portu (bu projede React yok).
-   DİKKAT: Bu bölüm bilerek tema kapsamı DIŞINDA — anahtarın kendisi
-   hem açık hem koyu temada görünmek zorunda. Durum html[data-theme]
+   Ölçek sidebar'ın diline uyarlandı: "Uygulamalar"/"Logout" ile aynı
+   tam genişlikte cam kutu, solda etiket, sağda küçük anahtar. Tamamı
+   tek tıklanabilir buton.
+   DİKKAT: Bu bölüm bilerek tema kapsamı DIŞINDA — anahtarın kendisi hem
+   açık hem koyu temada görünmek zorunda. Durum html[data-theme]
    üzerinden okunur; "checked" = dark.
    ═════════════════════════════════════════════════════════════════════ */
-.cine-row { display: flex; justify-content: center; padding: 2px 0 4px; }
+.cine-box {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px 7px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .24s ease, border-color .24s ease, transform .3s cubic-bezier(.34, 1.4, .56, 1);
+}
+.cine-box:active { transform: scale(.975); }
+.cine-box:focus-visible { outline: 2px solid rgba(45, 212, 191, .8); outline-offset: 2px; }
+.cine-box-label { letter-spacing: .01em; white-space: nowrap; }
 
+/* Kutunun kendisi — sidebar'ın diğer butonlarıyla aynı dil */
+html[data-theme="light"] .cine-box {
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  color: #4b5364;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 2px 8px rgba(23, 43, 99, 0.07);
+}
+html[data-theme="light"] .cine-box:hover {
+  background: rgba(255, 255, 255, 0.76);
+  color: #12141a;
+}
+html[data-theme="dark"] .cine-box,
+html:not([data-theme]) .cine-box {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+}
+html[data-theme="dark"] .cine-box:hover,
+html:not([data-theme]) .cine-box:hover { background: #243244; color: #e2e8f0; }
+
+/* ── Anahtar: 52×28, kol 22, yol 24 ──────────────────────────────── */
 .cine-switch {
   position: relative;
   display: flex;
   align-items: center;
-  width: 100px;
-  height: 56px;
-  padding: 5px;
+  width: 52px;
+  height: 28px;
+  padding: 3px;
   border-radius: 999px;
-  cursor: pointer;
   flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent;
   transition: background .45s ease, border-color .45s ease, box-shadow .45s ease;
 }
-.cine-switch:focus-visible { outline: 2px solid rgba(45, 212, 191, .8); outline-offset: 3px; }
-.cine-switch:active { transform: scale(.98); }
 
-/* ── Açık tema (kol solda, güneş) ─────────────────────────────────── */
+/* Açık tema — kol solda, güneş */
 html[data-theme="light"] .cine-switch {
-  background: radial-gradient(ellipse at top left, #ffffff 0%, #f1f5f9 40%, #cbd5e1 100%);
-  border: 2px solid rgba(203, 213, 225, 0.6);
+  background: radial-gradient(ellipse at top left, #ffffff 0%, #f1f5f9 45%, #cbd5e1 100%);
+  border: 1px solid rgba(203, 213, 225, 0.75);
   box-shadow:
-    inset 5px 5px 12px rgba(148, 163, 184, 0.5),
-    inset -5px -5px 12px rgba(255, 255, 255, 1),
-    inset 8px 8px 16px rgba(100, 116, 139, 0.3),
-    inset -8px -8px 16px rgba(255, 255, 255, 0.9),
-    inset 0 2px 4px rgba(148, 163, 184, 0.4),
-    inset 0 -2px 4px rgba(255, 255, 255, 1),
-    inset 0 0 20px rgba(203, 213, 225, 0.3),
-    0 1px 2px rgba(255, 255, 255, 1),
-    0 2px 4px rgba(0, 0, 0, 0.1),
-    0 8px 16px rgba(0, 0, 0, 0.08),
-    0 16px 32px rgba(0, 0, 0, 0.06);
+    inset 2px 2px 5px rgba(148, 163, 184, 0.5),
+    inset -2px -2px 5px rgba(255, 255, 255, 1),
+    inset 0 1px 2px rgba(148, 163, 184, 0.4),
+    inset 0 -1px 2px rgba(255, 255, 255, 1),
+    inset 0 0 8px rgba(203, 213, 225, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.08);
 }
-/* ── Koyu tema (kol sağda, ay) ────────────────────────────────────── */
+/* Koyu tema — kol sağda, ay */
 html[data-theme="dark"] .cine-switch,
 html:not([data-theme]) .cine-switch {
-  background: radial-gradient(ellipse at top left, #1e293b 0%, #0f172a 40%, #020617 100%);
-  border: 2px solid rgba(51, 65, 85, 0.6);
+  background: radial-gradient(ellipse at top left, #1e293b 0%, #0f172a 45%, #020617 100%);
+  border: 1px solid rgba(51, 65, 85, 0.85);
   box-shadow:
-    inset 5px 5px 12px rgba(0, 0, 0, 0.9),
-    inset -5px -5px 12px rgba(71, 85, 105, 0.4),
-    inset 8px 8px 16px rgba(0, 0, 0, 0.7),
-    inset -8px -8px 16px rgba(100, 116, 139, 0.2),
-    inset 0 2px 4px rgba(0, 0, 0, 1),
-    inset 0 -2px 4px rgba(71, 85, 105, 0.4),
-    inset 0 0 20px rgba(0, 0, 0, 0.6),
-    0 1px 1px rgba(255, 255, 255, 0.05),
-    0 2px 4px rgba(0, 0, 0, 0.4),
-    0 8px 16px rgba(0, 0, 0, 0.4),
-    0 16px 32px rgba(0, 0, 0, 0.3);
+    inset 2px 2px 5px rgba(0, 0, 0, 0.9),
+    inset -2px -2px 5px rgba(71, 85, 105, 0.4),
+    inset 0 1px 2px rgba(0, 0, 0, 1),
+    inset 0 -1px 2px rgba(71, 85, 105, 0.4),
+    inset 0 0 8px rgba(0, 0, 0, 0.6),
+    0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 /* Derin iç oluk */
-.cine-groove {
-  position: absolute; inset: 3px; border-radius: 999px; pointer-events: none;
-  transition: box-shadow .45s ease;
-}
-html[data-theme="light"] .cine-groove {
-  box-shadow: inset 0 2px 6px rgba(100, 116, 139, 0.4), inset 0 -1px 3px rgba(255, 255, 255, 0.8);
-}
+.cine-groove { position: absolute; inset: 2px; border-radius: 999px; pointer-events: none; transition: box-shadow .45s ease; }
+html[data-theme="light"] .cine-groove { box-shadow: inset 0 1px 3px rgba(100, 116, 139, 0.38), inset 0 -1px 2px rgba(255, 255, 255, 0.85); }
 html[data-theme="dark"] .cine-groove,
-html:not([data-theme]) .cine-groove {
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9), inset 0 -1px 3px rgba(71, 85, 105, 0.3);
-}
+html:not([data-theme]) .cine-groove { box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.9), inset 0 -1px 2px rgba(71, 85, 105, 0.3); }
 
-/* Cam parlaması (çok katmanlı) */
-.cine-gloss {
-  position: absolute; inset: 0; border-radius: 999px; pointer-events: none;
-  mix-blend-mode: overlay;
-  transition: background .45s ease;
-}
+/* Cam parlaması */
+.cine-gloss { position: absolute; inset: 0; border-radius: 999px; pointer-events: none; mix-blend-mode: overlay; transition: background .45s ease; }
 html[data-theme="light"] .cine-gloss {
   background:
-    radial-gradient(ellipse at top, rgba(255, 255, 255, 0.8) 0%, transparent 50%),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.7) 0%, transparent 30%, transparent 70%, rgba(148, 163, 184, 0.15) 100%);
+    radial-gradient(ellipse at top, rgba(255, 255, 255, 0.85) 0%, transparent 55%),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.7) 0%, transparent 35%, transparent 70%, rgba(148, 163, 184, 0.18) 100%);
 }
 html[data-theme="dark"] .cine-gloss,
 html:not([data-theme]) .cine-gloss {
   background:
-    radial-gradient(ellipse at top, rgba(71, 85, 105, 0.15) 0%, transparent 50%),
-    linear-gradient(to bottom, rgba(71, 85, 105, 0.2) 0%, transparent 30%, transparent 70%, rgba(0, 0, 0, 0.3) 100%);
+    radial-gradient(ellipse at top, rgba(71, 85, 105, 0.18) 0%, transparent 55%),
+    linear-gradient(to bottom, rgba(71, 85, 105, 0.22) 0%, transparent 35%, transparent 70%, rgba(0, 0, 0, 0.32) 100%);
 }
 
-/* Ortam gölgelemesi (ambient occlusion) */
+/* Ortam gölgelemesi */
 .cine-ao { position: absolute; inset: 0; border-radius: 999px; pointer-events: none; transition: box-shadow .45s ease; }
-html[data-theme="light"] .cine-ao { box-shadow: inset 0 0 15px rgba(148, 163, 184, 0.2); }
+html[data-theme="light"] .cine-ao { box-shadow: inset 0 0 7px rgba(148, 163, 184, 0.22); }
 html[data-theme="dark"] .cine-ao,
-html:not([data-theme]) .cine-ao { box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5); }
+html:not([data-theme]) .cine-ao { box-shadow: inset 0 0 7px rgba(0, 0, 0, 0.5); }
 
-/* Zemindeki güneş / ay ikonları */
+/* Zemindeki güneş / ay */
 .cine-bg-icons {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 13px; pointer-events: none;
+  padding: 0 6px; pointer-events: none;
 }
-.cine-bg-icons svg { width: 17px; height: 17px; transition: color .45s ease, opacity .45s ease; }
-html[data-theme="light"] .cine-bg-icons svg:first-child { color: #b45309; opacity: .95; }
-html[data-theme="light"] .cine-bg-icons svg:last-child  { color: #475569; opacity: .5; }
+.cine-bg-icons svg { width: 11px; height: 11px; transition: color .45s ease, opacity .45s ease; }
+html[data-theme="light"] .cine-bg-icons svg:first-child { color: #b45309; opacity: .9; }
+html[data-theme="light"] .cine-bg-icons svg:last-child  { color: #64748b; opacity: .45; }
 html[data-theme="dark"] .cine-bg-icons svg:first-child,
-html:not([data-theme]) .cine-bg-icons svg:first-child { color: #fef9c3; opacity: .45; }
+html:not([data-theme]) .cine-bg-icons svg:first-child { color: #fef9c3; opacity: .4; }
 html[data-theme="dark"] .cine-bg-icons svg:last-child,
-html:not([data-theme]) .cine-bg-icons svg:last-child { color: #fef9c3; opacity: .95; }
+html:not([data-theme]) .cine-bg-icons svg:last-child { color: #fef9c3; opacity: .9; }
 
-/* ── Kol (thumb) — yay fiziğiyle kayar ───────────────────────────── */
+/* ── Kol — yay fiziğiyle kayar ───────────────────────────────────── */
 .cine-thumb {
   position: relative;
   z-index: 2;
-  width: 46px; height: 46px;
+  width: 22px; height: 22px;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  /* Yay (spring) hissi: hafif aşma ile oturur */
-  transition: transform .52s cubic-bezier(.34, 1.56, .64, 1),
+  /* framer-motion spring(300/20) karşılığı: hafif aşma ile oturur */
+  transition: transform .48s cubic-bezier(.34, 1.56, .64, 1),
               background .45s ease, box-shadow .45s ease, border-color .45s ease;
   transform: translateX(0);
 }
 html[data-theme="light"] .cine-thumb {
   background: linear-gradient(145deg, #ffffff 0%, #fefefe 50%, #f8fafc 100%);
-  border: 2px solid rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.95);
   box-shadow:
-    inset 2px 2px 4px rgba(203, 213, 225, 0.3),
-    inset -2px -2px 4px rgba(255, 255, 255, 1),
-    inset 0 1px 2px rgba(255, 255, 255, 1),
-    0 1px 2px rgba(255, 255, 255, 1),
-    0 8px 32px rgba(0, 0, 0, 0.18),
-    0 4px 12px rgba(0, 0, 0, 0.12),
-    0 2px 4px rgba(0, 0, 0, 0.08);
+    inset 1px 1px 2px rgba(203, 213, 225, 0.35),
+    inset -1px -1px 2px rgba(255, 255, 255, 1),
+    0 1px 2px rgba(0, 0, 0, 0.14),
+    0 3px 8px rgba(0, 0, 0, 0.14);
 }
 html[data-theme="dark"] .cine-thumb,
 html:not([data-theme]) .cine-thumb {
   background: linear-gradient(145deg, #64748b 0%, #475569 50%, #334155 100%);
-  border: 2px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid rgba(148, 163, 184, 0.35);
   box-shadow:
-    inset 2px 2px 4px rgba(100, 116, 139, 0.4),
-    inset -2px -2px 4px rgba(0, 0, 0, 0.8),
-    inset 0 1px 1px rgba(255, 255, 255, 0.15),
-    0 1px 2px rgba(255, 255, 255, 0.1),
-    0 8px 32px rgba(0, 0, 0, 0.6),
-    0 4px 12px rgba(0, 0, 0, 0.5),
-    0 2px 4px rgba(0, 0, 0, 0.4);
-  /* 100 - (2*5 padding) - 46 = 44px yol */
-  transform: translateX(44px);
+    inset 1px 1px 2px rgba(100, 116, 139, 0.45),
+    inset -1px -1px 2px rgba(0, 0, 0, 0.8),
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 3px 10px rgba(0, 0, 0, 0.55);
+  /* 52 - (2*3 padding) - 22 = 24px yol */
+  transform: translateX(24px);
 }
 
 .cine-thumb-gloss {
   position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4) 0%, transparent 40%, rgba(0, 0, 0, 0.1) 100%);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.45) 0%, transparent 45%, rgba(0, 0, 0, 0.1) 100%);
   mix-blend-mode: overlay;
 }
 
-/* Kolun içindeki ikon — temaya göre biri görünür */
-.cine-thumb svg { position: relative; z-index: 3; width: 19px; height: 19px; }
+.cine-thumb svg { position: relative; z-index: 3; width: 12px; height: 12px; }
 .cine-thumb-sun  { color: #f59e0b; }
 .cine-thumb-moon { color: #fde68a; }
 html[data-theme="light"] .cine-thumb-moon { display: none; }
 html[data-theme="dark"] .cine-thumb-sun,
 html:not([data-theme]) .cine-thumb-sun { display: none; }
 
-/* ── Parçacık patlaması (grenli, katmanlı) ───────────────────────── */
+/* ── Grenli parçacık patlaması ───────────────────────────────────── */
 .cine-particle {
   position: absolute;
   left: 50%; top: 50%;
-  width: 10px; height: 10px;
-  margin: -5px 0 0 -5px;
+  width: 8px; height: 8px;
+  margin: -4px 0 0 -4px;
   border-radius: 50%;
   opacity: 0;
   pointer-events: none;
-  /* Film greni — SVG gürültü dokusu, harici dosya gerektirmez */
+  /* Film greni — harici dosya gerektirmeyen inline SVG gürültü */
   background-image:
     url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
   background-blend-mode: overlay;
   background-size: cover;
 }
-html[data-theme="light"] .cine-particle {
-  background-color: rgba(251, 191, 36, 0.7);
-}
+html[data-theme="light"] .cine-particle { background-color: rgba(251, 191, 36, 0.7); }
 html[data-theme="dark"] .cine-particle,
-html:not([data-theme]) .cine-particle {
-  background-color: rgba(147, 197, 253, 0.5);
-}
-.cine-burst .cine-p1 { animation: cineBurst .6s ease-out both; }
-.cine-burst .cine-p2 { animation: cineBurst .7s ease-out .1s both; }
-.cine-burst .cine-p3 { animation: cineBurst .8s ease-out .2s both; }
+html:not([data-theme]) .cine-particle { background-color: rgba(147, 197, 253, 0.5); }
+.cine-burst .cine-p1 { animation: cineBurst .55s ease-out both; }
+.cine-burst .cine-p2 { animation: cineBurst .65s ease-out .09s both; }
+.cine-burst .cine-p3 { animation: cineBurst .75s ease-out .18s both; }
 @keyframes cineBurst {
   0%   { transform: scale(0);   opacity: 0; }
   35%  { opacity: 1; }
-  100% { transform: scale(7.5); opacity: 0; }
+  100% { transform: scale(6.5); opacity: 0; }
 }
 
 /* Mini sidebar'daki küçük tema butonu — pill sığmadığı için ikon kalır */

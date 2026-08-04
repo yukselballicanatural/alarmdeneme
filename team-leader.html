@@ -317,25 +317,26 @@
   <div style="padding:0 10px 14px;display:flex;flex-direction:column;gap:8px">
     <!-- Sinematik tema anahtarı — neumorfik pill, yay fizikli kol,
          grenli parçacık patlaması. Her iki temada da çalışır. -->
-    <div class="cine-row">
-      <button id="themeSwitch" class="cine-switch" onclick="toggleThemeMode()" role="switch" aria-checked="false" aria-label="Tema değiştir" title="Açık / Koyu tema">
-        <span class="cine-groove" aria-hidden="true"></span>
-        <span class="cine-gloss" aria-hidden="true"></span>
-        <span class="cine-ao" aria-hidden="true"></span>
-        <span class="cine-bg-icons" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+    <button id="themeSwitch" class="cine-box" onclick="toggleThemeMode()" role="switch" aria-checked="false" aria-label="Tema değiştir" title="Açık / Koyu tema">
+      <span class="cine-box-label" id="themeToggleLabel">Görünüm</span>
+      <span class="cine-switch" aria-hidden="true">
+        <span class="cine-groove"></span>
+        <span class="cine-gloss"></span>
+        <span class="cine-ao"></span>
+        <span class="cine-bg-icons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
         </span>
-        <span class="cine-thumb" aria-hidden="true">
+        <span class="cine-thumb">
           <span class="cine-thumb-gloss"></span>
           <span class="cine-particle cine-p1"></span>
           <span class="cine-particle cine-p2"></span>
           <span class="cine-particle cine-p3"></span>
-          <svg class="cine-thumb-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-          <svg class="cine-thumb-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+          <svg class="cine-thumb-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="cine-thumb-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
         </span>
-      </button>
-    </div>
+      </span>
+    </button>
     <button onclick="window.location.href='apps.html'" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:10px;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s" onmouseover="this.style.background='#1e2f4a';this.style.borderColor='#3b5578';this.style.color='#93c5fd'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155';this.style.color='#94a3b8'">
       <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
       Uygulamalar
