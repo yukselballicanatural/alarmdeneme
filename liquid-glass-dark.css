@@ -1,0 +1,857 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   liquid-glass-dark.css — KOYU Liquid Glass (macOS / iOS dark)
+   ───────────────────────────────────────────────────────────────────────
+   liquid-glass.css'in koyu ikizi. Yalnızca html[data-theme="dark"]
+   altında çalışır, açık temaya hiç dokunmaz.
+
+   AÇIK TEMADAN FARKLI YAKLAŞAN TEK NOKTA — metin renkleri:
+   Uygulamanın satır içi renkleri zaten KOYU tema için yazılmış
+   (#f1f5f9, #94a3b8, #4ade80, #fbbf24 ...). Bu yüzden açık temada
+   yaptığımız "parlak renkleri koyulaştır" eşlemelerinin koyu temada
+   KARŞILIĞI YOK — burada sadece ZEMİNLER camlaşır, renk dili korunur.
+   Camda okunurluk bozulmadığı için doğrusu da bu.
+
+   Cam formülü koyuda tersine döner: açıkta yüzeyler beyazın saydamı
+   (rgba(255,255,255,.4)), koyuda beyazın ÇOK AZ saydamı
+   (rgba(255,255,255,.06)) — yani karanlığın üstüne ince bir ışık tabakası.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+html[data-theme="dark"] {
+  /* Cam yüzeyler — karanlık üstüne ince ışık tabakası */
+  --d-1: rgba(255, 255, 255, 0.062);   /* ana paneller */
+  --d-2: rgba(255, 255, 255, 0.038);   /* iç/ikincil yüzeyler */
+  --d-3: rgba(255, 255, 255, 0.085);   /* input, öne çıkan yüzey */
+  --d-hover: rgba(255, 255, 255, 0.13);
+  --d-strong: rgba(20, 26, 42, 0.78);  /* menü/popover (opak tarafta) */
+
+  /* Kenar ışığı */
+  --d-edge: rgba(255, 255, 255, 0.16);
+  --d-edge-soft: rgba(255, 255, 255, 0.09);
+
+  /* Üst kenarda biriken ışık */
+  --d-sheen: inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
+             inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  /* Gölgeler — koyuda daha derin, daha yayvan */
+  --d-sh-1: 0 2px 10px rgba(0, 0, 0, 0.40), 0 10px 32px rgba(0, 0, 0, 0.32);
+  --d-sh-2: 0 6px 18px rgba(0, 0, 0, 0.46), 0 20px 56px -12px rgba(0, 0, 0, 0.55);
+  --d-sh-3: 0 10px 28px rgba(0, 0, 0, 0.52), 0 36px 88px -18px rgba(0, 0, 0, 0.70);
+
+  --d-blur: 30px;
+  --d-sat: 175%;
+
+  /* Metin — koyu camda yüksek kontrast */
+  --d-ink: #f2f5fa;
+  --d-ink-2: #a9b4c8;
+  --d-ink-3: #78849c;
+
+  /* Seçim/aktif göstergesi: koyuda ışık camı (açıkta koyu camdı) */
+  --d-sel: rgba(255, 255, 255, 0.155);
+
+  --d-r-lg: 26px;
+  --d-r-md: 20px;
+  --d-r-sm: 14px;
+
+  --d-ease: cubic-bezier(.22, 1, .36, 1);
+  --d-spring: cubic-bezier(.34, 1.4, .56, 1);
+}
+
+/* ── 1. ZEMİN — koyu mesh (camın kıracağı derin renk) ────────────────
+   Açık temadaki mantığın aynısı: cam ancak arkada RENK varsa cam gibi
+   durur. Koyuda renkler kısık ama var — düz siyah olsa efekt kaybolurdu. */
+html[data-theme="dark"] { background: #070b14; }
+html[data-theme="dark"] body {
+  background:
+    radial-gradient(1250px 900px at 6%   0%,  rgba(37, 99, 235, 0.30),  transparent 60%),
+    radial-gradient(1050px 820px at 97%  4%,  rgba(139, 92, 246, 0.26), transparent 58%),
+    radial-gradient(1150px 900px at 92% 70%,  rgba(13, 148, 136, 0.24), transparent 60%),
+    radial-gradient(980px 820px at 2%   72%,  rgba(79, 70, 229, 0.22),  transparent 58%),
+    radial-gradient(900px 760px at 44%  36%,  rgba(56, 189, 248, 0.14), transparent 62%),
+    linear-gradient(158deg, #0a1020 0%, #080d1a 46%, #0a0f1e 100%) !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  color: var(--d-ink);
+}
+html[data-theme="dark"] ::-webkit-scrollbar-track { background: transparent !important; }
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-radius: 99px;
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.26) !important; }
+html[data-theme="dark"] h1, html[data-theme="dark"] h2,
+html[data-theme="dark"] h3, html[data-theme="dark"] h4 { letter-spacing: -0.015em; }
+
+/* ── 2. SIDEBAR — yüzen koyu cam panel ───────────────────────────────── */
+html[data-theme="dark"] #sidebarFull,
+html[data-theme="dark"] #sidebarMini {
+  background: var(--d-1) !important;
+  -webkit-backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: var(--d-r-lg) !important;
+  box-shadow: var(--d-sh-2), var(--d-sheen);
+  margin: 10px 0 10px 10px !important;
+  height: calc(100vh - 20px) !important;
+  top: 10px !important;
+  padding-bottom: 6px !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+html[data-theme="dark"] #sidebarFull > div,
+html[data-theme="dark"] #sidebarMini > div { border-color: var(--d-edge-soft) !important; }
+html[data-theme="dark"] #sidebarFull::-webkit-scrollbar { width: 5px; }
+html[data-theme="dark"] #sidebarFull::-webkit-scrollbar-track { background: transparent; }
+html[data-theme="dark"] #sidebarFull::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.11); border-radius: 99px; }
+html[data-theme="dark"] #sidebarFull:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.22); }
+/* Ölçü sıkıştırmaları — açık temayla aynı, içerik panelden taşmasın */
+html[data-theme="dark"] #sidebarFull .nav-btn { padding: 7px 11px !important; }
+html[data-theme="dark"] #sidebarFull > div:first-child { padding: 14px 14px 11px !important; }
+html[data-theme="dark"] #sidebarFull div[onclick] { padding: 8px 11px !important; }
+html[data-theme="dark"] #sidebarFull div[onclick] span[id^="kpi"] { font-size: 18px !important; }
+html[data-theme="dark"] #sidebarFull > div[style*="padding:12px 10px" i] { padding: 10px 9px !important; }
+html[data-theme="dark"] #sidebarFull > div[style*="padding:14px 16px" i] { padding: 11px 14px !important; }
+html[data-theme="dark"] #langToggleMount { padding: 0 9px 7px !important; }
+html[data-theme="dark"] #sidebarFull > div:last-child { padding: 0 9px 11px !important; gap: 6px !important; }
+html[data-theme="dark"] #sidebarFull > div:last-child button { padding: 9px !important; }
+html[data-theme="dark"] #userAvatar,
+html[data-theme="dark"] #miniAvatar { box-shadow: 0 6px 18px -4px rgba(13, 148, 136, 0.6), var(--d-sheen); }
+
+/* ── 3. NAVİGASYON — aktif: kayan IŞIK camı ─────────────────────────── */
+/* KRİTİK: gösterge position:absolute — kabın offsetParent olması için
+   .lq-seg mutlaka position:relative olmalı. Bu satır atlandığında gösterge
+   başka bir atayı referans alıp yanlış öğenin üzerinde duruyordu. */
+html[data-theme="dark"] .lq-seg { position: relative; }
+html[data-theme="dark"] .nav-btn { position: relative; z-index: 1; }
+html[data-theme="dark"] .nav-btn:not(.active):hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: var(--d-ink) !important;
+}
+html[data-theme="dark"] .nav-btn.active {
+  background: transparent !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+html[data-theme="dark"] .lq-seg-ind {
+  background: var(--d-sel);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.6),
+              inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+html[data-theme="dark"] #sidebarFull .lq-seg-ind { border-radius: 12px; }
+
+/* Sidebar'ın satır içi stilli butonları */
+html[data-theme="dark"] aside button:not(.nav-btn) {
+  background: var(--d-2) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  color: var(--d-ink-2) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: background .22s var(--d-ease), transform .3s var(--d-spring), color .2s var(--d-ease) !important;
+}
+html[data-theme="dark"] aside button:not(.nav-btn):hover {
+  background: var(--d-hover) !important;
+  color: var(--d-ink) !important;
+  transform: translateY(-1px);
+}
+html[data-theme="dark"] aside button:not(.nav-btn):active { transform: scale(.93); }
+
+/* ── 4. ANA CAM PANELLER ─────────────────────────────────────────────── */
+html[data-theme="dark"] .filter-card,
+html[data-theme="dark"] .dep-card,
+html[data-theme="dark"] .deal-total-bar,
+html[data-theme="dark"] .tl-kanban-col,
+html[data-theme="dark"] #tmTableWrap {
+  background: var(--d-1) !important;
+  -webkit-backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: var(--d-r-md) !important;
+  box-shadow: var(--d-sh-1), var(--d-sheen);
+}
+html[data-theme="dark"] .info-card,
+html[data-theme="dark"] .tl-kanban-card,
+html[data-theme="dark"] .tl-kanban-col-head {
+  background: var(--d-2) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: var(--d-r-sm) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+html[data-theme="dark"] .tl-kanban-card {
+  transition: transform .28s var(--d-spring), background .25s var(--d-ease), box-shadow .25s var(--d-ease);
+}
+html[data-theme="dark"] .tl-kanban-card:hover {
+  background: var(--d-hover) !important;
+  transform: translateY(-3px) scale(1.012);
+  box-shadow: var(--d-sh-2);
+  border-color: var(--d-edge) !important;
+}
+html[data-theme="dark"] .today-card {
+  transition: transform .3s var(--d-spring), box-shadow .3s var(--d-ease), background .25s var(--d-ease) !important;
+}
+html[data-theme="dark"] .today-card:hover {
+  background: var(--d-hover) !important;
+  transform: translateY(-4px) scale(1.015) !important;
+  box-shadow: var(--d-sh-2) !important;
+  border-color: rgba(13, 148, 136, 0.6) !important;
+}
+
+/* ── 5. MODAL ────────────────────────────────────────────────────────── */
+html[data-theme="dark"] .modal-bg {
+  background: rgba(3, 6, 14, 0.62) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+html[data-theme="dark"] .modal-box {
+  background: rgba(255, 255, 255, 0.075) !important;
+  -webkit-backdrop-filter: blur(44px) saturate(190%);
+  backdrop-filter: blur(44px) saturate(190%);
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: 28px !important;
+  box-shadow: var(--d-sh-3), var(--d-sheen);
+  animation: lgModalIn .46s var(--d-spring);
+  /* Kaydırma çubuğu yuvarlak köşeden taşmasın (açık temayla aynı çözüm) */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-gutter: stable;
+  padding-right: 18px !important;
+}
+html[data-theme="dark"] .modal-box::-webkit-scrollbar { width: 7px; }
+html[data-theme="dark"] .modal-box::-webkit-scrollbar-track { background: transparent; margin: 14px 0; }
+html[data-theme="dark"] .modal-box::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+html[data-theme="dark"] .modal-box:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); background-clip: content-box; }
+html[data-theme="dark"] .modal-box *::-webkit-scrollbar { width: 5px; height: 5px; }
+html[data-theme="dark"] .modal-box *::-webkit-scrollbar-track { background: transparent; }
+html[data-theme="dark"] .modal-box *::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.14); border-radius: 99px; }
+
+/* Aksiyon Geçmişi */
+html[data-theme="dark"] #alarmHistoryList {
+  background: var(--d-2) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: 14px !important;
+  padding: 10px 13px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+html[data-theme="dark"] #alarmHistoryList > * + * {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 7px;
+  margin-top: 7px;
+}
+
+/* ── 6. BUTONLAR ─────────────────────────────────────────────────────── */
+html[data-theme="dark"] .tab-pill { position: relative; z-index: 1; border-radius: 999px !important; }
+html[data-theme="dark"] .tab-pill:not(.active) {
+  background: var(--d-2) !important;
+  color: var(--d-ink-2) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .tab-pill:not(.active):hover {
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: var(--d-ink) !important;
+}
+html[data-theme="dark"] .tab-pill.active {
+  background: transparent !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+html[data-theme="dark"] .tab-pill:active,
+html[data-theme="dark"] .nav-btn:active,
+html[data-theme="dark"] .dep-quick-btn:active { transform: scale(.955); }
+
+/* Birincil butonlar — Yenile / Güncelle / Sonuç Kodu / Kaydet */
+html[data-theme="dark"] button[style*="background:#0d9488" i]:not(aside button),
+html[data-theme="dark"] button[style*="background: rgb(13, 148, 136)" i]:not(aside button),
+html[data-theme="dark"] button[style*="background:#0f766e" i]:not(aside button),
+html[data-theme="dark"] button[style*="background: rgb(15, 118, 110)" i]:not(aside button) {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(150deg, #17c1ad 0%, #0d9488 55%, #0e7c72 100%) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 6px 22px -5px rgba(13, 148, 136, 0.65),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  transition: box-shadow .26s var(--d-ease), transform .3s var(--d-spring), filter .2s var(--d-ease) !important;
+}
+html[data-theme="dark"] button[style*="background:#0d9488" i]:not(aside button)::after,
+html[data-theme="dark"] button[style*="background: rgb(13, 148, 136)" i]:not(aside button)::after {
+  content: ""; position: absolute; inset: 0 0 52% 0;
+  background: linear-gradient(rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
+  border-radius: inherit; pointer-events: none;
+}
+html[data-theme="dark"] button[style*="background:#0d9488" i]:not(aside button):hover,
+html[data-theme="dark"] button[style*="background: rgb(13, 148, 136)" i]:not(aside button):hover {
+  transform: translateY(-1.5px); filter: saturate(115%) brightness(1.08);
+}
+html[data-theme="dark"] button[style*="background:#0d9488" i]:not(aside button):active { transform: scale(.965); }
+
+/* İkincil butonlar */
+html[data-theme="dark"] button[style*="background:#1e293b" i]:not(aside button),
+html[data-theme="dark"] button[style*="background: rgb(30, 41, 59)" i]:not(aside button) {
+  background: var(--d-3) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  color: var(--d-ink-2) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  transition: background .22s var(--d-ease), transform .3s var(--d-spring) !important;
+}
+html[data-theme="dark"] button[style*="background:#1e293b" i]:not(aside button):hover,
+html[data-theme="dark"] button[style*="background: rgb(30, 41, 59)" i]:not(aside button):hover {
+  background: var(--d-hover) !important; color: var(--d-ink) !important; transform: translateY(-1px);
+}
+
+/* WhatsApp */
+html[data-theme="dark"] button[onclick*="WhatsApp" i],
+html[data-theme="dark"] #depWaBtn {
+  position: relative; overflow: hidden;
+  background: linear-gradient(150deg, #2fc36b 0%, #1faa57 55%, #158f46 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 12px !important;
+  color: #fff !important;
+  box-shadow: 0 6px 22px -5px rgba(21, 143, 70, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  transition: transform .3s var(--d-spring), filter .2s var(--d-ease) !important;
+}
+html[data-theme="dark"] button[onclick*="WhatsApp" i]:hover,
+html[data-theme="dark"] #depWaBtn:hover { transform: translateY(-1.5px); filter: brightness(1.08); }
+
+/* Başlık butonları */
+html[data-theme="dark"] #btnRunEngine {
+  background: var(--d-3) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  color: var(--d-ink-2) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  transition: background .22s var(--d-ease), color .2s var(--d-ease), transform .3s var(--d-spring) !important;
+}
+html[data-theme="dark"] #btnRunEngine:hover {
+  background: linear-gradient(150deg, #14b8a6, #0d9488) !important;
+  border-color: transparent !important; color: #fff !important;
+  transform: translateY(-1px);
+}
+/* Temizle / Yenile metin butonları */
+html[data-theme="dark"] button[onclick*="Reset" i],
+html[data-theme="dark"] button[onclick="loadTlActivity()"] {
+  padding: 6px 13px !important;
+  background: var(--d-3) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: 999px !important;
+  color: var(--d-ink-2) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  transition: background .22s var(--d-ease), color .2s var(--d-ease), transform .3s var(--d-spring) !important;
+}
+html[data-theme="dark"] button[onclick*="Reset" i]:hover,
+html[data-theme="dark"] button[onclick="loadTlActivity()"]:hover {
+  background: rgba(13, 148, 136, 0.28) !important; color: #5eead4 !important; transform: translateY(-1px);
+}
+
+/* Tablo / Kanban segmenti */
+html[data-theme="dark"] div:has(> #alarmsViewBtnTable),
+html[data-theme="dark"] div:has(> #dealsViewBtnTable) {
+  background: var(--d-2) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] #alarmsViewBtnTable,
+html[data-theme="dark"] #alarmsViewBtnKanban,
+html[data-theme="dark"] #dealsViewBtnTable,
+html[data-theme="dark"] #dealsViewBtnKanban {
+  position: relative; z-index: 1;
+  background: transparent !important;
+  border-radius: 9px !important;
+  transition: color .24s var(--d-ease), transform .3s var(--d-spring) !important;
+}
+html[data-theme="dark"] #alarmsViewBtnTable[style*="rgb(79, 70, 229)" i],
+html[data-theme="dark"] #alarmsViewBtnKanban[style*="rgb(79, 70, 229)" i],
+html[data-theme="dark"] #dealsViewBtnTable[style*="rgb(79, 70, 229)" i],
+html[data-theme="dark"] #dealsViewBtnKanban[style*="rgb(79, 70, 229)" i],
+html[data-theme="dark"] #alarmsViewBtnTable[style*="background:#4f46e5" i],
+html[data-theme="dark"] #dealsViewBtnTable[style*="background:#4f46e5" i] {
+  background: transparent !important; color: #fff !important; box-shadow: none !important;
+}
+html[data-theme="dark"] div:has(> #alarmsViewBtnTable) .lq-seg-ind,
+html[data-theme="dark"] div:has(> #dealsViewBtnTable) .lq-seg-ind { border-radius: 9px; }
+
+/* Metrik pill'leri */
+html[data-theme="dark"] .metric-pill {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: transform .3s var(--d-spring), filter .2s var(--d-ease) !important;
+}
+html[data-theme="dark"] .metric-pill:hover { transform: translateY(-2px) scale(1.03) !important; filter: brightness(1.15) !important; }
+
+/* ── 7. INPUT / SELECT ───────────────────────────────────────────────── */
+html[data-theme="dark"] .filter-sel,
+html[data-theme="dark"] .filter-inp,
+html[data-theme="dark"] .nc-date-trigger,
+html[data-theme="dark"] .dep-input,
+html[data-theme="dark"] textarea.modal-note {
+  background: var(--d-3) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: 12px !important;
+  color: var(--d-ink) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: border-color .2s var(--d-ease), box-shadow .25s var(--d-ease), background .2s var(--d-ease) !important;
+}
+html[data-theme="dark"] .filter-inp::placeholder,
+html[data-theme="dark"] .dep-input::placeholder,
+html[data-theme="dark"] textarea.modal-note::placeholder { color: var(--d-ink-3); }
+html[data-theme="dark"] .filter-sel:hover,
+html[data-theme="dark"] .filter-inp:hover,
+html[data-theme="dark"] .nc-date-trigger:hover { background: var(--d-hover) !important; }
+html[data-theme="dark"] .filter-sel:focus,
+html[data-theme="dark"] .filter-inp:focus,
+html[data-theme="dark"] .dep-input:focus,
+html[data-theme="dark"] textarea.modal-note:focus,
+html[data-theme="dark"] .nc-date-trigger.active {
+  border-color: rgba(45, 212, 191, 0.65) !important;
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.22) !important;
+  background: rgba(255, 255, 255, 0.11) !important;
+}
+html[data-theme="dark"] .filter-sel option { background: #101725 !important; color: var(--d-ink) !important; }
+html[data-theme="dark"] input[id^="tmPhone-"],
+html[data-theme="dark"] #waPhoneInput {
+  width: 160px !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+  font-weight: 600;
+  padding: 7px 13px !important;
+  border-radius: 999px !important;
+}
+
+/* ── 8. TABLOLAR ─────────────────────────────────────────────────────── */
+html[data-theme="dark"] .alarm-tbl th,
+html[data-theme="dark"] .dep-tbl thead th,
+html[data-theme="dark"] #tmTable thead th {
+  background: rgba(255, 255, 255, 0.055) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border-bottom: 1px solid var(--d-edge-soft) !important;
+}
+html[data-theme="dark"] .alarm-tbl td,
+html[data-theme="dark"] .dep-tbl tbody td,
+html[data-theme="dark"] #tmTable tbody td { border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important; }
+html[data-theme="dark"] .alarm-tbl tbody tr:nth-child(even) td,
+html[data-theme="dark"] .dep-tbl tbody tr:nth-child(even) td,
+html[data-theme="dark"] #tmTable tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.022); }
+html[data-theme="dark"] .alarm-tbl tbody tr:hover td,
+html[data-theme="dark"] .dep-tbl tbody tr:hover td,
+html[data-theme="dark"] #tmTable tbody tr:hover td { background: rgba(255, 255, 255, 0.075) !important; }
+html[data-theme="dark"] .dep-tbl tfoot td {
+  background: rgba(13, 148, 136, 0.16) !important;
+  border-top: 1px solid rgba(45, 212, 191, 0.4) !important;
+}
+html[data-theme="dark"] #tmTableWrap { padding: 2px; }
+html[data-theme="dark"] #tmTable thead th {
+  padding: 11px 13px !important;
+  font-size: 9.5px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: var(--d-ink-3) !important;
+  position: sticky; top: 0; z-index: 2;
+}
+html[data-theme="dark"] #tmTable tbody td { padding: 9px 13px !important; vertical-align: middle; }
+html[data-theme="dark"] #tmTable tbody td input,
+html[data-theme="dark"] #tmTable tbody td .lq-sel,
+html[data-theme="dark"] #tmTable tbody td button { animation: lqCellIn .4s var(--d-spring) backwards; }
+
+/* ── 9. TAKVİM ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] .nc-cal-popup {
+  background: linear-gradient(158deg, rgba(24, 32, 50, 0.88), rgba(16, 22, 38, 0.84)) !important;
+  -webkit-backdrop-filter: blur(46px) saturate(180%);
+  backdrop-filter: blur(46px) saturate(180%);
+  border: 1px solid var(--d-edge) !important;
+  border-radius: 18px !important;
+  box-shadow: var(--d-sh-2), var(--d-sheen);
+  animation: lgCalIn .34s var(--d-spring);
+  z-index: 400 !important;
+}
+html[data-theme="dark"] .nc-cal-day:hover { background: rgba(45, 212, 191, 0.20) !important; color: #5eead4 !important; }
+html[data-theme="dark"] .nc-cal-day.selected,
+html[data-theme="dark"] .nc-cal-panel-item.selected {
+  background: linear-gradient(150deg, #14b8a6, #0d9488) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px -3px rgba(13, 148, 136, 0.7) !important;
+}
+html[data-theme="dark"] .nc-cal-footer { border-top: 1px solid var(--d-edge-soft) !important; }
+
+/* ── 10. YIĞIN SIRASI — takvim/export tablonun önünde ────────────────── */
+html[data-theme="dark"] .filter-card { position: relative; z-index: 60; }
+html[data-theme="dark"] .nc-date-field { position: relative; z-index: 61; }
+html[data-theme="dark"] main > div[id^="view-"] > div:has(.nc-date-field),
+html[data-theme="dark"] main > div[id^="view-"] > div:has(.nc-export-wrap),
+html[data-theme="dark"] main > div[id^="view-"] > div:has(> span[id$="ExportMount"]) { position: relative; z-index: 70; }
+html[data-theme="dark"] .nc-export-wrap { position: relative; z-index: 300; }
+html[data-theme="dark"] .nc-export-menu { z-index: 500 !important; }
+html[data-theme="dark"] main > div[id^="view-"] > div:has(> table) { position: relative; z-index: 1; }
+html[data-theme="dark"] #dealTableWrap,
+html[data-theme="dark"] #dealsKanbanView,
+html[data-theme="dark"] #dealTotalBar { position: relative; z-index: 1; }
+
+/* ── 11. EXPORT MENÜSÜ ───────────────────────────────────────────────── */
+html[data-theme="dark"] .nc-export-menu {
+  background: var(--d-strong) !important;
+  -webkit-backdrop-filter: blur(34px) saturate(180%);
+  backdrop-filter: blur(34px) saturate(180%);
+  border: 1px solid var(--d-edge) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--d-sh-2), var(--d-sheen) !important;
+  padding: 7px !important;
+  animation: lqPanelIn .4s var(--d-spring);
+}
+html[data-theme="dark"] .nc-export-menu button {
+  color: var(--d-ink) !important;
+  border-radius: 10px !important;
+  animation: lqOptIn .3s var(--d-ease) backwards;
+  transition: background .18s var(--d-ease), transform .25s var(--d-spring) !important;
+}
+html[data-theme="dark"] .nc-export-menu button:hover { background: rgba(45, 212, 191, 0.18) !important; }
+html[data-theme="dark"] .nc-export-menu button:nth-child(1) { animation-delay: 20ms; }
+html[data-theme="dark"] .nc-export-menu button:nth-child(2) { animation-delay: 45ms; }
+html[data-theme="dark"] .nc-export-menu button:nth-child(3) { animation-delay: 70ms; }
+html[data-theme="dark"] .nc-export-menu button:nth-child(4) { animation-delay: 95ms; }
+html[data-theme="dark"] .nc-export-btn,
+html[data-theme="dark"] [id$="ExportMount"] > button {
+  background: var(--d-3) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  color: var(--d-ink-2) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+html[data-theme="dark"] .nc-export-btn:hover,
+html[data-theme="dark"] [id$="ExportMount"] > button:hover { background: var(--d-hover) !important; color: var(--d-ink) !important; }
+
+/* ── 12. LIQUID SELECT (cam açılır liste) ────────────────────────────── */
+html[data-theme="dark"] .lq-trigger {
+  width: 100%;
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 11px;
+  font-size: 12px; font-weight: 500;
+  text-align: left;
+  color: var(--d-ink);
+  background: var(--d-3);
+  border: 1px solid var(--d-edge-soft);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  cursor: pointer;
+  transition: background .22s var(--d-ease), border-color .2s var(--d-ease),
+              box-shadow .25s var(--d-ease), transform .3s var(--d-spring);
+}
+html[data-theme="dark"] .lq-trigger:hover { background: var(--d-hover); }
+html[data-theme="dark"] .lq-trigger:active { transform: scale(.985); }
+html[data-theme="dark"] .lq-trigger.lq-active {
+  border-color: rgba(45, 212, 191, 0.6);
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+}
+html[data-theme="dark"] .lq-trigger-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html[data-theme="dark"] .lq-trigger-chev { width: 12px; height: 12px; flex-shrink: 0; color: var(--d-ink-3); transition: transform .38s var(--d-spring); }
+html[data-theme="dark"] .lq-trigger.lq-active .lq-trigger-chev { transform: rotate(180deg); color: #5eead4; }
+html[data-theme="dark"] .lq-disabled .lq-trigger { opacity: .45; cursor: not-allowed; }
+
+html[data-theme="dark"] .lq-panel {
+  background: rgba(20, 27, 44, 0.88);
+  -webkit-backdrop-filter: blur(44px) saturate(180%);
+  backdrop-filter: blur(44px) saturate(180%);
+  border: 1px solid var(--d-edge);
+  box-shadow: var(--d-sh-3), var(--d-sheen);
+}
+html[data-theme="dark"] .lq-panel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); }
+html[data-theme="dark"] .lq-panel .lq-search input {
+  color: var(--d-ink);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--d-edge-soft);
+}
+html[data-theme="dark"] .lq-panel .lq-search input::placeholder { color: var(--d-ink-3); }
+html[data-theme="dark"] .lq-panel .lq-search input:focus {
+  border-color: rgba(45, 212, 191, 0.6);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
+}
+html[data-theme="dark"] .lq-opt { color: var(--d-ink); }
+html[data-theme="dark"] .lq-opt:hover { background: rgba(255, 255, 255, 0.10); }
+html[data-theme="dark"] .lq-opt-on {
+  background: var(--d-sel);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+html[data-theme="dark"] .lq-opt-on:hover { background: rgba(255, 255, 255, 0.22); }
+
+/* Devam durumu pill'i (Günlük Ekip Girişi) */
+html[data-theme="dark"] .lq-att .lq-trigger {
+  border-radius: 999px !important;
+  padding: 5px 11px !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  justify-content: center;
+}
+html[data-theme="dark"] .lq-att .lq-trigger-label { flex: 0 1 auto; text-align: center; }
+html[data-theme="dark"] .lq-trigger.lq-att-working {
+  background: rgba(34, 197, 94, 0.22) !important;
+  border-color: rgba(74, 222, 128, 0.42) !important;
+  color: #4ade80 !important;
+}
+html[data-theme="dark"] .lq-trigger.lq-att-working:hover { background: rgba(34, 197, 94, 0.34) !important; }
+html[data-theme="dark"] .lq-trigger.lq-att-off {
+  background: rgba(239, 68, 68, 0.22) !important;
+  border-color: rgba(248, 113, 113, 0.42) !important;
+  color: #f87171 !important;
+}
+html[data-theme="dark"] .lq-trigger.lq-att-off:hover { background: rgba(239, 68, 68, 0.34) !important; }
+html[data-theme="dark"] .lq-att .lq-trigger-chev { width: 10px; height: 10px; }
+
+/* ── 13. DİL SEÇİCİ ──────────────────────────────────────────────────── */
+html[data-theme="dark"] .lang-dd { position: relative; display: block; }
+html[data-theme="dark"] .lang-trigger {
+  width: 100%;
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+  cursor: pointer;
+  color: var(--d-ink-2);
+  background: var(--d-3);
+  border: 1px solid var(--d-edge-soft);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: background .22s var(--d-ease), color .2s var(--d-ease), transform .3s var(--d-spring);
+}
+html[data-theme="dark"] .lang-trigger:hover { background: var(--d-hover); color: var(--d-ink); }
+html[data-theme="dark"] .lang-trigger:active { transform: scale(.975); }
+html[data-theme="dark"] .lang-dd.lang-open .lang-trigger {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(45, 212, 191, 0.5);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
+  color: var(--d-ink);
+}
+html[data-theme="dark"] .lang-code {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 23px; padding: 2px 5px;
+  border-radius: 6px;
+  font-size: 8.5px; font-weight: 800; letter-spacing: .06em;
+  background: rgba(45, 212, 191, 0.18);
+  color: #5eead4;
+  border: 1px solid rgba(45, 212, 191, 0.28);
+}
+html[data-theme="dark"] .lang-item.lang-on .lang-code {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+html[data-theme="dark"] .lang-name { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-theme="dark"] .lang-chev { width: 11px; height: 11px; flex-shrink: 0; color: var(--d-ink-3); transition: transform .38s var(--d-spring); }
+html[data-theme="dark"] .lang-dd.lang-open .lang-chev { transform: rotate(180deg); color: #5eead4; }
+html[data-theme="dark"] .lang-menu {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 400;
+  display: none;
+  padding: 6px;
+  border-radius: 16px;
+  background: rgba(20, 27, 44, 0.90);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--d-edge);
+  box-shadow: var(--d-sh-3), var(--d-sheen);
+  transform-origin: bottom center;
+}
+html[data-theme="dark"] .lang-dd.lang-open .lang-menu { display: block; animation: langFadeIn .38s var(--d-spring); }
+html[data-theme="dark"] .lang-item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none; border-radius: 11px;
+  background: none;
+  font-size: 11.5px; font-weight: 600;
+  color: var(--d-ink);
+  cursor: pointer; text-align: left;
+  transition: background .16s ease, transform .25s var(--d-spring);
+  animation: lqOptIn .32s var(--d-ease) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+html[data-theme="dark"] .lang-item:hover { background: rgba(255, 255, 255, 0.10); }
+html[data-theme="dark"] .lang-item.lang-on {
+  background: var(--d-sel);
+  color: #fff; font-weight: 800;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+html[data-theme="dark"] .lang-check { width: 12px; height: 12px; flex-shrink: 0; opacity: 0; color: #5eead4; transition: opacity .2s ease; }
+html[data-theme="dark"] .lang-item.lang-on .lang-check { opacity: 1; }
+
+/* ── 14. TEMA ANAHTARI KUTUCUĞU (koyu cam) ──────────────────────────── */
+html[data-theme="dark"] .cine-box {
+  background: var(--d-3);
+  border: 1px solid var(--d-edge-soft);
+  color: var(--d-ink-2);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+html[data-theme="dark"] .cine-box:hover { background: var(--d-hover); color: var(--d-ink); }
+
+/* ── 15. ALARM ÖZETİ KUTULARI (pastel koyu cam) ─────────────────────── */
+html[data-theme="dark"] #sidebarFull div[onclick] {
+  background: var(--d-2) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 10px rgba(0, 0, 0, 0.3);
+  transition: background .25s var(--d-ease), transform .32s var(--d-spring),
+              box-shadow .28s var(--d-ease), border-color .25s var(--d-ease) !important;
+}
+html[data-theme="dark"] #sidebarFull div[onclick]:hover {
+  transform: translateY(-2px) scale(1.015);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 24px -6px rgba(0, 0, 0, 0.5);
+}
+html[data-theme="dark"] #sidebarFull div[onclick]:has(#kpiOpen)    { background: rgba(245, 158, 11, 0.14) !important; }
+html[data-theme="dark"] #sidebarFull div[onclick]:has(#kpiToday)   { background: rgba(34, 197, 94, 0.14) !important; }
+html[data-theme="dark"] #sidebarFull div[onclick]:has(#kpiOverdue) { background: rgba(239, 68, 68, 0.14) !important; }
+html[data-theme="dark"] #sidebarFull div[onclick]:has(#kpiMissing) { background: rgba(148, 163, 184, 0.12) !important; }
+html[data-theme="dark"] #sidebarFull div[onclick]:has(#kpiOpen):hover    { background: rgba(245, 158, 11, 0.24) !important; }
+html[data-theme="dark"] #sidebarFull div[onclick]:has(#kpiToday):hover   { background: rgba(34, 197, 94, 0.24) !important; }
+html[data-theme="dark"] #sidebarFull div[onclick]:has(#kpiOverdue):hover { background: rgba(239, 68, 68, 0.24) !important; }
+html[data-theme="dark"] #sidebarFull div[onclick]:has(#kpiMissing):hover { background: rgba(148, 163, 184, 0.22) !important; }
+
+/* ── 16. NOT POPUP ───────────────────────────────────────────────────── */
+html[data-theme="dark"] #notePopup {
+  background: rgba(26, 34, 54, 0.86) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid var(--d-edge) !important;
+  border-radius: 18px !important;
+  padding: 13px 15px !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  line-height: 1.55;
+  box-shadow: var(--d-sh-3), var(--d-sheen) !important;
+  animation: lqNoteIn .34s var(--d-spring);
+}
+html[data-theme="dark"] button[onclick*="showNoteTip" i] {
+  background: rgba(245, 158, 11, 0.20) !important;
+  border: 1px solid rgba(251, 191, 36, 0.45) !important;
+  color: #fbbf24 !important;
+  border-radius: 8px !important;
+  transition: background .2s var(--d-ease), transform .28s var(--d-spring) !important;
+}
+html[data-theme="dark"] button[onclick*="showNoteTip" i]:hover {
+  background: rgba(245, 158, 11, 0.34) !important;
+  transform: translateY(-1px) scale(1.06);
+}
+
+/* ── 17. GÜNLÜK EKİP GİRİŞİ ──────────────────────────────────────────── */
+html[data-theme="dark"] .dep-input { border-radius: 10px !important; font-variant-numeric: tabular-nums; }
+html[data-theme="dark"] .dep-tbl tbody tr.dep-row-off td { background: rgba(239, 68, 68, 0.09) !important; }
+html[data-theme="dark"] .dep-quick-btn {
+  position: relative; z-index: 1;
+  border-radius: 999px !important;
+  padding: 7px 16px !important;
+  color: var(--d-ink-2) !important;
+  transition: color .24s var(--d-ease), transform .3s var(--d-spring) !important;
+}
+html[data-theme="dark"] .dep-quick-btn:hover { background: rgba(255, 255, 255, 0.08) !important; color: var(--d-ink) !important; }
+html[data-theme="dark"] .dep-quick-btn.dep-quick-active,
+html[data-theme="dark"] .dep-quick-btn.dep-quick-active:hover {
+  background: transparent !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+/* ── 18. GÖRÜNÜM GEÇİŞİ ──────────────────────────────────────────────── */
+html[data-theme="dark"] main > div[id^="view-"] { animation: lgViewIn .62s var(--d-spring); }
+html[data-theme="dark"] .spinner {
+  border-color: rgba(45, 212, 191, 0.22) !important;
+  border-top-color: #2dd4bf !important;
+}
+
+/* ── 19. KOYU ZEMİNLERİ CAMA ÇEVİR ───────────────────────────────────
+   Açık temadaki eşlemelerin koyu karşılığı. Burada SADECE zeminler
+   camlaşır; metin/accent renkleri zaten koyu tema için yazılmış olduğu
+   için ellenmiyor (dosya başındaki nota bakın).
+   Hem hex hem normalize edilmiş rgb() biçimi kapsanır — JS bir elemanın
+   style.display'ini set ettiğinde tarayıcı style özniteliğini yeniden
+   serialize ediyor ve hex eşleşmesi kayboluyor. */
+html[data-theme="dark"] [style*="background:#0f172a" i]:not(body),
+html[data-theme="dark"] [style*="background: rgb(15, 23, 42)" i]:not(body),
+html[data-theme="dark"] [style*="background:#0d1526" i]:not(body),
+html[data-theme="dark"] [style*="background: rgb(13, 21, 38)" i]:not(body),
+html[data-theme="dark"] [style*="background:#111827" i]:not(body),
+html[data-theme="dark"] [style*="background: rgb(17, 24, 39)" i]:not(body),
+html[data-theme="dark"] [style*="background:#0b1220" i]:not(body),
+html[data-theme="dark"] [style*="background: rgb(11, 18, 32)" i]:not(body),
+html[data-theme="dark"] [style*="background:#0a1120" i]:not(body),
+html[data-theme="dark"] [style*="background: rgb(10, 17, 32)" i]:not(body),
+html[data-theme="dark"] [style*="background:#141d30" i]:not(body),
+html[data-theme="dark"] [style*="background: rgb(20, 29, 48)" i]:not(body),
+html[data-theme="dark"] [style*="background:#0d1a2b" i]:not(body),
+html[data-theme="dark"] [style*="background: rgb(13, 26, 43)" i]:not(body),
+html[data-theme="dark"] [style*="background:#1e2c45" i]:not(body),
+html[data-theme="dark"] [style*="background: rgb(30, 44, 69)" i]:not(body),
+html[data-theme="dark"] [style*="background:#0f1b30" i]:not(body),
+html[data-theme="dark"] [style*="background: rgb(15, 27, 48)" i]:not(body) {
+  background: var(--d-1) !important;
+  -webkit-backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  backdrop-filter: blur(var(--d-blur)) saturate(var(--d-sat));
+  border-radius: var(--d-r-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+/* Nötr slate chip'ler */
+html[data-theme="dark"] [style*="background:#1e293b" i]:not(body):not(button):not(aside button),
+html[data-theme="dark"] [style*="background: rgb(30, 41, 59)" i]:not(body):not(button):not(aside button),
+html[data-theme="dark"] [style*="background:#334155" i]:not(body):not(button):not(aside button),
+html[data-theme="dark"] [style*="background: rgb(51, 65, 85)" i]:not(body):not(button):not(aside button) {
+  background: var(--d-2) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+/* Kenarlıklar → ince ışık hairline */
+html[data-theme="dark"] [style*="1px solid #1e293b" i],
+html[data-theme="dark"] [style*="1px solid rgb(30, 41, 59)" i],
+html[data-theme="dark"] [style*="1px solid #334155" i],
+html[data-theme="dark"] [style*="1px solid rgb(51, 65, 85)" i],
+html[data-theme="dark"] [style*="1px solid #374151" i],
+html[data-theme="dark"] [style*="1px solid rgb(55, 65, 81)" i],
+html[data-theme="dark"] [style*="1px solid #2a3752" i],
+html[data-theme="dark"] [style*="1px solid #223049" i],
+html[data-theme="dark"] [style*="2px solid #1e293b" i] { border-color: var(--d-edge-soft) !important; }
+
+/* Renkli koyu zeminler → aynı tonun cam hâli (renk dili korunur) */
+html[data-theme="dark"] [style*="background:#450a0a" i]:not(button),
+html[data-theme="dark"] [style*="background: rgb(69, 10, 10)" i]:not(button) { background: rgba(239, 68, 68, 0.16) !important; }
+html[data-theme="dark"] [style*="background:#052e16" i]:not(button),
+html[data-theme="dark"] [style*="background: rgb(5, 46, 22)" i]:not(button) { background: rgba(34, 197, 94, 0.16) !important; }
+html[data-theme="dark"] [style*="background:#431407" i]:not(button),
+html[data-theme="dark"] [style*="background:#422006" i]:not(button) { background: rgba(249, 115, 22, 0.16) !important; }
+html[data-theme="dark"] [style*="background:#1e1b4b" i]:not(button),
+html[data-theme="dark"] [style*="background:#2e1065" i]:not(button),
+html[data-theme="dark"] [style*="background:#3b1f6e" i]:not(button),
+html[data-theme="dark"] [style*="background:#1a0a2e" i]:not(button) { background: rgba(167, 139, 250, 0.16) !important; }
+html[data-theme="dark"] [style*="background:#0e7490" i]:not(button),
+html[data-theme="dark"] [style*="background:#083344" i]:not(button),
+html[data-theme="dark"] [style*="background:#042f2e" i]:not(button),
+html[data-theme="dark"] [style*="background:#14343a" i]:not(button),
+html[data-theme="dark"] [style*="background:#0d1f1c" i]:not(button) { background: rgba(45, 212, 191, 0.15) !important; }
+html[data-theme="dark"] [style*="background:#1e3a5f" i]:not(button) { background: rgba(96, 165, 250, 0.15) !important; }
+
+/* Logo koyu temada beyaz kalır — açık temadaki koyultma filtresi UYGULANMAZ */
+html[data-theme="dark"] img[src*="beyaz" i] { filter: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="dark"] main > div[id^="view-"],
+  html[data-theme="dark"] .modal-box,
+  html[data-theme="dark"] .nc-cal-popup,
+  html[data-theme="dark"] #notePopup,
+  html[data-theme="dark"] .nc-export-menu,
+  html[data-theme="dark"] .nc-export-menu button { animation: none !important; }
+  html[data-theme="dark"] .lq-seg-ind { transition: opacity .2s ease !important; }
+}

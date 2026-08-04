@@ -169,6 +169,7 @@
        geçince tarayıcı otomatik olarak orijinal koyu görünüme döner.
        ══════════════════════════════════════════════════════════════════ -->
   <link rel="stylesheet" href="liquid-glass.css">
+  <link rel="stylesheet" href="liquid-glass-dark.css">
 </head>
 <body class="flex flex-row min-h-screen text-slate-100" style="background:#020617">
 <script>
@@ -193,8 +194,10 @@
       void sw.offsetWidth;               // animasyonu yeniden tetikle
       sw.classList.add('cine-burst');
     }
-    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    setTimeout(function () { location.reload(); }, reduce ? 0 : 520);
+    // Sayfa YENİLENMİYOR: cam katman artık iki temada da çalıştığı için
+    // geçiş yerinde ve akıcı oluyor (eskiden koyu tema orijinal kaldığı için
+    // yenilemek gerekiyordu). Segment göstergeleri kendilerini yeniden ölçer.
+    window.dispatchEvent(new Event("resize"));
   }
   document.addEventListener('DOMContentLoaded', function() {
     var sw = document.getElementById('themeSwitch');

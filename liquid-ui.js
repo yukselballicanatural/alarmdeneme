@@ -279,6 +279,23 @@
     new MutationObserver(function () { self.update(); })
       .observe(container, { attributes: true, attributeFilter: ['class', 'style'], subtree: true });
     window.addEventListener('resize', function () { self.update(true); });
+
+    // Göstergeyi YENİDEN ölçmek şart: ilk ölçüm web fontları yüklenmeden
+    // yapılırsa öğe yükseklikleri sonradan değişiyor ve gösterge yanlış
+    // öğenin üzerinde kalıyordu (koyu temada "Alarmlar" aktifken gösterge
+    // "Aktivite"nin üzerinde duruyordu). ResizeObserver kabın her ölçü
+    // değişiminde tazeler; font/yükleme olayları da yedek.
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(function () { self.update(true); }).observe(container);
+    }
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { self.update(true); });
+    }
+    window.addEventListener('load', function () { self.update(true); });
+    [120, 400, 1200].forEach(function (ms) {
+      setTimeout(function () { self.update(true); }, ms);
+    });
+
     this.update(true);
   }
 
@@ -455,7 +472,7 @@
   /* ════════════════ Başlatma ════════════════ */
 
   function init() {
-    if (!isLight()) return;   // koyu tema birebir orijinal kalır
+    // Artık HER İKİ temada da çalışır: koyu tema da Liquid Glass oldu.
     enhanceSelects();
     enhanceSegments();
     enhanceLangSwitcher();
