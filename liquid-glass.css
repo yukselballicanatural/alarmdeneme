@@ -451,12 +451,18 @@ html[data-theme="light"] [style*="color:#c3cee2" i] { color: var(--ink) !importa
 html[data-theme="light"] [style*="color:#94a3b8" i],
 html[data-theme="light"] [style*="color:#8393ab" i],
 html[data-theme="light"] [style*="color:#a5b4d6" i] { color: var(--ink-2) !important; }
+/* DİKKAT: bunlar bir kademe KOYULAŞTIRILDI (--ink-3 → --ink-2).
+   Ölçüm: --ink-3 ile bu satır-içi tonlar cam üzerinde 2.73:1 kalıyordu ve
+   admin panelinde 10 tablo başlığı + "Yükleniyor" metinleri okunmuyordu.
+   Aynı eşleme takım liderinde de kullanıldığı için düzeltme iki panele
+   birden gidiyor — istenen "birebir aynı" davranış. Hiyerarşi korunuyor:
+   --ink-3 hâlâ sınıf tabanlı üçüncül metinlerde kullanılıyor. */
 html[data-theme="light"] [style*="color:#64748b" i],
 html[data-theme="light"] [style*="color:#475569" i],
 html[data-theme="light"] [style*="color:#5b6b85" i],
 html[data-theme="light"] [style*="color:#48597a" i],
 html[data-theme="light"] [style*="color:#54637a" i],
-html[data-theme="light"] [style*="color:#78716c" i] { color: var(--ink-3) !important; }
+html[data-theme="light"] [style*="color:#78716c" i] { color: var(--ink-2) !important; }
 
 /* Koyu temada parlak olan accent'ler → camda okunur derin tonlar
    (kontrast düşüklüğü camın en büyük düşmanı) */
@@ -2341,8 +2347,10 @@ html[data-theme="light"] .am-btn-primary,
 html[data-theme="light"] .nav-btn.active,
 html[data-theme="light"] .nav-btn.active .text-white,
 html[data-theme="light"] #userAvatar,
-html[data-theme="light"] .stage-pill,
 html[data-theme="light"] .am-day-chip.active { color: #fff !important; }
+/* .stage-pill bu listeden ÇIKARILDI: açık temada zeminlerini pastel cam
+   yaptım, dolayısıyla beyaz metin soluklaşıp okunmuyordu. Renkleri
+   stage-* kuralları veriyor (koyu ton + pastel zemin). */
 html[data-theme="light"] #userAvatar { background: linear-gradient(140deg, #6366f1, #4338ca) !important; }
 
 /* Arama/metin girdileri — .filter-input eşlemesi atlanmıştı, koyu kalıyordu */
@@ -2383,3 +2391,137 @@ html[data-theme="light"] input[type="date"] {
   border-radius: 10px !important;
   padding: 6px 10px !important;
 }
+
+/* ═════════════════════════════════════════════════════════════════════
+   40c. ADMIN — OTOMATİK DENETİMİN BULDUKLARI
+   Tüm görünümler + 10 modal aynı anda açılıp her öğenin zemin/metin
+   kontrastı taranarak çıkarıldı. Sayılar o taramadan geliyor.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ── Deal detay modalı (en büyük eksik: 32 kart hiç dönüşmemişti) ───── */
+html[data-theme="light"] .aam-info-card {
+  background: rgba(255, 255, 255, 0.5) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  backdrop-filter: blur(16px) saturate(170%);
+  border: 1px solid var(--edge-soft) !important;
+  border-radius: 13px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+/* 2.34:1 idi — modaldaki en okunmaz metindi */
+html[data-theme="light"] .aam-info-label { color: var(--ink-2) !important; }
+html[data-theme="light"] .aam-info-val { color: var(--ink) !important; }
+html[data-theme="light"] .aam-info-section { color: #4338ca !important; }
+
+/* ── Yapışkan tablo başlıkları: .am-th kendi koyu zeminini taşıyordu ── */
+html[data-theme="light"] .am-th,
+html[data-theme="light"] th.am-th {
+  background: rgba(255, 255, 255, 0.74) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  color: var(--ink-2) !important;
+  border-bottom: 1px solid var(--edge-soft) !important;
+}
+html[data-theme="light"] .am-sort:hover { color: var(--ink) !important; }
+
+/* ── 59 yerde 2.73:1 çıkan ton: bir kademe koyulaştırıldı ──────────── */
+html[data-theme="light"] .text-slate-500 { color: var(--ink-2) !important; }
+html[data-theme="light"] .am-kpi .am-kpi-label { color: var(--ink-2) !important; }
+
+/* ── Katı indigo butonlar: BEYAZ metin kalmalı ──────────────────────
+   `.text-white`u mürekkebe çevirmek bunları koyu-üstüne-koyu yapıyordu
+   (2.93:1). Zemin gerçekten koyu/renkli olduğu için beyaz doğru. */
+html[data-theme="light"] .bg-indigo-500,
+html[data-theme="light"] .bg-indigo-600,
+html[data-theme="light"] .bg-indigo-700,
+html[data-theme="light"] .bg-indigo-800,
+html[data-theme="light"] .bg-indigo-900 {
+  background-color: #4f46e5 !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+html[data-theme="light"] .bg-indigo-500 *,
+html[data-theme="light"] .bg-indigo-600 *,
+html[data-theme="light"] .bg-indigo-700 *,
+html[data-theme="light"] .bg-indigo-800 *,
+html[data-theme="light"] .bg-indigo-900 * { color: #fff !important; }
+/* Aynı mantık diğer katı renkli butonlar için */
+html[data-theme="light"] .bg-teal-600, html[data-theme="light"] .bg-teal-700,
+html[data-theme="light"] .bg-emerald-600, html[data-theme="light"] .bg-green-600,
+html[data-theme="light"] .bg-rose-600, html[data-theme="light"] .bg-red-600,
+html[data-theme="light"] .bg-amber-600, html[data-theme="light"] .bg-sky-600 { color: #fff !important; }
+html[data-theme="light"] .bg-teal-600 *, html[data-theme="light"] .bg-teal-700 *,
+html[data-theme="light"] .bg-emerald-600 *, html[data-theme="light"] .bg-green-600 *,
+html[data-theme="light"] .bg-rose-600 *, html[data-theme="light"] .bg-red-600 *,
+html[data-theme="light"] .bg-amber-600 *, html[data-theme="light"] .bg-sky-600 * { color: #fff !important; }
+
+/* ── #userModal zemini kabın KENDİSİNDE (rgba(0,0,0,.75)) ─────────── */
+html[data-theme="light"] #userModal {
+  background: rgba(23, 43, 99, 0.28) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+/* ── Parlak Tailwind vurgu renkleri açık camda okunmuyordu ─────────── */
+html[data-theme="light"] .text-blue-300,   html[data-theme="light"] .text-blue-400   { color: #1d4ed8 !important; }
+html[data-theme="light"] .text-cyan-300,   html[data-theme="light"] .text-cyan-400   { color: #0e7490 !important; }
+html[data-theme="light"] .text-teal-300,   html[data-theme="light"] .text-teal-400   { color: #0f766e !important; }
+html[data-theme="light"] .text-violet-300, html[data-theme="light"] .text-violet-400,
+html[data-theme="light"] .text-purple-300, html[data-theme="light"] .text-purple-400 { color: #6d28d9 !important; }
+html[data-theme="light"] .text-pink-300,   html[data-theme="light"] .text-pink-400   { color: #be185d !important; }
+html[data-theme="light"] .text-lime-300,   html[data-theme="light"] .text-lime-400   { color: #4d7c0f !important; }
+html[data-theme="light"] .text-orange-300, html[data-theme="light"] .text-orange-400 { color: #c2410c !important; }
+html[data-theme="light"] .text-fuchsia-400 { color: #a21caf !important; }
+
+/* ── Sekme rozetleri: koyu renkli zeminde beyaz kalsın ─────────────── */
+html[data-theme="light"] .tab-badge.text-white,
+html[data-theme="light"] .tab-badge.text-white * { color: #fff !important; }
+
+/* ── Tablo satır/gövde metinleri — takım liderindeki tabloyla aynı ── */
+html[data-theme="light"] .am-table-wrap table td,
+html[data-theme="light"] table.tbl td,
+html[data-theme="light"] table.deal-tbl td { color: var(--ink); }
+
+/* ── 40d. Denetimin son turu ─────────────────────────────────────────
+   Kalan beyaz-metinli butonlar YANLIS ALARM cikti: hepsinin zemini
+   gradyan (backgroundColor seffaf gorunuyor, backgroundImage var), yani
+   beyaz metin dogru. Gercekten duzeltilecekler bunlar: */
+
+/* INPUT ama `filter-select` sinifi tasiyor — select sanip atlamisim,
+   tek koyu kutu olarak kaliyordu */
+html[data-theme="light"] input.filter-select {
+  background: var(--g-3) !important;
+  border: 1px solid var(--edge-soft) !important;
+  color: var(--ink) !important;
+  border-radius: 12px !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+}
+html[data-theme="light"] input.filter-select::placeholder { color: var(--ink-3) !important; }
+html[data-theme="light"] input.filter-select:focus {
+  border-color: rgba(13, 148, 136, .65) !important;
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, .14) !important;
+  outline: none !important;
+}
+
+/* 2.73:1 kalan tonlar (10 tablo basligi + yukleniyor metinleri + CODE) */
+html[data-theme="light"] .text-slate-600,
+html[data-theme="light"] .text-gray-500,
+html[data-theme="light"] .text-gray-600 { color: var(--ink-2) !important; }
+html[data-theme="light"] .am-region-count { color: var(--ink-2) !important; }
+html[data-theme="light"] code { color: var(--ink-2) !important; }
+/* Canli gosterge yesili acik camda 1.92:1 */
+html[data-theme="light"] .tl-live { color: #0f766e !important; }
+
+/* Tailwind hover türevleri: `hover:text-white` AYRI bir sınıf, `.text-white`
+   eşlemem onu görmüyordu — açık temada üzerine gelince metin beyaza dönüp
+   cam zeminde kayboluyordu (26 yerde kullanılıyor). Aynısı hover:bg-* için. */
+html[data-theme="light"] [class~="hover:text-white"]:hover { color: var(--ink) !important; }
+html[data-theme="light"] [class~="hover:bg-gray-800"]:hover,
+html[data-theme="light"] [class~="hover:bg-gray-700"]:hover,
+html[data-theme="light"] [class~="hover:bg-slate-800"]:hover,
+html[data-theme="light"] [class~="hover:bg-slate-700"]:hover {
+  background-color: var(--g-hover) !important;
+}
+/* Zemini gerçekten koyu/renkli kalan yerlerde beyaz hover DOĞRU */
+html[data-theme="light"] .bg-indigo-600[class~="hover:text-white"]:hover,
+html[data-theme="light"] .am-btn-primary[class~="hover:text-white"]:hover { color: #fff !important; }

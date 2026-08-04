@@ -1393,3 +1393,41 @@ html[data-theme="dark"] input[type="date"] {
   padding: 6px 10px !important;
   color-scheme: dark;
 }
+
+/* ── 21c. Admin denetim bulgularinin koyu karsiligi
+   Koyuda yalnizca zeminler camlasir, renk dili korunur. */
+html[data-theme="dark"] .aam-info-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: 13px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+html[data-theme="dark"] .am-th,
+html[data-theme="dark"] th.am-th {
+  background: rgba(20, 26, 42, 0.88) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border-bottom: 1px solid var(--d-edge-soft) !important;
+}
+html[data-theme="dark"] #userModal {
+  background: rgba(3, 6, 14, 0.66) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+/* ── 21d. input.filter-select (koyu) — select sanilip atlanmisti */
+html[data-theme="dark"] input.filter-select {
+  background: var(--d-3) !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  color: var(--d-ink) !important;
+  border-radius: 12px !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+}
+html[data-theme="dark"] input.filter-select:focus {
+  border-color: rgba(45, 212, 191, .6) !important;
+  box-shadow: 0 0 0 4px rgba(45, 212, 191, .13) !important;
+  outline: none !important;
+}
