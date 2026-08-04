@@ -377,13 +377,25 @@ html[data-theme="light"] .nc-cal-panel-item.selected {
 html[data-theme="light"] .nc-cal-footer { border-top: 1px solid var(--edge-soft) !important; }
 
 /* ── 9. EXPORT MENÜSÜ — inline koyu stiller burada ezilir ────────────── */
-html[data-theme="light"] .nc-export-menu {
-  background: rgba(255, 255, 255, 0.62) !important;
-  -webkit-backdrop-filter: blur(34px) saturate(200%);
-  backdrop-filter: blur(34px) saturate(200%);
-  border: 1px solid var(--edge-soft) !important;
+/* Opaklık 0.62 → 0.88: menü KPI kartlarının ve filtre panelinin üzerine
+   düşüyor; yarı saydamken altındaki kenarlar/yazılar içinden okunuyordu ve
+   menü "tablonun arkasında kalmış" gibi görünüyordu. Katman sırası zaten
+   doğruydu (çarpışma testiyle ölçüldü) — sorun tamamen saydamlıktı.
+   Cam dokusu korunuyor: yüksek blur + doygunluk + üst kenar parlaması. */
+/* Seçici İKİ KEZ yazıldı (0,3,x): menünün satır içi stili
+   `background:#0f172a` olduğu için 19/22. bölümdeki genel
+   [style*="background:#0f172a"]:not(...) eşlemesi (0,2,2) buraya da
+   uyuyor ve tek sınıflı halini eziyordu — ölçümde 0.88 yerine 0.4
+   çıkmasının sebebi buydu. */
+html[data-theme="light"] .nc-export-menu.nc-export-menu {
+  background: rgba(255, 255, 255, 0.88) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid var(--edge) !important;
   border-radius: 16px !important;
-  box-shadow: var(--sh-2), var(--sheen) !important;
+  box-shadow: 0 18px 44px -12px rgba(23, 43, 99, 0.32),
+              0 4px 12px -4px rgba(23, 43, 99, 0.16),
+              var(--sheen) !important;
   padding: 7px !important;
 }
 html[data-theme="light"] .nc-export-menu button {
@@ -2603,9 +2615,94 @@ html[data-theme="light"] .modal-panel::-webkit-scrollbar-thumb:hover { backgroun
 
 /* Sidebar kaydırma çubuğu — ada görünümünde kalın çubuk kenarı bozuyor
    (takım liderindeki #sidebarFull ile aynı çözüm) */
-html[data-theme="light"] aside { scrollbar-width: thin; scrollbar-gutter: stable; }
+/* DİKKAT — `scrollbar-width` verildiği anda Chromium STANDART çubuk yoluna
+   geçer ve aşağıdaki ::-webkit-scrollbar kurallarını TAMAMEN yok sayar.
+   O yüzden görünümü belirleyen tek şey `scrollbar-color`; burada eksikti ve
+   çubuk varsayılan kalın griyle çiziliyordu (ölçüm: 12px, gri raylı).
+   Değerler takım liderindeki #sidebarFull ile birebir aynı.
+   webkit kuralları, standart yolu desteklemeyen tarayıcılar için yedek. */
+html[data-theme="light"] aside {
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+  scrollbar-color: rgba(23, 43, 99, 0.10) transparent;
+}
+/* Fare sidebar üzerindeyken belirginleşir — okunurluk korunur ama duruşta
+   ada kenarını bölmez (admin menüsü takım liderinin aksine her zaman
+   kayacak kadar uzun, o yüzden dinlenme hali daha silik). */
+html[data-theme="light"] aside:hover { scrollbar-color: rgba(23, 43, 99, 0.26) transparent; }
 html[data-theme="light"] aside::-webkit-scrollbar { width: 5px; }
 html[data-theme="light"] aside::-webkit-scrollbar-track { background: transparent; }
 html[data-theme="light"] aside::-webkit-scrollbar-thumb {
   background: rgba(23, 43, 99, 0.16); border-radius: 99px;
 }
+
+/* ═════════════════════════════════════════════════════════════════════
+   41. ADMIN HIZLI FİLTRELERİ (#dealTabNav) — takım liderinin alarm
+   sekmeleriyle BİREBİR aynı dil: tek cam ray, kayan koyu cam gösterge.
+   Neden ray şart: gösterge düğmelerin ARKASINDAN geçiyor. Düğmelerin
+   kendi zeminleri olursa gösterge yolda kaybolur — #alarmTabsRow'da
+   yaşanan tam olarak bu hatadır (36. bölüm).
+   Kimlik rengi mavi DEĞİL: seçim koyu cam göstergeden geliyor, böylece
+   Tablo/Kanban ve sidebar seçimiyle aynı dili konuşuyor.
+   DİKKAT: display'e DOKUNULMAZ — sadece kutu ölçüleri.
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] #dealTabNav {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px !important;
+  padding: 4px !important;          /* Tailwind pb-2'yi de ezer */
+  border: 1px solid var(--edge-soft) !important;
+  border-radius: 999px !important;
+  background: var(--g-2) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(175%);
+  backdrop-filter: blur(18px) saturate(175%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65),
+              0 2px 8px rgba(23, 43, 99, 0.07);
+}
+html[data-theme="light"] #dealTabNav .lq-seg-ind { border-radius: 999px !important; }
+
+/* Düğmeler: zemin şeffaf ki gösterge yol boyunca görünsün.
+   id'li seçici (1,1,1) — genel .bg-indigo-600 eşlemesini (0,2,0) yener. */
+html[data-theme="light"] #dealTabNav button {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-radius: 999px !important;
+  color: var(--ink-2) !important;
+  box-shadow: none !important;
+  transition: color .2s var(--ease), transform .3s var(--spring) !important;
+}
+html[data-theme="light"] #dealTabNav button:not(.bg-indigo-600):hover {
+  background: rgba(18, 22, 34, 0.10) !important;
+  color: var(--ink) !important;
+}
+html[data-theme="light"] #dealTabNav button:active { transform: scale(.96); }
+html[data-theme="light"] #dealTabNav button.bg-indigo-600,
+html[data-theme="light"] #dealTabNav button.bg-indigo-600 * { color: #fff !important; }
+
+/* Rozetler — aktifte koyu göstergenin üzerinde, pasifte açık camda */
+html[data-theme="light"] #dealTabNav .tab-badge {
+  background: rgba(23, 43, 99, 0.10) !important;
+  color: var(--ink-2) !important;
+  border-radius: 999px !important;
+}
+html[data-theme="light"] #dealTabNav button.bg-indigo-600 .tab-badge {
+  background: rgba(255, 255, 255, 0.24) !important;
+  color: #fff !important;
+}
+
+/* Cam açılır listede optgroup başlığı — tıklanamaz ayırıcı etiket */
+.lq-optgroup {
+  padding: 7px 12px 3px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+}
+html[data-theme="light"] .lq-optgroup { color: var(--ink-3); }
+html[data-theme="light"] .lq-optgroup + .lq-opt { margin-top: 0; }

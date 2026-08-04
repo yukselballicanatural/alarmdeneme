@@ -512,13 +512,19 @@ html[data-theme="dark"] #dealsKanbanView,
 html[data-theme="dark"] #dealTotalBar { position: relative; z-index: 1; }
 
 /* ── 11. EXPORT MENÜSÜ ───────────────────────────────────────────────── */
-html[data-theme="dark"] .nc-export-menu {
-  background: var(--d-strong) !important;
-  -webkit-backdrop-filter: blur(34px) saturate(180%);
-  backdrop-filter: blur(34px) saturate(180%);
+/* Açık temadaki aynı gerekçe: altındaki kartlar içinden okunmasın diye
+   yüzey opaklaştırıldı ve gölge derinleştirildi. */
+/* Sınıf iki kez: satır içi `background:#0f172a` genel eşlemesi (0,2,2)
+   tek sınıflı halini eziyordu (açık temadaki aynı tuzak). */
+html[data-theme="dark"] .nc-export-menu.nc-export-menu {
+  background: rgba(13, 18, 32, 0.94) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(185%);
+  backdrop-filter: blur(40px) saturate(185%);
   border: 1px solid var(--d-edge) !important;
   border-radius: 16px !important;
-  box-shadow: var(--d-sh-2), var(--d-sheen) !important;
+  box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.7),
+              0 4px 14px -4px rgba(0, 0, 0, 0.5),
+              var(--d-sheen) !important;
   padding: 7px !important;
   animation: lqPanelIn .4s var(--d-spring);
 }
@@ -1451,9 +1457,67 @@ html[data-theme="dark"] .modal-panel::-webkit-scrollbar-thumb {
   background-clip: content-box;
 }
 
-html[data-theme="dark"] aside { scrollbar-width: thin; scrollbar-gutter: stable; }
+/* Açık temadaki aynı tuzak: `scrollbar-width` webkit sözde-öğelerini
+   devre dışı bırakır, görünümü `scrollbar-color` belirler (eksikti). */
+html[data-theme="dark"] aside {
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+  scrollbar-color: rgba(255, 255, 255, 0.09) transparent;
+}
+html[data-theme="dark"] aside:hover { scrollbar-color: rgba(255, 255, 255, 0.24) transparent; }
 html[data-theme="dark"] aside::-webkit-scrollbar { width: 5px; }
 html[data-theme="dark"] aside::-webkit-scrollbar-track { background: transparent; }
 html[data-theme="dark"] aside::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.16); border-radius: 99px;
 }
+
+/* ═════════════════════════════════════════════════════════════════════
+   22. ADMIN HIZLI FİLTRELERİ (#dealTabNav) — açık temanın 41. bölümünün
+   koyu ikizi. Geometri açık katmanda temadan bağımsız YAZILMADI (id'li
+   seçiciler oradaki tema kapsamı içinde), bu yüzden ray ölçüleri burada
+   da TAM tekrar edilmek zorunda — eksik kalırsa gösterge akışa girip
+   düğmeleri yana iter (segment hatasının tekrarı).
+   ═════════════════════════════════════════════════════════════════════ */
+html[data-theme="dark"] #dealTabNav {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px !important;
+  padding: 4px !important;
+  border: 1px solid var(--d-edge-soft) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] #dealTabNav .lq-seg-ind { border-radius: 999px !important; }
+html[data-theme="dark"] #dealTabNav button {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-radius: 999px !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+  transition: color .2s var(--d-ease), transform .3s var(--d-spring) !important;
+}
+html[data-theme="dark"] #dealTabNav button:not(.bg-indigo-600):hover {
+  background: rgba(255, 255, 255, 0.09) !important;
+  color: #fff !important;
+}
+html[data-theme="dark"] #dealTabNav button:active { transform: scale(.96); }
+html[data-theme="dark"] #dealTabNav button.bg-indigo-600,
+html[data-theme="dark"] #dealTabNav button.bg-indigo-600 * { color: #fff !important; }
+html[data-theme="dark"] #dealTabNav .tab-badge {
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: #94a3b8 !important;
+  border-radius: 999px !important;
+}
+html[data-theme="dark"] #dealTabNav button.bg-indigo-600 .tab-badge {
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .lq-optgroup { color: rgba(255, 255, 255, 0.42); }

@@ -159,7 +159,22 @@
     var list = this.panel.querySelector('.lq-list');
     list.innerHTML = '';
     var opts = Array.prototype.slice.call(this.sel.options);
+    // select.options optgroup'ları DÜMDÜZ verir; grup başlıkları kaybolurdu.
+    // Seçeneğin ebeveyni değiştiğinde başlık satırı basıyoruz (tıklanamaz,
+    // filtrelemede de atlanır — .lq-opt sınıfı taşımıyor).
+    var lastGroup = null;
     opts.forEach(function (o, i) {
+      var g = (o.parentElement && o.parentElement.tagName === 'OPTGROUP')
+        ? (o.parentElement.getAttribute('label') || '') : null;
+      if (g !== lastGroup) {
+        lastGroup = g;
+        if (g) {
+          var h = document.createElement('div');
+          h.className = 'lq-optgroup';
+          h.textContent = g;
+          list.appendChild(h);
+        }
+      }
       var row = document.createElement('div');
       row.className = 'lq-opt' + (i === self.sel.selectedIndex ? ' lq-opt-on' : '');
       row.setAttribute('role', 'option');
@@ -208,6 +223,16 @@
       var q = this.value.toLowerCase();
       p.querySelectorAll('.lq-opt').forEach(function (row) {
         row.style.display = row.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+      });
+      // Grup başlığı, altındaki tüm seçenekler elenmişse gizlenir —
+      // yoksa boş bir başlık havada kalıyor.
+      p.querySelectorAll('.lq-optgroup').forEach(function (h) {
+        var any = false, n = h.nextElementSibling;
+        while (n && !n.classList.contains('lq-optgroup')) {
+          if (n.classList.contains('lq-opt') && n.style.display !== 'none') { any = true; break; }
+          n = n.nextElementSibling;
+        }
+        h.style.display = any ? '' : 'none';
       });
     });
     inp.addEventListener('keydown', function (e) {
@@ -385,6 +410,18 @@
       var b = document.getElementById(id);
       if (b && b.parentElement) new Segment(b.parentElement, 'button', inlineActive);
     });
+
+    // Admin "Tüm Deal'ler" hızlı filtreleri (#dealTabNav) — aktiflik burada
+    // ne .active sınıfıyla ne satır içi stille işaretleniyor: switchTab()
+    // düğmenin className'ini tamamen yeniden yazıp aktife .bg-indigo-600
+    // ekliyor. Ölçüt o. (Cam katmanı bu sınıfın rengini saydama çeker;
+    // görünen seçim kayan göstergeden gelir.)
+    var dtn = document.getElementById('dealTabNav');
+    if (dtn && dtn.querySelectorAll('button').length > 1) {
+      new Segment(dtn, 'button', function (el) {
+        return el.classList.contains('bg-indigo-600');
+      });
+    }
 
     // Günlük Ekip Girişi — Bugün / Dün
     var dq = document.querySelector('.dep-quick-btn');

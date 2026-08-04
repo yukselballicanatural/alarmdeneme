@@ -126,6 +126,11 @@
     'Oluşturma Tarihi': 'Created Time',
     'Sonuçlu': 'Has Result',
     'Sonuçsuz': 'No Result',
+    // fResult filtresinin yeni etiketleri (eskiden "Sonuçlu/Sonuçsuz" idi;
+    // sonuç kodu filtresi sanıldığı için netleştirildi) + optgroup başlığı
+    'Sonuç Girilmiş': 'Result Entered',
+    'Sonuç Girilmemiş': 'No Result Entered',
+    'Sonuç Kodları': 'Result Codes',
     'Hasta / Deal': 'Deal Name',
     'Ödenmemiş': 'Unpaid',
     'Kilit Talebi': 'Unlock Req.',
@@ -1007,7 +1012,9 @@
     }
     toChange.forEach(function (pair) { pair[0].nodeValue = pair[1]; });
 
-    ['placeholder', 'title'].forEach(function (attr) {
+    // 'label' de listede: <optgroup label="..."> metni text node değil
+    // attribute'tur, yoksa İngilizce modda sessizce Türkçe kalır.
+    ['placeholder', 'title', 'label'].forEach(function (attr) {
       var els = root.querySelectorAll('[' + attr + ']');
       els.forEach(function (el) {
         var v = el.getAttribute(attr);

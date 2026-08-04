@@ -499,9 +499,21 @@
               <option value="">Tümü</option><option value="Paid">Ödenen</option><option value="Unpaid">Ödenmemiş</option><option value="Partial">Kısmi</option></select></div>
           <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Dil</label>
             <select id="fLang" class="filter-select" onchange="applyFilters()"><option value="">Tüm Diller</option></select></div>
-          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Sonuç</label>
+          <!-- Onceki hali sadece KILIT DURUMUNU filtreliyordu ("Sonuçsuz/Sonuçlu")
+               ama etiketi "Sonuç" oldugu icin sonuc kodu filtresi sanilyordu.
+               Simdi durum secenekleri net adlandirildi ve altina verideki
+               GERCEK sonuc kodlari populateFilters() ile ekleniyor
+               (deger onekleri "code:" — durum degerleriyle carpismasin diye). -->
+          <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Sonuç Kodu</label>
             <select id="fResult" class="filter-select" onchange="applyFilters()">
-              <option value="">Tümü</option><option value="pending">Sonuçsuz</option><option value="locked">Sonuçlu</option><option value="unlock">Kilit Talebi</option></select></div>
+              <option value="">Tümü</option>
+              <optgroup label="Durum">
+                <option value="pending">Sonuç Girilmemiş</option>
+                <option value="locked">Sonuç Girilmiş</option>
+                <option value="unlock">Kilit Talebi</option>
+              </optgroup>
+              <optgroup label="Sonuç Kodları" id="fResultCodes"></optgroup>
+            </select></div>
           <div><label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Ara</label>
             <input id="fSearch" class="filter-input" placeholder="Hasta, Deal ID veya sonuç ara..." oninput="_dbApplyFilters()"></div>
         </div>
@@ -525,21 +537,15 @@
         </div>
       </div>
 
-      <!-- Summary Stats Bar -->
-      <div class="flex flex-wrap gap-x-5 gap-y-1.5 px-4 py-2.5 bg-gray-900 border border-gray-800 rounded-xl text-xs text-slate-400 mb-4">
-        <span>Tüm Veri: <strong class="text-white font-bold" id="statFull">0</strong></span>
-        <span class="text-gray-700">|</span>
-        <span>Geçmiş Arrival: <strong class="text-amber-400 font-bold" id="statArrival">0</strong></span>
-        <span>Geçmiş Ziyaret 1: <strong class="text-amber-400 font-bold" id="statV1">0</strong></span>
-        <span>Geçmiş Ziyaret 2: <strong class="text-amber-400 font-bold" id="statV2">0</strong></span>
-        <span>Geçmiş Ziyaret 3: <strong class="text-amber-400 font-bold" id="statV3">0</strong></span>
-        <span class="text-gray-700">|</span>
-        <span>İptal: <strong class="text-red-400 font-bold" id="statCancelled">0</strong></span>
-        <span class="text-gray-700">|</span>
-        <span>Kilit Talebi: <strong class="text-amber-300 font-bold" id="statUnlock">0</strong></span>
-      </div>
+      <!-- Ozet serit KALDIRILDI (istek): ayni sayilar hizli filtre
+           rozetlerinde zaten yaziyordu. Sayilari yazan updateTabBadges() ve
+           renderBadgesFromSummary() `if (el)` korumali oldugu icin
+           stat* ogeleri yokken hata vermez — yalnizca atlanir. -->
 
-      <!-- Tab Navigation -->
+      <!-- Hizli filtreler — takim liderinin alarm sekmeleriyle ayni dil:
+           tek cam ray + kayan gosterge. Gosterge liquid-ui.js'de
+           enhanceSegments() tarafindan enjekte edilir; aktiflik olcutu
+           .bg-indigo-600 sinifi (switchTab bu sinifi yaziyor). -->
       <div class="border-b border-gray-800 flex flex-wrap gap-1.5 pb-2 mb-4" id="dealTabNav">
         <button onclick="switchTab('all')" id="tab-all" class="px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white flex items-center gap-1.5 transition-all">
           Tüm Veri <span id="badge-all" class="tab-badge bg-indigo-800 text-white">0</span>
@@ -6821,6 +6827,34 @@
         if (cur) sel.value = cur;
       };
       fill('fTeam', teams); fill('fAgent', agents); fill('fStage', stages); fill('fLang', langs);
+      _fillResultCodeOptions(data);
+    }
+
+    // fResult icindeki "Sonuç Kodları" optgroup'unu verideki gercek kodlarla
+    // doldurur. Alt kod (sub_code) varsa o daha ayirt edici oldugu icin
+    // tercih edilir — tablo ve deal detayi da onu gosteriyor.
+    function _dealResultCodeOf(d) { return d.sub_code || d.result_code || ''; }
+
+    function _fillResultCodeOptions(data) {
+      const grp = document.getElementById('fResultCodes');
+      if (!grp) return;
+      const sel = document.getElementById('fResult');
+      const codes = [...new Set((data || []).map(_dealResultCodeOf).filter(Boolean))].sort();
+      const existing = Array.from(grp.children).map(o => o.value.slice(5));
+      if (existing.join('|') === codes.join('|')) return;
+      if (document.activeElement === sel) return;
+      const cur = sel ? sel.value : '';
+      grp.innerHTML = '';
+      grp.style.display = codes.length ? '' : 'none';
+      codes.forEach(c => {
+        const o = document.createElement('option');
+        o.value = 'code:' + c;
+        o.text  = c.length > 44 ? c.slice(0, 43) + '…' : c;
+        grp.appendChild(o);
+      });
+      // Secili kod hala listede degilse filtreyi sessizce dusurmek yerine
+      // koru: LiquidSelect'in deger yakalayicisi bunu etiketler.
+      if (cur && sel) sel.value = cur;
     }
 
     function switchTab(tabId) {
@@ -6873,6 +6907,7 @@
         if (result === 'pending' && d.status === 'locked') return false;
         if (result === 'locked'  && d.status !== 'locked') return false;
         if (result === 'unlock'  && !d.lock_approval_requested) return false;
+        if (result.slice(0, 5) === 'code:' && _dealResultCodeOf(d) !== result.slice(5)) return false;
         if (dFrom || dTo) {
           const dt = parseDateString(d['Arrival Date']);
           if (!dt) return false;
@@ -6966,6 +7001,7 @@
         if (result === 'pending' && d.status === 'locked') return false;
         if (result === 'locked'  && d.status !== 'locked') return false;
         if (result === 'unlock'  && !d.lock_approval_requested) return false;
+        if (result.slice(0, 5) === 'code:' && _dealResultCodeOf(d) !== result.slice(5)) return false;
         if (dFrom || dTo) {
           const dt = parseDateString(d['Arrival Date']);
           if (!dt) return false;
@@ -7836,6 +7872,9 @@
         if (cur) sel.value = cur;
       };
       fill('fTeam', teams); fill('fAgent', agents); fill('fStage', stages); fill('fLang', langs);
+      // Ozet RPC'si sonuc kodu dagilimi tasimiyor; kodlar yuklenmis deal
+      // setinden gelir. Set henuz bossa liste bos kalir ve optgroup gizlenir.
+      _fillResultCodeOptions(allDeals);
     }
 
     function renderSummaryFromRPC(s) {
